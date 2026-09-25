@@ -15,6 +15,12 @@
 （推测项目从别的盘/目录搬过家，junction 失效）。表现：`pnpm ts-check` 报
 `Cannot find module .../typescript/bin/tsc`。→ `pnpm install` 重链解决。
 
+### #2b careers.ts 类型注解损坏 ✅ 已修
+`careers.ts` 第 45 行 `export const careers: Career[{` 缺了 `] =`（应为 `Career[] = [`）。
+一个字符级损坏造成 **66136 个连锁语法错误**，整个项目无法编译——
+推断 2026-07-14 最后一次修改 careers.ts 后项目就处于不可构建状态。
+依赖链接修好后跑 `pnpm ts-check` 才暴露。已修复，ts-check 0 错误。
+
 ### 编码损坏 ✅ 已修
 `src/app/layout.tsx`（1 处）与 `src/app/api/ai/analyze/route.ts`（7 处）共 27 个字节损坏
 （U+FFFD，每个坏一个汉字），已按上下文还原：
