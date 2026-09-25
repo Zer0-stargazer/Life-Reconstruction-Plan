@@ -99,6 +99,9 @@ Desktop.ini
 
 .coze-logs
 
+# 开发期截图（约85MB，不入库；可自行归档或删除）
+assets/
+
 # Preview files
 .preview
 .cozeproj/reduction
