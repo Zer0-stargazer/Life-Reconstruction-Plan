@@ -11,11 +11,11 @@
 | # | 模块 | 路由 | 内容 | 权限 |
 |---|------|------|------|------|
 | 01 | 名字 | `/name` | AI 起名（当前为本地随机生成） | 免费 |
-| 02 | 职业 | `/career` | 1539 个职业 + 自学路线 + 课程/书籍资源 | 免费 |
+| 02 | 职业 | `/career` | 1535 个职业 + 自学路线 + 课程/书籍资源 | 免费 |
 | 03 | 命运 | `/destiny` | 命势运报告（规则计算，非 AI） | 🔒 |
 | 04 | 规律 | `/laws` | 8 维度 × 36 条 = 288 条人生规律 | 🔒 |
 | 05 | 努力 | `/simulation` | 命运模拟器（SVG 雷达图 + 6 维滑块 + AI 策略） | 🔒 |
-| 06 | 窗口 | `/windows` | 479 个人生关键窗口卡片 | 免费 |
+| 06 | 窗口 | `/windows` | 473 个人生关键窗口卡片 | 免费 |
 | 07 | 运气 | `/luck` | 250 个运气节点 | 🔒 |
 | 08 | 用户 | `/user` | 角色 / 邀请码 / AI Key 配置 / 高级设置 | 登录 |
 | — | 后台 | `/admin` | 用户管理 / 邀请码生成 / 访问日志 | 开发者 |
@@ -51,8 +51,8 @@ cp .env.example .env.local    # 然后填入真实值
 - **框架**：Next.js 16.1.1（App Router）+ React 19.2.3 + TypeScript 5
 - **UI**：shadcn/ui（Radix UI）+ Tailwind CSS v4 + Lucide React
 - **图表**：Recharts（雷达图等）
-- **数据库**：Supabase PostgreSQL（@supabase/supabase-js 直连，未用 drizzle 运行时）
-- **AI**：OpenAI-compatible SSE（`src/lib/ai-stream.ts`），默认火山方舟豆包
+- **数据库**：Supabase PostgreSQL（@supabase/supabase-js 直连；drizzle 已于 2026-09-26 移除）
+- **AI**：多协议流式（`src/lib/ai-stream.ts`），默认火山方舟豆包，支持用户自带 Key
 - **密码**：bcryptjs（服务端哈希，cost=10）
 - **包管理**：pnpm 9（registry 走 npmmirror）
 
@@ -78,16 +78,18 @@ src/
 │   └── ui/                   # shadcn/ui 组件库（60+）
 ├── contexts/auth-context.tsx # 全局认证（localStorage 持久化，见已知问题）
 ├── data/                     # 静态数据（约 2.1MB）
-│   ├── careers.ts            # 1539 个职业
-│   ├── windows.ts            # 479 个人生窗口
+│   ├── careers.ts            # 1535 个职业
+│   ├── windows.ts            # 473 个人生窗口（单行/多行两种格式批次）
 │   ├── luck-nodes.ts         # 250 个运气节点
-│   ├── luck-red.ts           # 50 个节点（未被引用，见已知问题）
+│   ├── luck-red.ts           # 50 个节点（预留数据，未接线）
 │   └── laws-*.ts             # 8 维度规律，各 36 条
 ├── hooks/
 │   ├── use-advanced-settings.ts # 7 个人生阶段 + 6 维偏好权重（localStorage）
 │   └── use-module-visit.ts   # 模块访问记录（探索进度）
-├── lib/ai-stream.ts          # OpenAI-compatible SSE 客户端
-└── storage/database/         # supabase-client.ts + drizzle 类型定义
+├── lib/ai-stream.ts          # AI 流式客户端（OpenAI 兼容 + Claude/Gemini 协议适配）
+├── lib/ai-providers.ts       # 厂商白名单与 baseUrl 映射（analyze/test-key 共用）
+├── lib/active-ai-client.ts   # 前端读取用户当前 AI 源（localStorage）
+└── storage/database/         # supabase-client.ts
 supabase/schema.sql           # 建表 SQL（手工执行）
 scripts/                      # .coze 运行入口 + archive/（历史生成脚本）
 docs/                         # 架构 / API / 数据库 / 已知问题 / 交接

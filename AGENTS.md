@@ -34,12 +34,12 @@ src/
 │   ├── page.tsx                # 首页 Landing
 │   ├── globals.css             # 全局样式 + 主题变量 + 微动效
 │   ├── name/page.tsx           # 模块01 名字（AI起名器）
-│   ├── career/page.tsx         # 模块02 职业（1538职业遍历+筛选）
+│   ├── career/page.tsx         # 模块02 职业（1535职业遍历+筛选）
 │   ├── destiny/page.tsx        # 模块03 命运（命势运报告）🔒
 │   ├── laws/page.tsx           # 模块04 规律（8维度288条规律）🔒
 │   ├── simulation/page.tsx     # 模块05 努力（命运模拟器 SVG雷达图）🔒
-│   ├── windows/page.tsx        # 模块06 窗口（524人生窗口卡片）
-│   ├── luck/page.tsx           # 模块07 运气（365运气节点）🔒
+│   ├── windows/page.tsx        # 模块06 窗口（473人生窗口卡片）
+│   ├── luck/page.tsx           # 模块07 运气（250运气节点）🔒
 │   ├── user/page.tsx           # 模块08 用户中心（角色/邀请码/AI Key/设置）
 │   ├── admin/page.tsx          # 开发者后台（用户/邀请码管理）
 │   └── api/
@@ -55,9 +55,9 @@ src/
 │   └── ui/                    # shadcn/ui 组件库
 ├── contexts/auth-context.tsx   # 全局认证（角色/权限/邀请码）
 ├── data/                       # 静态数据
-│   ├── windows.ts              # 524个人生窗口
-│   ├── luck-nodes.ts           # 365个运气节点
-│   ├── careers.ts              # 1538个职业（自学推荐+课程/视频资源）
+│   ├── windows.ts              # 473个人生窗口（单行+多行两种格式批次）
+│   ├── luck-nodes.ts           # 250个运气节点（luck-red.ts 50条预留未接线）
+│   ├── careers.ts              # 1535个职业（自学推荐+课程/视频资源）
 │   └── laws*.ts                # 8维度规律（各36条，共288条）
 ├── hooks/
 │   ├── use-mobile.ts           # 移动端检测
@@ -77,8 +77,8 @@ src/
 
 1. **权限门控**: ModuleGate组件包裹🔒模块，normal只能访问3个，premium全开，developer全权限+后台
 2. **角色升级**: normal → premium 通过邀请码；developer 通过admin页面密码验证(x-dev-token)
-3. **AI能力**: 内置coze-coding-dev-sdk + 用户自定义API Key（8厂商，localStorage存储）
-4. **职业数据**: 1538个职业，tutorials只含course/video两种类型，书籍链接为豆瓣真实链接
+3. **AI能力**: 内置 AI（env 的 AI_API_KEY，走 ai-stream.ts）+ 用户自定义API Key（8厂商，localStorage存储，**已接入 analyze**）
+4. **职业数据**: 1535个职业（已去重），tutorials只含course/video两种类型，书籍链接为豆瓣真实链接
 5. **规律引擎**: 8维度(laws-*.ts)聚合到laws.ts，4类标签(critical/danger/opportunity/neutral)
 6. **命运模拟器**: SVG雷达图 + 6维滑块，推演后AI生成策略建议
 7. **侧边栏**: 桌面 w-56 (224px) 固定 / 移动端顶部栏+左侧抽屉（main 用 md:ml-56 对齐）
@@ -98,7 +98,7 @@ src/
 - 名字模块当前本地随机生成，可接入AI流式
 - 命运报告当前规则计算，可接入AI深度分析
 - 命运模拟器可增加蒙特卡洛模拟
-- 用户配置的自定义 API Key 尚未接入 /api/ai/analyze（当前只用于 test-key 连通性测试）
-- 首页统计数字（524窗口/365运气/1538职业）与真实数据（479/250/1539）不符，建议改为真实值
+- ~~自定义 API Key 未接入 analyze~~（2026-09-26 已接入，claude/gemini/minimax 协议适配未经真实 Key 实测）
+- ~~首页统计数字与真实数据不符~~（2026-09-26 已改为真实值并完成数据去重）
 
 > 全部已知问题（含安全项）见 docs/KNOWN-ISSUES.md（2026-09-25 全量排查）。

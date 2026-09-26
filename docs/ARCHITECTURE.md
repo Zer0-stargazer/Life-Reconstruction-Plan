@@ -72,7 +72,7 @@ ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation 
 ## 构建与运行
 
 - dev/start 走 `next dev -p 5000` / `next start -p 5000`（package.json scripts）
-- `src/server.ts` 是自定义 HTTP server 入口，**未被任何 script 引用**，属死代码
+- `src/server.ts` 自定义 HTTP server 入口（曾未被引用）——**2026-09-26 已删除**
 - `scripts/*.sh` 供扣子 `.coze` 配置调用；本地直接用 pnpm scripts 即可
 - 静态数据约 2.1MB 全部打进 client bundle（careers.ts 1.1MB），首屏性能受此影响
 

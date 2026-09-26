@@ -1,5 +1,6 @@
 ﻿import { NextRequest } from "next/server";
-import { streamChat } from "@/lib/ai-stream";
+import { streamChatAuto } from "@/lib/ai-stream";
+import { resolveAiSource, type AiSourceConfig } from "@/lib/ai-providers";
 
 const SYSTEM_PROMPT = `你是"人生重构计划"的AI分析顾问，专注于人生决策、职业规划、命运概率分析。你的角色是帮助用户深入理解每个模块的内涵，给出具体、可操作的建议。
 
@@ -79,15 +80,25 @@ const MODULE_PROMPTS: Record<string, string> = {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { module, item, question, history } = body as {
+    const { module, item, question, history, ai } = body as {
       module: string;
       item: string;
       question?: string;
       history?: { role: string; content: string }[];
+      ai?: AiSourceConfig;
     };
 
     if (!module || !item) {
       return new Response(JSON.stringify({ error: "缺少必要参数" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // 解析用户自带 AI 源：无效配置直接报错（不静默回退，避免"配了没用"的错觉）
+    const aiSource = resolveAiSource(ai);
+    if (aiSource.kind === "invalid") {
+      return new Response(JSON.stringify({ error: aiSource.reason }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -127,9 +138,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create SSE stream using our replacement
+    // Create SSE stream (uses user-provided AI source when available)
     const encoder = new TextEncoder();
-    const stream = streamChat(messages, { temperature: 0.7 });
+    const stream = streamChatAuto(messages, aiSource, { temperature: 0.7 });
 
     const readable = new ReadableStream({
       async start(controller) {

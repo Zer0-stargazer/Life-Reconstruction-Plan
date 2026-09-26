@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { X, Send, Sparkles, Loader2 } from 'lucide-react';
+import { getActiveAiConfig } from '@/lib/active-ai-client';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -78,12 +79,18 @@ export function AIAnalysisPanel({
           item: itemContext,
           question,
           history: historyForApi,
+          ai: getActiveAiConfig(),
         }),
         signal: abortRef.current.signal,
       });
 
       if (!response.ok) {
-        throw new Error(`请求失败: ${response.status}`);
+        let detail = `请求失败: ${response.status}`;
+        try {
+          const j = await response.json();
+          if (j?.error) detail = j.error;
+        } catch { /* keep default */ }
+        throw new Error(detail);
       }
 
       const reader = response.body?.getReader();

@@ -1,12 +1,12 @@
 # 人生重构计划 - 开发者文档
 
-> ⚠ **2026-09-25 校注**：本文写于扣子云端环境（2026-07），以下条目已过时，
+> ⚠ **2026-09-25 校注（09-26 更新）**：本文写于扣子云端环境（2026-07），以下条目已过时，
 > 以 [ARCHITECTURE.md](ARCHITECTURE.md) / [API.md](API.md) / [KNOWN-ISSUES.md](KNOWN-ISSUES.md) 为准：
 > 1. `coze-coding-dev-sdk` 不在依赖中，AI 走自写的 `src/lib/ai-stream.ts`（OpenAI-compatible SSE）
 > 2. "运行时注入、无需 .env" 是扣子云端行为；本地必须 `.env.local`（含 `SUPABASE_*`、`AI_*`、`DEV_PASSWORD`）
-> 3. 数据条目实测：careers **1539**（4 重名）、windows **479**（宣传 524）、luck **250**（宣传 365，另有 50 条 redNodes 未被引用）
-> 4. `/api/invite` **无鉴权**（userId 客户端自报）；analyze 请求体是 `{module,item,question,history}`，**不接收 apiKey**
-> 5. `server.ts`/tsup 未被使用（走 next dev/start）；"高级设置未被消费"已过时——destiny/windows/simulation 在消费
+> 3. 数据条目（2026-09-26 去重后）：careers **1535**、windows **473**、luck **250**（luck-red.ts 50 条为预留数据）
+> 4. `/api/invite` **无鉴权**（userId 客户端自报，暂未修）；analyze 已接收用户自带 Key（`ai` 字段）
+> 5. `server.ts` 已删除、drizzle 三件套已移除；"高级设置未被消费"已过时——destiny/windows/simulation 在消费
 > 6. 本地无 Node 24 硬约束，Node 22 可跑
 
 ## 技术架构
@@ -27,7 +27,7 @@
 | coze-coding-dev-sdk | ^0.7.19 | AI 分析 + Web 搜索 |
 | recharts | 2.15.4 | 图表 (命运模拟器雷达图) |
 | lucide-react | ^0.468.0 | 图标 |
-| drizzle-orm / drizzle-kit | ^0.45.1 / ^0.31.8 | 数据库 ORM (已安装但主要用 raw SQL) |
+| drizzle-orm / drizzle-kit | ^0.45.1 / ^0.31.8 | ~~数据库 ORM~~ **2026-09-26 已移除** |
 
 ### 环境变量 (运行时注入, 无需 .env)
 

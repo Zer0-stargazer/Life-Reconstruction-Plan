@@ -55,9 +55,9 @@ const modules = [
 
 const stats = [
   { value: 288, label: '条人生规律', suffix: '' },
-  { value: 524, label: '个人生窗口', suffix: '' },
-  { value: 365, label: '个运气因子', suffix: '' },
-  { value: 1538, label: '种职业分析', suffix: '' },
+  { value: 473, label: '个人生窗口', suffix: '' },
+  { value: 250, label: '个运气因子', suffix: '' },
+  { value: 1535, label: '种职业分析', suffix: '' },
 ];
 
 function AnimatedCounter({ target, suffix }: { target: number; suffix: string }) {

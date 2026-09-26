@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createHash } from 'crypto';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 
 // Developer password (stored as env var in production)
 const DEV_PASSWORD = process.env.DEV_PASSWORD;
 
+// 会话令牌 = DEV_PASSWORD 的加盐哈希，避免明文密码出服务端/落 localStorage
+function devSessionToken(): string {
+  return createHash('sha256').update(`lrs-dev-session:${DEV_PASSWORD}`).digest('hex');
+}
+
 function verifyDevAuth(request: NextRequest): boolean {
+  if (!DEV_PASSWORD) return false;
   const authHeader = request.headers.get('x-dev-token');
   if (!authHeader) return false;
-  return authHeader === DEV_PASSWORD;
+  return authHeader === devSessionToken();
 }
+
+const VALID_ROLES = ['normal', 'premium', 'developer'] as const;
 
 // GET /api/admin - List users / invite codes / logs
 export async function GET(request: NextRequest) {
@@ -116,16 +125,20 @@ export async function POST(request: NextRequest) {
 
               userData.role = 'developer';
             }
-            return NextResponse.json({ success: true, token: DEV_PASSWORD, user: userData });
+            return NextResponse.json({ success: true, token: devSessionToken(), user: userData });
           }
         }
-        return NextResponse.json({ success: true, token: DEV_PASSWORD });
+        return NextResponse.json({ success: true, token: devSessionToken() });
       }
       return NextResponse.json({ error: '密码错误' }, { status: 401 });
     }
 
     // Exit developer mode - downgrade back to premium
+    // 必须携带 x-dev-token：否则任何人可传 userId 把任意用户降级
     if (action === 'exit_developer') {
+      if (!verifyDevAuth(request)) {
+        return NextResponse.json({ error: '未授权' }, { status: 401 });
+      }
       const { userId } = body;
       if (!userId) {
         return NextResponse.json({ error: '缺少用户ID' }, { status: 400 });
@@ -233,6 +246,9 @@ export async function POST(request: NextRequest) {
       const { userId, role, isActive } = body;
       if (!userId) {
         return NextResponse.json({ error: '缺少用户ID' }, { status: 400 });
+      }
+      if (role !== undefined && !(VALID_ROLES as readonly string[]).includes(role)) {
+        return NextResponse.json({ error: `无效角色: ${role}` }, { status: 400 });
       }
 
       const updates: Record<string, unknown> = {};

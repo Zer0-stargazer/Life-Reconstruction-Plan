@@ -3,7 +3,8 @@
 ## 现状
 
 - 数据库：Supabase PostgreSQL，`@supabase/supabase-js` 直连（service_role 或 anon key）
-- 代码里装了 `drizzle-orm / drizzle-kit / drizzle-zod`，但**运行时从未使用**，仅 `schema.ts` 用 drizzle 语法定义类型（见 KNOWN-ISSUES #16）
+- ~~代码里装了 `drizzle-orm / drizzle-kit / drizzle-zod`，但运行时从未使用~~
+  → **2026-09-26 已移除**（依赖 + `schema.ts`/`relations.ts` 一并删除，表结构以本文件与 `supabase/schema.sql` 为准）
 - **仓库没有迁移文件**，新环境必须手工执行 `supabase/schema.sql` 建表
 
 ## 表结构
@@ -56,7 +57,7 @@
 
 ### health_check
 
-drizzle schema 里有定义，代码未使用。建表脚本里保留了，可删。
+原 drizzle schema 里有定义（drizzle 已于 2026-09-26 移除），代码未使用。建表脚本里保留了，可删。
 
 ## 连接配置
 

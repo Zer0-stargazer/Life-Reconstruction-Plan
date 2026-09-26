@@ -150,7 +150,7 @@ export default function AdminPage() {
       try {
         const res = await fetch('/api/admin', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-dev-token': devToken || '' },
           body: JSON.stringify({ action: 'exit_developer', userId: authUser.id }),
         });
         const data = await res.json();
