@@ -129,3 +129,35 @@ SVG 手绘雷达图 (6 维度) + 滑块交互, 推演后调用 AI 生成策略�
 - careers.ts 1.6MB 会导致 ESLint deoptimise (仅影响 lint 速度, 不影响功能)
 - 高级设置数据存 localStorage, 未被其他模块消费
 - 名字模块本地随机生成, 未接入 AI 流式
+
+## 本地环境重建 (Windows / pnpm)
+
+本项目 `node_modules` 曾出现过 **pnpm 虚拟 store 链接残缺** 导致 `next dev` 起得来但页面 500。若遇到
+`Cannot find module 'picocolors'`、`Can't resolve 'scheduler'` 一类报错, 按下面顺序一次性修复:
+
+```bash
+# 1) 把坏掉的 node_modules 移开 (不要 rm —— Windows Defender 下删除极慢)
+mv node_modules node_modules.deleted_partial
+
+# 2) 用系统 warm store 重装 (esbuild postinstall 在 Windows 会失败, 加 --ignore-scripts)
+CI=1 pnpm install --ignore-scripts --prefer-offline \
+  --store-dir=C:/Users/Administrator/AppData/Local/pnpm/store/v3
+
+# 3) 把残留目录移出项目根 (留在项目里会被 Turbopack 扫到, 报 "outside of root directory")
+mv node_modules.deleted_partial /c/Users/Administrator/.workbuddy/tmp-stale-nm/
+
+# 4) 清缓存后启动
+rm -rf .next && pnpm dev
+```
+
+要点说明:
+
+- 根因是 `.npmrc` 中 `strictStorePkgContentCheck=false` + `verifyStoreIntegrity=false` (扣子环境写入),
+  pnpm 因此不校验也不修复残缺的虚拟 store 链接。**长期建议把这两行删掉**, 让 pnpm 能自愈。
+- 残留的 `node_modules.deleted_partial*` 必须**移出项目根**, 否则 Turbopack 编译 CSS 时会因路径
+  超出项目 root 直接 500 —— 这一步最容易被忽略。
+- `--ignore-scripts` 只跳过 esbuild 的 postinstall (Next 用 SWC 编译, 不依赖 esbuild), 对开发/构建无影响。
+- 验证链接是否真的建好, 用 `ls -d node_modules/.pnpm/<pkg>@*` 看真实目录名, 不要凭记忆猜版本号。
+
+启动后自检: `curl -o /dev/null -w "%{http_code}" http://localhost:5000/`, 预期 200。
+主要页面: `/laws` `/windows` `/luck` `/career` `/name` `/destiny` `/simulation` `/user` `/admin`。

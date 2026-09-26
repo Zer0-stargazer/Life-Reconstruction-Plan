@@ -15,6 +15,19 @@
 （推测项目从别的盘/目录搬过家，junction 失效）。表现：`pnpm ts-check` 报
 `Cannot find module .../typescript/bin/tsc`。→ `pnpm install` 重链解决。
 
+### #2c 虚拟 store 链接残缺 + 残留目录污染 ✅ 已修（2026-09-27）
+比 #2 更深一层：`.pnpm` 各包目录存在，但**包内部的依赖链接大面积缺失**，导致 dev server
+能 Ready 却一编译就 500（`Cannot find module 'picocolors'`、`Can't resolve 'scheduler'`）。
+根因是 `.npmrc` 的 `strictStorePkgContentCheck=false` + `verifyStoreIntegrity=false`
+（扣子环境写入），pnpm 因此不校验也不修复残缺链接。
+
+另外，项目根若残留 `node_modules.deleted_partial*` 之类的目录，Turbopack 编译 CSS 时会报
+`Cannot depend on path ... outside of root directory` 并直接 500 —— 必须**移出项目根**而不只是放着。
+
+→ 完整重建步骤见 `docs/DEVELOPER.md`「本地环境重建 (Windows / pnpm)」。
+现状：首页与 9 个主要页面全部 200，dev 日志 0 错误。
+**长期建议**：删掉 `.npmrc` 里那两行让 pnpm 恢复自愈能力。
+
 ### #2b careers.ts 类型注解损坏 ✅ 已修
 `careers.ts` 第 45 行 `export const careers: Career[{` 缺了 `] =`（应为 `Career[] = [`）。
 一个字符级损坏造成 **66136 个连锁语法错误**，整个项目无法编译——
