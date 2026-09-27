@@ -1,7 +1,12 @@
 const fs = require('fs');
+const path = require('path');
+// 项目根路径：本脚本位于 <root>/scripts/archive/，不依赖运行时的 cwd。
+// （原脚本写死了扣子云端沙箱路径 /workspace/projects/...，本地无法运行）
+const ROOT = path.resolve(__dirname, '..', '..');
+const P = (p) => path.join(ROOT, p);
 
 // Read the existing windows.ts
-let content = fs.readFileSync('src/data/windows.ts', 'utf8');
+let content = fs.readFileSync(P('src/data/windows.ts'), 'utf8');
 
 // 1. Update the interface to add new fields
 content = content.replace(
@@ -215,5 +220,5 @@ content = content.replace(
   `'精英': '特殊窗口',\n  '暗线': '人生暗线',`
 );
 
-fs.writeFileSync('src/data/windows.ts', content);
+fs.writeFileSync(P('src/data/windows.ts'), content);
 console.log('Total windows: ' + (id - 1));

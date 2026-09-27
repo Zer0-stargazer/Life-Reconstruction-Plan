@@ -1,5 +1,10 @@
 const fs = require('fs');
-const raw = JSON.parse(fs.readFileSync('/workspace/projects/scripts/luck-raw-fixed.json','utf8'));
+const path = require('path');
+// 项目根路径：本脚本位于 <root>/scripts/archive/，不依赖运行时的 cwd。
+// （原脚本写死了扣子云端沙箱路径 /workspace/projects/...，本地无法运行）
+const ROOT = path.resolve(__dirname, '..', '..');
+const P = (p) => path.join(ROOT, p);
+const raw = JSON.parse(fs.readFileSync(P('scripts/archive/luck-raw-fixed.json'),'utf8'));
 
 // 最终分类逻辑（参照 npcnpc.com）：
 // 红-人际吸血: 消耗你的人际关系（人际负面）
@@ -310,5 +315,5 @@ for (const cat of ['red', 'purple', 'blue', 'cyan']) {
   console.log(`\n${cat} (${names.length}): ${names.join(', ')}`);
 }
 
-fs.writeFileSync('/workspace/projects/scripts/luck-raw-remapped.json', JSON.stringify(remapped, null, 2));
+fs.writeFileSync(P('scripts/archive/luck-raw-remapped.json'), JSON.stringify(remapped, null, 2));
 console.log('\nSaved');

@@ -14,7 +14,7 @@
 
 | 场景 | 响应 |
 |---|---|
-| 成功 | `{ success: true, user: { id, nickname, avatar, role, created_at } }`（**不含 password_hash**） |
+| 成功 | `{ success: true, user: { id, nickname, avatar, role, created_at }, token: "<会话令牌>" }`（**不含 password_hash**） |
 | 昵称已注册 | 409 |
 | 昵称未注册 | 404 |
 | 密码错误 | 401 |
@@ -22,19 +22,44 @@
 
 注意：注册无验证码/频率限制；登录成功会更新 `last_login_at`。
 
+### 会话令牌 `token`
+
+由 `src/lib/session.ts` 签发，格式 `<base64url(payload)>.<base64url(hmac-sha256)>`，
+载荷 `{ userId, nickname, role, exp }`，有效期 **7 天**。
+
+- **是签名不是加密**：payload 可被 base64 解开，别往里放敏感信息。
+- 受保护接口用 `Authorization: Bearer <token>`（也接受 `x-session-token` 头）。
+- 令牌无效/过期/被篡改 → 401。role 变更后需重新签发（兑换邀请码时服务端会自动发新的）。
+- 签名密钥取 `SESSION_SECRET`，未设则回退 `DEV_PASSWORD`；
+  **生产环境两者都没配会拒绝签发**（避免静默使用不安全默认值）。
+
 ## POST /api/invite
 
-邀请码兑换，`normal → premium`。**无任何鉴权，userId 由客户端自报**（见 KNOWN-ISSUES #7）。
+邀请码兑换，`normal → premium`。
+
+**需要会话**（2026-09-27 修复，原为完全无鉴权，见 KNOWN-ISSUES #7）。
 
 ```jsonc
-// 请求
-{ "userId": 123, "code": "LR-XXXXXX" }
+// 请求头
+Authorization: Bearer <token>       // 或 x-session-token: <token>
+// 请求体
+{ "code": "LR-XXXXXX" }             // userId 不再由客户端自报，取会话令牌里的
 // 成功
-{ "success": true, "role": "premium" }
+{ "success": true, "role": "premium", "token": "<新令牌>" }  // role 变了，令牌重新签发
 ```
 
-校验顺序：码存在且激活 → 未过期 → 未用完（max_uses/used_count）→ 用户存在且还是 normal。
-成功后：user.role=premium、user.invite_code_used=code、invite.used_count+1（读后写，非原子，并发可超发）。
+| 状态码 | 含义 |
+|---|---|
+| 400 | 缺 code / 码已过期 / 码已用完 / 已是 premium 或 developer |
+| 401 | 会话令牌缺失、无效或已过期 |
+| 403 | 账号被禁用（is_active=false） |
+| 404 | 邀请码无效 / 用户不存在 |
+| 409 | 并发下名额刚被抢走（乐观锁未抢到），可重试 |
+| 429 | 同 IP 15 分钟内失败 ≥10 次，触发限流 |
+
+校验顺序：会话 → 码存在且激活 → 未过期 → 未用完 → 用户存在、激活且还是 normal
+→ **乐观锁占位** `used_count`（`.eq("used_count", 读到的值)`，防并发超发）→ 升级用户
+→ 写 access_logs → 重新签发令牌。升级失败会把名额还回去。
 
 ## GET /api/admin
 

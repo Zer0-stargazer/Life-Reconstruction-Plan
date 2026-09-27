@@ -1,5 +1,10 @@
 const fs = require('fs');
-let content = fs.readFileSync('src/data/windows.ts', 'utf8');
+const path = require('path');
+// 项目根路径：本脚本位于 <root>/scripts/archive/，不依赖运行时的 cwd。
+// （原脚本写死了扣子云端沙箱路径 /workspace/projects/...，本地无法运行）
+const ROOT = path.resolve(__dirname, '..', '..');
+const P = (p) => path.join(ROOT, p);
+let content = fs.readFileSync(P('src/data/windows.ts'), 'utf8');
 const d = [
 ['0-1','嗅觉发育期','嗅觉是新生儿最敏锐感官之一','past','感知','嗅觉系统早期发育','嗅觉异常影响安全感','unplanned','completed'],
 ['0.5-1','爬行关键期','爬行促进大脑左右半球协调','past','运动','大脑跨半球发育窗口','跳过爬行影响协调性','unplanned','completed'],
@@ -56,5 +61,5 @@ let id = 383;
 const addStr = d.map(x => `  { id: ${id++}, age: '${x[0]}', title: '${x[1]}', description: '${x[2]}', status: '${x[3]}', tag: '${x[4]}', lockedForce: '${x[5]}', remedyCost: '${x[6]}', planningStatus: '${x[7]}', completionStatus: '${x[8]}' }`).join(',\n');
 const idx = content.lastIndexOf('];');
 content = content.slice(0, idx) + ',\n\n  // ===== 细节窗口 =====\n' + addStr + ',\n' + content.slice(idx);
-fs.writeFileSync('src/data/windows.ts', content);
+fs.writeFileSync(P('src/data/windows.ts'), content);
 console.log('Total windows: ' + (id - 1));

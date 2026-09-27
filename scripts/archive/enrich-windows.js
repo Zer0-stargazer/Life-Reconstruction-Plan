@@ -1,6 +1,11 @@
 // 为所有窗口节点补充新字段：lockForceScore, remedyLevel, bestExecuteAge, executePhase, missType
 const fs = require('fs');
-const content = fs.readFileSync('/workspace/projects/src/data/windows.ts', 'utf8');
+const path = require('path');
+// 项目根路径：本脚本位于 <root>/scripts/archive/，不依赖运行时的 cwd。
+// （原脚本写死了扣子云端沙箱路径 /workspace/projects/...，本地无法运行）
+const ROOT = path.resolve(__dirname, '..', '..');
+const P = (p) => path.join(ROOT, p);
+const content = fs.readFileSync(P('src/data/windows.ts'), 'utf8');
 
 // 解析age范围获取中值
 function parseAgeMid(age) {
@@ -207,11 +212,11 @@ for (let i = replacements.length - 1; i >= 0; i--) {
 // 同时更新已存在的 lockedForce 和 remedyCost 字段（之前是可选的，现在必须）
 // 这些字段已经存在，不需要修改
 
-fs.writeFileSync('/workspace/projects/src/data/windows.ts', result);
+fs.writeFileSync(P('src/data/windows.ts'), result);
 console.log(`Updated ${count} window nodes with new fields`);
 
 // 验证
-const verifyContent = fs.readFileSync('/workspace/projects/src/data/windows.ts', 'utf8');
+const verifyContent = fs.readFileSync(P('src/data/windows.ts'), 'utf8');
 const lockForceScoreCount = (verifyContent.match(/lockForceScore:/g) || []).length;
 const remedyLevelCount = (verifyContent.match(/remedyLevel:/g) || []).length;
 const bestExecuteAgeCount = (verifyContent.match(/bestExecuteAge:/g) || []).length;

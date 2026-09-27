@@ -43,6 +43,7 @@ cp .env.example .env.local    # 然后填入真实值
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | 数据库 | 注册/登录/邀请码/后台全 500 |
 | `AI_API_URL` / `AI_API_KEY` / `AI_MODEL` | AI 分析（默认火山方舟豆包） | AI 分析面板报错 |
 | `DEV_PASSWORD` | 开发者后台密码 | 无法进入 `/admin` |
+| `SESSION_SECRET` | 登录态令牌的 HMAC 签名密钥 | 回退用 `DEV_PASSWORD`；生产环境两者都缺则拒绝签发登录态 |
 
 数据库建表：执行 `supabase/schema.sql`（Supabase Dashboard → SQL Editor）。
 

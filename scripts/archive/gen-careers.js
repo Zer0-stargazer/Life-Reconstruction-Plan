@@ -1,4 +1,9 @@
 const fs = require('fs');
+const path = require('path');
+// 项目根路径：本脚本位于 <root>/scripts/archive/，不依赖运行时的 cwd。
+// （原脚本写死了扣子云端沙箱路径 /workspace/projects/...，本地无法运行）
+const ROOT = path.resolve(__dirname, '..', '..');
+const P = (p) => path.join(ROOT, p);
 
 const templates = {
   '医疗': [
@@ -324,7 +329,7 @@ const templates = {
 };
 
 // Read existing file and find where to insert
-let content = fs.readFileSync('src/data/careers.ts', 'utf8');
+let content = fs.readFileSync(P('src/data/careers.ts'), 'utf8');
 
 // Remove trailing comma on last item and any trailing whitespace
 content = content.trimEnd();
@@ -353,5 +358,5 @@ for (const [cat, items] of Object.entries(templates)) {
 output += '] as const;\n';
 
 // Write the complete file
-fs.writeFileSync('src/data/careers.ts', content + ',\n' + output);
+fs.writeFileSync(P('src/data/careers.ts'), content + ',\n' + output);
 console.log('Total careers: ' + (id - 1));

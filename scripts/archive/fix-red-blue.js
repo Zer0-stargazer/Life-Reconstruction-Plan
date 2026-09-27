@@ -1,9 +1,14 @@
 const fs = require('fs');
+const path = require('path');
+// 项目根路径：本脚本位于 <root>/scripts/archive/，不依赖运行时的 cwd。
+// （原脚本写死了扣子云端沙箱路径 /workspace/projects/...，本地无法运行）
+const ROOT = path.resolve(__dirname, '..', '..');
+const P = (p) => path.join(ROOT, p);
 
 // 后处理：修正 red（人际吸血）和 blue（人际杠杆）节点的文案
 // 因为原模板是按"红利/暗坑"逻辑写的，现在分类改为"人际吸血/人际杠杆"后语义不匹配
 
-const content = fs.readFileSync('/workspace/projects/src/data/luck-nodes.ts', 'utf8');
+const content = fs.readFileSync(P('src/data/luck-nodes.ts'), 'utf8');
 
 // 红色节点的文案修正：从"红利缺失"逻辑改为"人际消耗"逻辑
 const redFixes = {
@@ -220,7 +225,7 @@ function hash2(name, field) {
 }
 
 // 读取已生成的数据
-const dataContent = fs.readFileSync('/workspace/projects/src/data/luck-nodes.ts', 'utf8');
+const dataContent = fs.readFileSync(P('src/data/luck-nodes.ts'), 'utf8');
 
 // 解析所有节点，找到 red 和 blue 的节点，替换文案
 // 使用正则匹配节点块
@@ -322,7 +327,7 @@ result = result.replace(
   "cyan: { label: '命运暗门', subLabel: '少数人拥有的隐藏通道'"
 );
 
-fs.writeFileSync('/workspace/projects/src/data/luck-nodes.ts', result);
+fs.writeFileSync(P('src/data/luck-nodes.ts'), result);
 console.log('Fixed red and blue node content, and updated category labels');
 
 // 验证修正效果

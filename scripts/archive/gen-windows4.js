@@ -1,5 +1,10 @@
 const fs = require('fs');
-let content = fs.readFileSync('src/data/windows.ts', 'utf8');
+const path = require('path');
+// 项目根路径：本脚本位于 <root>/scripts/archive/，不依赖运行时的 cwd。
+// （原脚本写死了扣子云端沙箱路径 /workspace/projects/...，本地无法运行）
+const ROOT = path.resolve(__dirname, '..', '..');
+const P = (p) => path.join(ROOT, p);
+let content = fs.readFileSync(P('src/data/windows.ts'), 'utf8');
 const d = [
 ['0-2','反射动作整合','原始反射向自主动作的转变','past','运动','神经发育自然进程','反射整合不全影响运动发展','unplanned','completed'],
 ['1-3','因果关系初步','开始理解自己的行为会产生结果','past','认知','因果认知是控制感来源','因果认知不足习得性无助','unplanned','completed'],
@@ -98,5 +103,5 @@ let id = 433;
 const addStr = d.map(x => `  { id: ${id++}, age: '${x[0]}', title: '${x[1]}', description: '${x[2]}', status: '${x[3]}', tag: '${x[4]}', lockedForce: '${x[5]}', remedyCost: '${x[6]}', planningStatus: '${x[7]}', completionStatus: '${x[8]}' }`).join(',\n');
 const idx = content.lastIndexOf('];');
 content = content.slice(0, idx) + ',\n\n  // ===== 深度窗口 =====\n' + addStr + ',\n' + content.slice(idx);
-fs.writeFileSync('src/data/windows.ts', content);
+fs.writeFileSync(P('src/data/windows.ts'), content);
 console.log('Total windows: ' + (id - 1));

@@ -33,15 +33,31 @@ normal（3 模块：/name /career /windows）
 
 premium（全模块）
    └─ /admin 输入 DEV_PASSWORD → POST /api/admin {action:"verify"}
-        └─ role=developer，服务端返回 token=DEV_PASSWORD，前端存 localStorage("dev-token")
+        └─ role=developer，服务端返回 token=sha256("lrs-dev-session:"+DEV_PASSWORD)
+           前端存 localStorage("dev-token")，后续请求带 x-dev-token
+           （2026-09-26 起不再回传明文密码；旧浏览器存的明文 token 会失效，需重新验证一次）
 
 ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation /luck
-   └─ 判断依据是客户端 localStorage 里的 user.role（可篡改，见 KNOWN-ISSUES）
+   └─ 前端门控看 localStorage 里的 user.role（仅作界面展示，可被篡改）
+      服务端侧的权限依据：登录/注册签发的 HMAC 会话令牌（src/lib/session.ts）
 ```
 
-注意一个**有意为之的设计**（`module-gate.tsx` 第 12 行）：
-未登录用户 `!user` 直接放行内容——即"未登录 = 免费体验全部模块"，登录了反而受 normal 限制。
-与产品文案"普通用户 3/7 模块"自相矛盾，见 KNOWN-ISSUES #4。
+## 会话机制（2026-09-27 新增）
+
+```
+登录/注册 → /api/auth 签发 token = base64url(payload) + "." + HMAC-SHA256
+            payload = { userId, nickname, role, exp }  有效期 7 天
+            → 前端存 localStorage("auth-token")
+
+受保护接口（目前 /api/invite）→ Authorization: Bearer <token>
+            → 服务端 sessionFromRequest() 校验签名与过期，userId 以令牌为准
+```
+
+签名密钥取 `SESSION_SECRET`，未设则回退 `DEV_PASSWORD`，生产环境两者都缺则拒绝签发。
+用户对象本身仍存 localStorage，但**只用于界面展示**——权限判定的唯一权威是服务端令牌。
+
+> ⚠️ 待决策：未登录策略仍自相矛盾（`module-gate.tsx` 的 `!user ||` 放行 vs
+> `auth-context.tsx` 的 `if (!user) return false`），见 KNOWN-ISSUES #4。
 
 ## AI 链路
 
@@ -51,9 +67,12 @@ ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation 
 4. 服务端把 delta 转成 SSE `data: {content}` / `data: [DONE]`，前端逐块渲染
 5. 追问时携带完整 history，走续聊分支
 
-**服务端 key 来源**：只有 env（`AI_API_URL/AI_API_KEY/AI_MODEL`，默认火山方舟豆包）。
-用户在 `/user` 页配置的 8 厂商 Key 只存 localStorage 并仅用于 `/api/ai/test-key` 连通性测试，
-**不会**传给 analyze——"自定义 Key 参与 AI 分析"是断的，见 KNOWN-ISSUES #3。
+**服务端 key 来源**：env（`AI_API_URL/AI_API_KEY/AI_MODEL`，默认火山方舟豆包）。
+
+**用户自带 key**（2026-09-26 已接通，见 KNOWN-ISSUES #3）：用户在 `/user` 页配置的 8 厂商 Key
+存 localStorage，`AIAnalysisPanel` 每次请求携带当前选中的 AI 源 `ai: { provider, apiKey, model }`，
+`analyze` 路由按厂商自动选协议（doubao/glm/qwen/deepseek/mimo 走 OpenAI 兼容；
+claude/gemini/minimax 走各自的 SSE 适配）。配置无效返回 400，不静默回退到 env key。
 
 `/api/ai/test-key` 是服务端代理：浏览器把 Key POST 给本路由，路由替用户请求厂商（Gemini / Claude / DeepSeek 等 8 家），Key 不落盘但会经过服务器。
 

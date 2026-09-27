@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
+import { signSession } from "@/lib/session";
 import bcrypt from "bcryptjs";
 
 const SALT_ROUNDS = 10;
@@ -61,7 +62,14 @@ export async function POST(request: NextRequest) {
         detail: `用户 ${nickname} 注册`,
       });
 
-      return NextResponse.json({ success: true, user: data });
+      // 签发服务端会话令牌（敏感接口用它识别身份，不再信任请求体自报的 userId）
+      const token = signSession({
+        userId: data.id,
+        nickname: data.nickname,
+        role: data.role,
+      });
+
+      return NextResponse.json({ success: true, user: data, token });
 
     } else if (action === "login") {
       // Find user
@@ -99,7 +107,15 @@ export async function POST(request: NextRequest) {
       });
 
       const { password_hash, is_active, ...safeUser } = user;
-      return NextResponse.json({ success: true, user: safeUser });
+
+      // 签发服务端会话令牌（敏感接口用它识别身份，不再信任请求体自报的 userId）
+      const token = signSession({
+        userId: safeUser.id,
+        nickname: safeUser.nickname,
+        role: safeUser.role,
+      });
+
+      return NextResponse.json({ success: true, user: safeUser, token });
 
     } else {
       return NextResponse.json({ error: "无效操作" }, { status: 400 });

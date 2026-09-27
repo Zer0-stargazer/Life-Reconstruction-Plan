@@ -60,10 +60,28 @@
 说明这是有意写的，但与"普通用户 3/7 模块"的产品文案冲突，锁等形同虚设。
 → 需要产品决策：未登录到底是"全体验"还是"仅浏览"。
 
-### #5 认证 = localStorage 明文 JSON，无服务端会话
-`auth-context.tsx` 把整个 user（含 role）存 localStorage。浏览器控制台改一下就是
-premium/developer，服务端 API 不校验任何会话。个人自用可接受，一旦部署公网即失守。
-另外登录态永不校验：改密码/禁用后旧 localStorage 依然"已登录"。
+### #5 认证 = localStorage 明文 JSON，无服务端会话 ✅ 大部分已修（2026-09-27）
+原状：把整个 user（含 role）存 localStorage。浏览器控制台改一下就是 premium/developer，
+服务端 API 不校验任何会话。另外登录态永不校验：改密码/禁用后旧 localStorage 依然"已登录"。
+
+已修（补上服务端会话层 `src/lib/session.ts`）：
+- 登录/注册成功后服务端签发 **HMAC-SHA256 签名令牌**（载荷 userId/nickname/role/exp，7 天有效），
+  前端存 `auth-token`；受保护接口用 `Authorization: Bearer <token>` 校验身份；
+- 令牌过期/被篡改一律判无效；role 变更（如兑换邀请码升级）时重新签发，前端同步更新；
+- 启动时若发现"有 auth-user 但没有 auth-token"（旧版本残会话）→ 判为未登录，
+  避免出现"看着登录了但一操作就失败"。
+
+**尚未完成**：只有 `/api/invite` 接了会话校验。`/api/admin` 仍走独立的 `x-dev-token`
+（开发口令机制，不算用户会话）。localStorage 里的 user 对象仍只用于界面展示，
+权限判定的唯一依据是服务端令牌——若将来接口要严格鉴权，逐个补 `sessionFromRequest()` 即可。
+
+### #7 `/api/invite` 无鉴权 + 竞态 ✅ 已修（2026-09-27）
+- ~~userId 由客户端自报且无会话校验~~ → **已修**：userId 一律取会话令牌（见 #5），
+  请求体里的 userId 不再被信任；额外校验 `is_active`，兑换成功重新签发令牌；
+- ~~`used_count` 先读后写，并发可超发~~ → **已修**：乐观锁
+  `.update({used_count: n+1}).eq("id", id).eq("used_count", n)`，写空说明名额被抢走 → 409；
+  顺序改为"先占位再升级"，升级失败会把名额还回去；
+- ~~无限制暴力猜码~~ → **已修**：按 IP 的失败计数限流（15 分钟窗口，失败 10 次后 429）。
 
 ### #6 `/api/admin` 两个越权口 ✅ 部分已修（2026-09-26）
 - ~~`exit_developer` 无需任何鉴权~~ → **已修**：现在要求 `x-dev-token`；`/admin` 页 `handleDevLogout` 已补带 token；
@@ -125,18 +143,43 @@ windows 7 组重名标题。列表会展示两个一模一样的卡片。
 - "高级设置数据未被其他模块消费" → **过时**，destiny / windows / simulation 三个页面都在消费
   （default-age / life-stages / preference-weights）。
 
-### #12 生成脚本不可执行
-`scripts/archive/*.js`（已归档）内写死云端路径 `/workspace/projects/...`，本地跑不了。
-只作历史参考；复用需批量替换路径。
+### #12 生成脚本不可执行 ✅ 已修（2026-09-27）
+原状：`scripts/archive/*.js` 写死云端路径 `/workspace/projects/...`（扣子编程 CLI 的环境），
+另有部分脚本依赖"必须在项目根目录下运行"，本地都跑不了。
+
+已修：11 个脚本统一注入基于 `__dirname` 的项目根解析 helper（`const ROOT = path.resolve(__dirname,'..','..')`
++ `P(p) => path.join(ROOT, p)`），所有读写路径改为 `P('src/data/...')`。
+现在**从任意目录运行都可以**。校验：11 个脚本 `node --check` 全通过，15 处 `P()` 引用全部能解析到真实文件
+（`luck-raw*.json` 已随脚本归档到 `scripts/archive/`，引用同步更新）。
+→ 详见 `scripts/README.md`。注意这些脚本会直接改写 `src/data/`，跑之前先 commit。
 
 ### #13 包体积
 careers.ts 1.1MB 等静态数据全部打进 client bundle，`/career` 首屏会拖慢。
 可改服务端组件取数或动态 import 缓解（未做）。
 
-## 修与不修的建议优先级（2026-09-26 更新）
+## 修与不修的建议优先级（2026-09-27 更新）
 
 1. ~~#3 自定义 Key 接入 analyze~~ ✅ 已修（claude/gemini/minimax 协议适配未经真实 Key 实测，用前先在 /user 页测一下）；
 2. ~~#8 首页数字改真实值~~ ✅ 已修；
 3. ~~#9 数据去重~~ ✅ 已修；#6 admin 三处 ✅ 已修；
-4. #4 未登录策略——仍需产品决策（当前"未登录全解锁、登录后反而受限"的矛盾还在）；
-5. #5/#7 若只自用、不部署公网，可暂缓；要部署则必须全修（加服务端会话 + 邀请码原子自增）。
+4. ~~#7 邀请码无鉴权 + 竞态~~ ✅ 已修；~~#5 无服务端会话~~ ✅ 大部分已修（会话层已落地）；
+5. ~~#12 生成脚本不可执行~~ ✅ 已修；
+6. **#4 未登录策略——仍需产品决策**（当前"未登录全解锁、登录后反而受限"的矛盾还在，
+   见下）；
+7. #13 包体积：只影响 `/career` 首屏速度，自用可缓；
+8. 剩余小项：`/api/admin` 改用统一会话（现用独立 dev-token）、invite 限流改为持久存储
+   （现为进程内内存，重启即清零，多实例部署会失效）。
+
+### #4 待拍板的两个方案（需要你决定，我不擅自改产品行为）
+
+矛盾点：`module-gate.tsx` 第 12/63 行是 `if (!user || canAccessModule(path))`——未登录直接放行；
+但 `auth-context.tsx` 的 `canAccessModule` 里是 `if (!user) return false`。两处口径打架，
+实际效果是**未登录能看全部 7 个模块，登录成普通用户反而只剩 3 个**，锁形同虚设。
+
+- **方案 A（推荐，与现有文案一致）**：未登录 = 全锁，必须登录。删掉 module-gate 里那个 `!user ||`，
+  让门控只由 auth-context 一处决定；锁定卡片第三栏改成"未登录 / 需先登录"。
+- **方案 B（利于拉新）**：未登录 = 同普通用户，可看 3 个基础模块（名字/职业/窗口），
+  想看完整 7 个再引导注册。改动同样只落在 auth-context 一处，把 `if (!user) return false`
+  改成按 `NORMAL_USER_MODULES` 判断。
+
+无论选哪个，都建议顺手把 module-gate 里重复的 `!user ||` 去掉——门控逻辑应该只有一个权威来源。

@@ -1,4 +1,9 @@
 const fs = require('fs');
+const path = require('path');
+// 项目根路径：本脚本位于 <root>/scripts/archive/，不依赖运行时的 cwd。
+// （原脚本写死了扣子云端沙箱路径 /workspace/projects/...，本地无法运行）
+const ROOT = path.resolve(__dirname, '..', '..');
+const P = (p) => path.join(ROOT, p);
 const diffMap = { none: 5, low: 4, medium: 3, high: 2 };
 
 const silentCost = {
@@ -51,7 +56,7 @@ const realCases = {
 };
 
 // Read raw data
-const rawData = JSON.parse(fs.readFileSync('/workspace/projects/scripts/luck-raw-fixed.json','utf8'));
+const rawData = JSON.parse(fs.readFileSync(P('scripts/archive/luck-raw-fixed.json'),'utf8'));
 
 const nodes = rawData.map(d => {
   const [id, name, cat, prob, imp, ctrl, desc, strat] = d;
@@ -129,5 +134,5 @@ for (const n of nodes) {
 
 out += '];\n';
 
-fs.writeFileSync('/workspace/projects/src/data/luck-nodes.ts', out);
+fs.writeFileSync(P('src/data/luck-nodes.ts'), out);
 console.log('Generated ' + nodes.length + ' luck nodes');
