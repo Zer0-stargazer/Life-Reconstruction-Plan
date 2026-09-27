@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import {
   PenTool, Briefcase, Compass, SlidersHorizontal,
-  Clock, Dice5, ArrowRight, Flame, ChevronDown, Scale
+  Clock, Dice5, ArrowRight, Flame, ChevronDown, Scale, Hourglass
 } from 'lucide-react';
 
 const modules = [
@@ -154,17 +154,17 @@ export default function HomePage() {
 
           <div className="flex items-center gap-3 animate-fade-in-up stagger-4">
             <Link
-              href="/windows"
+              href="/me"
               className="group inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md btn-press"
             >
-              查看人生窗口
+              看看你的人生时间轴
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
-              href="/simulation"
+              href="/windows"
               className="inline-flex items-center gap-2 rounded-md border border-border px-5 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-accent hover:shadow-sm btn-press"
             >
-              命运模拟器
+              浏览 473 个人生窗口
             </Link>
           </div>
         </div>
@@ -189,6 +189,31 @@ export default function HomePage() {
             <p className="text-sm text-muted-foreground mt-0.5">六大维度，拆解你的人生</p>
           </div>
         </div>
+
+        {/* 个性化主线入口（全宽重点卡） */}
+        <Link
+          href="/me"
+          className="group relative block overflow-hidden rounded-xl border border-primary/25 bg-gradient-to-r from-primary/[0.06] via-primary/[0.03] to-transparent p-5 sm:p-6 mb-3 transition-all duration-200 hover:border-primary/40 hover:shadow-md animate-fade-in-up"
+        >
+          <div className="flex items-center gap-4 sm:gap-5">
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md transition-transform duration-200 group-hover:scale-105">
+              <Hourglass className="h-6 w-6" />
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow">
+                NEW
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">你的人生时间轴</h3>
+                <span className="rounded-full bg-red-500/10 border border-red-500/25 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">从这开始</span>
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                拖一下年龄滑块——473 个人生窗口里，哪些正为你开着、哪些已经关上、哪些马上要关。
+              </p>
+            </div>
+            <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          </div>
+        </Link>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {modules.map((m, idx) => {

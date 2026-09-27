@@ -21,6 +21,7 @@ import {
   Lock,
   Shield,
   LogOut,
+  CalendarRange,
 } from 'lucide-react';
 import { useAuth, type UserRole } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
@@ -29,6 +30,7 @@ import { RoleBadge } from '@/components/auth/module-gate';
 
 const navItems = [
   { href: '/', label: '首页', icon: Home, desc: '总览' },
+  { href: '/me', label: '时间轴', icon: CalendarRange, tag: '★', desc: '属于你的窗口' },
   { href: '/name', label: '名字', icon: PenTool, tag: '01', desc: '人生第一张牌' },
   { href: '/career', label: '职业', icon: Briefcase, tag: '02', desc: '赛道决定上限' },
   { href: '/destiny', label: '命运', icon: Compass, tag: '03', desc: '命与运的报告' },
