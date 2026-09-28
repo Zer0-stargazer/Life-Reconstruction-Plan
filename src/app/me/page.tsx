@@ -16,7 +16,7 @@ import { lifeWindows, type LifeWindow, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LO
 import { cn } from '@/lib/utils';
 import {
   Flame, Hourglass, CheckCircle2, CalendarClock, ChevronDown, ChevronRight,
-  ArrowRight, Lock, Sparkles, AlertTriangle, Info,
+  ArrowRight, Lock, AlertTriangle, Info,
 } from 'lucide-react';
 
 /* ============ 工具 ============ */
@@ -68,6 +68,21 @@ function classify(age: number): ClassifiedWindow[] {
 
 /* ============ 小组件 ============ */
 
+/** FIG 风格面板头：编号 + 标题 + 右侧数据注记 */
+function PanelHead({ fig, title, note }: { fig: string; title: string; note?: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-border pb-3 mb-4">
+      <div className="flex items-baseline gap-2.5 min-w-0">
+        <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70 shrink-0">{fig}</span>
+        <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
+      </div>
+      {note && (
+        <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">{note}</span>
+      )}
+    </div>
+  );
+}
+
 function StateBadge({ w }: { w: ClassifiedWindow }) {
   if (w.state === 'urgent') {
     return (
@@ -116,6 +131,9 @@ function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOp
       >
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="font-mono text-[10px] text-muted-foreground/40 tabular-nums">
+              #{String(w.id).padStart(3, '0')}
+            </span>
             <span className="text-[11px] font-mono font-semibold text-muted-foreground tabular-nums">
               {w.range.start}
               {w.range.end < 200 ? `-${w.range.end}` : '+'}岁
@@ -203,10 +221,19 @@ function OverviewBars({ age, windows }: { age: number; windows: ClassifiedWindow
   }
 
   const maxCount = Math.max(...buckets.map((b) => b.open + b.missed), 1);
+  const peakBucket = buckets.reduce((best, b) => (b.open + b.missed > best.open + best.missed ? b : best), buckets[0]);
 
   return (
     <div>
       <div className="relative h-28 flex items-end gap-[3px]">
+        {/* 水平网格线 */}
+        {[25, 50, 75].map((r) => (
+          <div
+            key={r}
+            className="absolute left-0 right-0 border-t border-dashed border-foreground/[0.07]"
+            style={{ bottom: `${r}%` }}
+          />
+        ))}
         {buckets.map((b) => {
           const missedH = (b.missed / maxCount) * 100;
           const openH = (b.open / maxCount) * 100;
@@ -242,10 +269,15 @@ function OverviewBars({ age, windows }: { age: number; windows: ClassifiedWindow
       <div className="flex justify-between mt-2 text-[10px] font-mono text-muted-foreground/60 tabular-nums">
         <span>0</span><span>25</span><span>50</span><span>75</span><span>{MAX_AGE}岁</span>
       </div>
-      <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-emerald-500/70 inline-block" /> 可及窗口密度</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-muted-foreground/15 inline-block" /> 已错过密度</span>
-        <span className="inline-flex items-center gap-1"><span className="h-2 w-2.5 bg-red-500/80 inline-block" /> 你的位置</span>
+      <div className="flex items-center justify-between gap-4 mt-2 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-4">
+          <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-emerald-500/70 inline-block" /> 可及窗口密度</span>
+          <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-muted-foreground/15 inline-block" /> 已错过密度</span>
+          <span className="inline-flex items-center gap-1"><span className="h-2 w-2.5 bg-red-500/80 inline-block" /> 你的位置</span>
+        </div>
+        <span className="font-mono text-muted-foreground/50 shrink-0">
+          PEAK {peakBucket.from}–{peakBucket.to}岁 · {peakBucket.open + peakBucket.missed}
+        </span>
       </div>
     </div>
   );
@@ -394,37 +426,61 @@ export default function MePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero：年龄选择 + 钩子 */}
-      <section className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 opacity-[0.02]" style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-          backgroundSize: '24px 24px',
+      <section className="relative overflow-hidden border-b border-border grain-texture">
+        {/* 48px 细网格 */}
+        <div className="absolute inset-0 opacity-[0.035]" style={{
+          backgroundImage: 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
         }} />
+        <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/[0.07] blur-3xl" />
+
         <div className="relative max-w-5xl mx-auto px-6 sm:px-8 py-12 sm:py-16">
-          <div className="animate-fade-in-up">
-            <span className="text-[10px] text-muted-foreground/60 tracking-[0.25em] uppercase font-mono">YOUR TIMELINE</span>
-            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mt-3 mb-2">
-              {openList.length > 0 ? (
-                <>你今年 <span className="text-primary tabular-nums">{age}</span> 岁，
-                <br className="sm:hidden" />
-                此刻有 <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openList.length}</span> 扇门正开着</>
-              ) : (
-                <>拖动下面的滑块，看看你的人生时间轴</>
-              )}
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl">
-              {urgentList.length > 0 ? (
-                <>其中 <span className="font-semibold text-red-600 dark:text-red-400 tabular-nums">{urgentList.length}</span> 扇将在 5 年内关上——
-                人生窗口不是隐喻，是发展心理学里真实存在的时机。</>
-              ) : (
-                <>473 个人生窗口里，正在开启的、已经关上的、还没来的——都在下面。</>
-              )}
-            </p>
+          {/* HUD 行 */}
+          <div className="flex items-center gap-3 mb-8 animate-fade-in-up">
+            <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 08</span>
+            <span className="h-px flex-1 bg-border" />
+            <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">YOUR TIMELINE · N=473</span>
           </div>
 
-          {/* 年龄滑块 */}
-          <div className="mt-8 rounded-xl border border-border bg-card p-5 sm:p-6 animate-fade-in-up stagger-2">
+          <h1 className="text-3xl sm:text-5xl font-serif font-bold text-foreground tracking-tight leading-[1.1] mb-4 animate-fade-in-up stagger-1">
+            {openList.length > 0 ? (
+              <>你今年 <span className="text-primary tabular-nums">{age}</span> 岁，
+              <br className="sm:hidden" />
+              此刻有 <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openList.length}</span> 扇门正开着</>
+            ) : (
+              <>拖动下面的滑块，看看你的人生时间轴</>
+            )}
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl animate-fade-in-up stagger-2">
+            {urgentList.length > 0 ? (
+              <>其中 <span className="font-semibold text-red-600 dark:text-red-400 tabular-nums">{urgentList.length}</span> 扇将在 5 年内关上——
+              人生窗口不是隐喻，是发展心理学里真实存在的时机。</>
+            ) : (
+              <>473 个人生窗口里，正在开启的、已经关上的、还没来的——都在下面。</>
+            )}
+          </p>
+
+          {/* 仪表读数行 */}
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[11px] text-muted-foreground/60 animate-fade-in-up stagger-3">
+            <span>AGE <b className="text-primary tabular-nums">{age}</b></span>
+            <span>OPEN <b className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openList.length}</b></span>
+            <span>URGENT <b className="text-red-500 tabular-nums">{urgentList.length}</b></span>
+            <span>MISSED <b className="text-muted-foreground tabular-nums">{all.filter((w) => w.state === 'missed').length}</b></span>
+            <span>FUTURE <b className="text-foreground/80 tabular-nums">{all.filter((w) => w.state === 'future').length}</b></span>
+            <span className="hidden sm:inline">SRC windows.ts</span>
+          </div>
+
+          {/* 年龄滑块：控制台 */}
+          <div className="relative mt-8 rounded-xl border border-border bg-card p-5 sm:p-6 animate-fade-in-up stagger-4">
+            <span className="pointer-events-none absolute left-0 top-0 h-3 w-3 border-l border-t border-primary/40 rounded-tl-xl" />
+            <span className="pointer-events-none absolute right-0 top-0 h-3 w-3 border-r border-t border-primary/40 rounded-tr-xl" />
+            <span className="pointer-events-none absolute bottom-0 left-0 h-3 w-3 border-b border-l border-primary/40 rounded-bl-xl" />
+            <span className="pointer-events-none absolute bottom-0 right-0 h-3 w-3 border-b border-r border-primary/40 rounded-br-xl" />
+
             <div className="flex items-baseline justify-between mb-4">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">你的年龄</label>
+              <label className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">
+                CTRL · 01 你的年龄
+              </label>
               <div className="text-right">
                 <span className="text-3xl font-serif font-bold text-primary tabular-nums">{age}</span>
                 <span className="text-xs text-muted-foreground ml-1">岁</span>
@@ -451,19 +507,17 @@ export default function MePage() {
       <section className="max-w-5xl mx-auto px-6 sm:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-xl border border-border bg-card p-5 animate-fade-in-up">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold text-foreground">全人生窗口密度</h2>
-            </div>
+            <PanelHead fig="FIG. 02" title="全人生窗口密度" note={`N=${all.length} · 5 岁/桶`} />
             <OverviewBars age={age} windows={all} />
           </div>
           <div className="rounded-xl border border-border bg-card p-5 animate-fade-in-up stagger-2">
-            <div className="flex items-center gap-2 mb-4">
-              <CalendarClock className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold text-foreground">
-                你身边 ±15 年的窗口
-              </h2>
-            </div>
+            <PanelHead
+              fig="FIG. 03"
+              title="你身边 ±15 年的窗口"
+              note={`AGE ${Math.max(0, age - 8)}–${age + 15} · ${
+                all.filter((w) => w.range.start <= age + 15 && w.range.end >= age - 8 && w.state !== 'missed').length
+              } 条`}
+            />
             <FocusTracks age={age} windows={all} />
           </div>
         </div>
