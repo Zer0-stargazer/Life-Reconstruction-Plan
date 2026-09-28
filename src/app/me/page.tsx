@@ -498,7 +498,7 @@ export default function MePage() {
           <div className="space-y-2.5 animate-fade-in">
             {openList.length === 0 && (
               <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                这个年龄段没有正在开启的窗口——往上看看"尚未到来"的。
+                这个年龄段没有正在开启的窗口——往上看看「尚未到来」的。
               </div>
             )}
             {openList.map((w) => <WindowCard key={w.id} w={w} />)}

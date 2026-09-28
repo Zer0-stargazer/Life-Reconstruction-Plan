@@ -67,14 +67,19 @@ ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation 
 4. 服务端把 delta 转成 SSE `data: {content}` / `data: [DONE]`，前端逐块渲染
 5. 追问时携带完整 history，走续聊分支
 
-**服务端 key 来源**：env（`AI_API_URL/AI_API_KEY/AI_MODEL`，默认火山方舟豆包）。
+**AI 来源只有两种**（2026-09-28 简化，原写死的 8 家厂商预设已删除）：
 
-**用户自带 key**（2026-09-26 已接通，见 KNOWN-ISSUES #3）：用户在 `/user` 页配置的 8 厂商 Key
-存 localStorage，`AIAnalysisPanel` 每次请求携带当前选中的 AI 源 `ai: { provider, apiKey, model }`，
-`analyze` 路由按厂商自动选协议（doubao/glm/qwen/deepseek/mimo 走 OpenAI 兼容；
-claude/gemini/minimax 走各自的 SSE 适配）。配置无效返回 400，不静默回退到 env key。
+| 来源 | provider | 配置位置 | 说明 |
+|---|---|---|---|
+| 内置 AI | `builtin` / 缺省 | 服务端 env（`AI_API_URL/AI_API_KEY/AI_MODEL`，三项缺一即报未配置） | 模型由 `AI_MODEL` 决定，前端改不了 |
+| 自定义源 | `custom` | `/user` 页，localStorage `ai-sources` | 用户自己填 baseUrl + protocol + key + model |
 
-`/api/ai/test-key` 是服务端代理：浏览器把 Key POST 给本路由，路由替用户请求厂商（Gemini / Claude / DeepSeek 等 8 家），Key 不落盘但会经过服务器。
+**用户自带 key**（2026-09-26 已接通，见 KNOWN-ISSUES #3）：`AIAnalysisPanel` 每次请求携带当前选中的 AI 源
+`ai: { provider, protocol, baseUrl, apiKey, model }`，`analyze` 路由用 `resolveAiSource()` 解析后
+按 protocol 自动选协议（openai → `/chat/completions`；claude / gemini / minimax 走各自的 SSE 适配）。
+配置无效返回 400，不静默回退到 env key。
+
+`/api/ai/test-key` 是服务端代理：浏览器把 Key POST 给本路由，路由替用户请求目标地址，Key 不落盘但会经过服务器。
 
 ## 数据流（用户偏好）
 

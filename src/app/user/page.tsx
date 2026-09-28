@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import {
   User, Settings, Shield, Moon, Sun, Palette, Clock, BarChart3,
-  CheckCircle2, Circle, Eye, EyeOff, Loader2, CheckCircle,
-  XCircle, Trash2, Zap, ChevronDown, ChevronRight, Cpu, ArrowRight,
+  CheckCircle2, Circle, Loader2, CheckCircle,
+  XCircle, Zap, ChevronRight, Cpu, ArrowRight,
   LogOut, RotateCcw, Weight, Milestone, Lock, Crown, Ticket,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -26,63 +26,23 @@ const modules = [
 
 // ---- AI provider types ----
 
-interface ModelOption {
-  id: string;
-  name: string;
-  tag?: string;
-}
-
 const BUILTIN_PROVIDER = {
   id: 'builtin' as const,
   name: '内置 AI',
   description: '系统默认 AI，无需配置密钥',
   color: 'text-primary',
   bg: 'bg-primary/10',
-  models: [
-    { id: 'doubao-seed-2-0-lite-260215', name: '豆包 Seed 2.0 Lite', tag: '默认' },
-    { id: 'doubao-seed-2-0-pro-260215', name: '豆包 Seed 2.0 Pro', tag: '旗舰' },
-    { id: 'doubao-seed-2-0-mini-260215', name: '豆包 Seed 2.0 Mini', tag: '快速' },
-    { id: 'deepseek-v3-2-251201', name: 'DeepSeek V3.2' },
-    { id: 'glm-5-0-260211', name: 'GLM-5' },
-    { id: 'qwen-3-5-plus-260215', name: 'Qwen 3.5 Plus' },
-  ] as ModelOption[],
 };
 
-type BuiltinId = 'builtin';
 
-const PROVIDERS = [
-  { id: 'gemini', name: 'Google Gemini', placeholder: 'AIzaSy...', color: 'text-blue-500', bg: 'bg-blue-500/10', models: [{ id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', tag: '推荐' }, { id: 'gemini-3.1-pro', name: 'Gemini 3.1 Pro', tag: '旗舰' }, { id: 'gemini-3.0-flash', name: 'Gemini 3.0 Flash', tag: '快速' }] as ModelOption[] },
-  { id: 'claude', name: 'Claude', placeholder: 'sk-ant-...', color: 'text-orange-500', bg: 'bg-orange-500/10', models: [{ id: 'claude-sonnet-4-6-20260219', name: 'Claude Sonnet 4.6', tag: '推荐' }, { id: 'claude-opus-4-6-20260219', name: 'Claude Opus 4.6', tag: '旗舰' }, { id: 'claude-haiku-4-5-20251015', name: 'Claude Haiku 4.5', tag: '快速' }] as ModelOption[] },
-  { id: 'glm', name: '智谱 GLM', placeholder: 'xxx.yyy...', color: 'text-cyan-600', bg: 'bg-cyan-600/10', models: [{ id: 'glm-5.1', name: 'GLM-5.1', tag: '推荐' }, { id: 'glm-5', name: 'GLM-5', tag: '旗舰' }, { id: 'glm-4.7', name: 'GLM-4.7' }] as ModelOption[] },
-  { id: 'qwen', name: '阿里云通义千问', placeholder: 'sk-...', color: 'text-violet-500', bg: 'bg-violet-500/10', models: [{ id: 'qwen3.6-plus', name: 'Qwen3.6-Plus', tag: '推荐' }, { id: 'qwen3.5-omni', name: 'Qwen3.5-Omni', tag: '多模态' }, { id: 'qwen3.5-plus', name: 'Qwen3.5-Plus' }] as ModelOption[] },
-  { id: 'deepseek', name: 'Deepseek', placeholder: 'sk-...', color: 'text-indigo-500', bg: 'bg-indigo-500/10', models: [{ id: 'deepseek-chat', name: 'DeepSeek V3.2', tag: '推荐' }, { id: 'deepseek-reasoner', name: 'DeepSeek V3.2 Speciale', tag: '推理' }, { id: 'deepseek-v4-lite', name: 'DeepSeek V4 Lite', tag: '预览' }] as ModelOption[] },
-  { id: 'doubao', name: '豆包', placeholder: 'API Key...', color: 'text-amber-600', bg: 'bg-amber-600/10', models: [{ id: 'doubao-2.0-pro', name: '豆包 2.0 Pro', tag: '推荐' }, { id: 'doubao-2.0-lite', name: '豆包 2.0 Lite', tag: '快速' }, { id: 'doubao-2.0-code', name: '豆包 2.0 Code', tag: '编程' }] as ModelOption[] },
-  { id: 'minimax', name: 'MiniMax', placeholder: 'API Key...', color: 'text-emerald-500', bg: 'bg-emerald-500/10', models: [{ id: 'MiniMax-M2.7', name: 'MiniMax-M2.7', tag: '推荐' }, { id: 'MiniMax-M2.5', name: 'MiniMax-M2.5' }, { id: 'MiniMax-M2', name: 'MiniMax-M2' }] as ModelOption[] },
-  { id: 'mimo', name: '小米 MiMo', placeholder: 'API Key...', color: 'text-rose-500', bg: 'bg-rose-500/10', models: [{ id: 'MiMo-V2-Pro', name: 'MiMo-V2-Pro', tag: '推荐' }, { id: 'MiMo-V2-Omni', name: 'MiMo-V2-Omni', tag: '多模态' }, { id: 'MiMo-V2-TTS', name: 'MiMo-V2-TTS', tag: '语音' }] as ModelOption[] },
-] as const;
 
-type ProviderId = (typeof PROVIDERS)[number]['id'];
-type AiSourceId = BuiltinId | ProviderId;
+type AiSourceId = 'builtin' | string;
 
 interface KeyStatus {
   state: 'idle' | 'testing' | 'success' | 'error';
   message?: string;
   responseSnippet?: string;
 }
-
-const TAG_COLORS: Record<string, string> = {
-  '默认': 'bg-primary/10 text-primary',
-  '推荐': 'bg-primary/10 text-primary',
-  '旗舰': 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  '快速': 'bg-green-500/10 text-green-600 dark:text-green-400',
-  '免费': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  '长文': 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
-  '推理': 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
-  '编程': 'bg-sky-500/10 text-sky-600 dark:text-sky-400',
-  '多模态': 'bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400',
-  '预览': 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
-  '语音': 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
-};
 
 const AVATAR_OPTIONS = ['🧑‍💻', '👩‍🚀', '🧙‍♂️', '🦊', '🐺', '🦁', '🐉', '🦅', '🐋', '🦉', '🌵', '🔥'];
 
@@ -114,15 +74,10 @@ export default function UserPage() {
   const { user: authUser, login: authLogin, register: authRegister, logout: authLogout, redeemCode, isPremium, canAccessModule } = useAuth();
   const [isDark, setIsDark] = useState(false);
   const [visitedPaths, setVisitedPaths] = useState<string[]>([]);
-  const [apiKeys, setApiKeys] = useState<Record<ProviderId, string>>({} as Record<ProviderId, string>);
-  const [selectedModels, setSelectedModels] = useState<Record<AiSourceId, string>>({} as Record<AiSourceId, string>);
-  const [enabledProviders, setEnabledProviders] = useState<Record<ProviderId, boolean>>({} as Record<ProviderId, boolean>);
   const [activeAiSource, setActiveAiSource] = useState<AiSourceId>('builtin');
   // 用户自定义接入源（独立存储 ai-sources，供顶部"当前使用"显示）
   const [customSources, setCustomSources] = useState<AiSource[]>([]);
-  const [visibleKeys, setVisibleKeys] = useState<Record<ProviderId, boolean>>({} as Record<ProviderId, boolean>);
   const [keyStatuses, setKeyStatuses] = useState<Record<string, KeyStatus>>({});
-  const [expandedProvider, setExpandedProvider] = useState<ProviderId | null>(null);
   const [defaultAge, setDefaultAge] = useState<number>(25);
   const [showAgeInput, setShowAgeInput] = useState(false);
 
@@ -163,19 +118,6 @@ export default function UserPage() {
       setVisitedPaths([pathname]);
     }
 
-    // Load API keys
-    try {
-      const storedKeys = localStorage.getItem('api-keys');
-      if (storedKeys) setApiKeys(JSON.parse(storedKeys));
-    } catch { /* ignore */ }
-    try {
-      const storedModels = localStorage.getItem('api-selected-models');
-      if (storedModels) setSelectedModels(JSON.parse(storedModels));
-    } catch { /* ignore */ }
-    try {
-      const storedEnabled = localStorage.getItem('api-enabled-providers');
-      if (storedEnabled) setEnabledProviders(JSON.parse(storedEnabled));
-    } catch { /* ignore */ }
     try {
       const storedActive = localStorage.getItem('api-active-source');
       if (storedActive) setActiveAiSource(storedActive as AiSourceId);
@@ -290,19 +232,6 @@ export default function UserPage() {
     }
   };
 
-  const updateApiKey = useCallback((providerId: ProviderId, value: string) => {
-    setApiKeys(prev => { const next = { ...prev, [providerId]: value }; persist('api-keys', next); return next; });
-    setKeyStatuses(prev => ({ ...prev, [providerId]: { state: 'idle' } }));
-  }, [persist]);
-
-  const updateSelectedModel = useCallback((sourceId: AiSourceId, modelId: string) => {
-    setSelectedModels(prev => { const next = { ...prev, [sourceId]: modelId }; persist('api-selected-models', next); return next; });
-    setKeyStatuses(prev => sourceId in prev ? { ...prev, [sourceId]: { state: 'idle' } } : prev);
-  }, [persist]);
-
-  const toggleProviderEnabled = useCallback((providerId: ProviderId) => {
-    setEnabledProviders(prev => { const next = { ...prev, [providerId]: !prev[providerId] }; persist('api-enabled-providers', next); return next; });
-  }, [persist]);
 
   // 参数放宽为 string：自定义源 id 是运行时生成的（src_xxx），不在 AiSourceId 字面量里
   const setActiveSource = useCallback((sourceId: AiSourceId | string) => {
@@ -310,48 +239,15 @@ export default function UserPage() {
     persist('api-active-source', sourceId);
   }, [persist]);
 
-  const deleteApiKey = useCallback((providerId: ProviderId) => {
-    setApiKeys(prev => { const next = { ...prev }; delete next[providerId]; persist('api-keys', next); return next; });
-    setEnabledProviders(prev => { const next = { ...prev, [providerId]: false }; persist('api-enabled-providers', next); return next; });
-    setKeyStatuses(prev => ({ ...prev, [providerId]: { state: 'idle' } }));
-  }, [persist]);
 
-  const toggleKeyVisibility = (providerId: ProviderId) => {
-    setVisibleKeys(prev => ({ ...prev, [providerId]: !prev[providerId] }));
-  };
-
-  const testApiKey = async (providerId: ProviderId) => {
-    const key = apiKeys[providerId];
-    if (!key || !key.trim()) return;
-    const provider = PROVIDERS.find(p => p.id === providerId);
-    const model = selectedModels[providerId] || provider?.models[0]?.id;
-    if (!model) return;
-    setKeyStatuses(prev => ({ ...prev, [providerId]: { state: 'testing' } }));
-    try {
-      const response = await fetch('/api/ai/test-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: providerId, apiKey: key, model }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setKeyStatuses(prev => ({ ...prev, [providerId]: { state: 'success', message: data.message || '连接成功', responseSnippet: data.responseSnippet } }));
-      } else {
-        setKeyStatuses(prev => ({ ...prev, [providerId]: { state: 'error', message: data.error || '连接失败' } }));
-      }
-    } catch (err) {
-      setKeyStatuses(prev => ({ ...prev, [providerId]: { state: 'error', message: err instanceof Error ? err.message : '网络请求失败' } }));
-    }
-  };
 
   const testBuiltin = async () => {
     setKeyStatuses(prev => ({ ...prev, builtin: { state: 'testing' } as KeyStatus }));
     try {
-      const model = selectedModels['builtin'] || BUILTIN_PROVIDER.models[0].id;
       const response = await fetch('/api/ai/test-key', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: 'builtin', model }),
+        body: JSON.stringify({ provider: 'builtin' }),
       });
       const data = await response.json();
       if (data.success) {
@@ -412,8 +308,6 @@ export default function UserPage() {
   const totalModules = modules.length;
   const progressPercent = Math.round((visitedCount / totalModules) * 100);
 
-  const enabledCount = Object.values(enabledProviders).filter(Boolean).length;
-  const hasCustomEnabled = enabledCount > 0;
 
   // Role display
   const accessibleModules = authUser ? (isPremium ? ALL_MODULES : NORMAL_USER_MODULES) : ALL_MODULES;
@@ -421,15 +315,7 @@ export default function UserPage() {
 
   const getActiveModelInfo = (): { name: string; source: string } => {
     if (activeAiSource === 'builtin') {
-      const modelId = selectedModels['builtin'] || BUILTIN_PROVIDER.models[0].id;
-      const model = BUILTIN_PROVIDER.models.find(m => m.id === modelId);
-      return { name: model?.name || modelId, source: '内置 AI' };
-    }
-    const provider = PROVIDERS.find(p => p.id === activeAiSource);
-    if (provider) {
-      const modelId = selectedModels[activeAiSource] || provider.models[0]?.id;
-      const model = provider.models.find(m => m.id === modelId);
-      return { name: model?.name || modelId, source: provider.name };
+      return { name: '服务端 env（AI_MODEL）', source: '内置 AI' };
     }
     // 自定义源（src_xxx）
     const custom = customSources.find(s => s.id === activeAiSource);
@@ -437,11 +323,6 @@ export default function UserPage() {
     return { name: '未知', source: '未知' };
   };
 
-  const getModelForProvider = (providerId: ProviderId) => {
-    const provider = PROVIDERS.find(p => p.id === providerId);
-    const modelId = selectedModels[providerId] || provider?.models[0]?.id || '';
-    return provider?.models.find(m => m.id === modelId) || provider?.models[0];
-  };
 
   const activeModelInfo = getActiveModelInfo();
 
@@ -747,8 +628,10 @@ export default function UserPage() {
                 <Zap className="h-2.5 w-2.5" />
                 {activeModelInfo.source} / {activeModelInfo.name}
               </span>
-              {hasCustomEnabled && (
-                <span className="text-[9px] text-muted-foreground/60">({enabledCount} 个自定义源已启用)</span>
+              {customSources.length > 0 && (
+                <span className="text-[9px] text-muted-foreground/60">
+                  ({customSources.filter(s => s.enabled).length}/{customSources.length} 个自定义源已启用)
+                </span>
               )}
             </div>
           </div>
@@ -775,15 +658,11 @@ export default function UserPage() {
               </div>
               {activeAiSource === 'builtin' && (
                 <div className="px-6 pb-5 space-y-3 animate-fade-in-up">
-                  <div>
-                    <label className="text-[10px] font-medium text-muted-foreground mb-1.5 block">模型选择</label>
-                    <div className="relative">
-                      <select value={selectedModels['builtin'] || BUILTIN_PROVIDER.models[0].id} onChange={(e) => updateSelectedModel('builtin', e.target.value)} className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2.5 pr-8 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer">
-                        {BUILTIN_PROVIDER.models.map((model) => (<option key={model.id} value={model.id}>{model.name}{model.tag ? ` (${model.tag})` : ''}</option>))}
-                      </select>
-                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                    </div>
-                    {(() => { const mid = selectedModels['builtin'] || BUILTIN_PROVIDER.models[0].id; const m = BUILTIN_PROVIDER.models.find(x => x.id === mid); return m?.tag ? (<span className={cn('inline-flex items-center mt-1.5 text-[9px] rounded-sm px-1.5 py-0.5', TAG_COLORS[m.tag] || 'bg-muted text-muted-foreground')}>{m.tag}</span>) : null; })()}
+                  <div className="rounded-md border border-border bg-muted/20 px-3 py-2.5">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      内置 AI 的模型由服务端 <span className="font-mono">.env</span> 的 <span className="font-mono">AI_MODEL</span> 决定，这里改不了。
+                      想换模型或换厂商，用下面的「自定义接入」。
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={testBuiltin} disabled={keyStatuses['builtin']?.state === 'testing'} className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/20 active:scale-95 transition-all">
@@ -805,99 +684,6 @@ export default function UserPage() {
               )}
             </div>
 
-            {/* External providers */}
-            {PROVIDERS.map((provider) => {
-              const hasKey = apiKeys[provider.id] && apiKeys[provider.id].trim();
-              const isEnabled = enabledProviders[provider.id] || false;
-              const isActive = activeAiSource === provider.id;
-              const status = keyStatuses[provider.id] || { state: 'idle' as const };
-              const isExpanded = expandedProvider === provider.id;
-              const isVisible = visibleKeys[provider.id];
-              const currentModel = getModelForProvider(provider.id);
-
-              return (
-                <div key={provider.id} className="relative">
-                  <div className="flex items-center gap-4 px-6 py-4">
-                    <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold shrink-0', isActive ? provider.bg : 'bg-muted', isActive ? provider.color : 'text-muted-foreground')}>
-                      {provider.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-foreground">{provider.name}</p>
-                        {isActive && (<span className="flex items-center gap-1 text-[9px] text-primary bg-primary/10 rounded-sm px-1.5 py-0.5"><Zap className="h-2.5 w-2.5" />使用中</span>)}
-                        {hasKey && !isActive && isEnabled && (<span className="flex items-center gap-1 text-[9px] text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-sm px-1.5 py-0.5"><CheckCircle className="h-2.5 w-2.5" />已启用</span>)}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{currentModel?.name || provider.models[0]?.name}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {hasKey && (
-                        <button
-                          onClick={() => { if (isEnabled && isActive) { setActiveSource('builtin'); } toggleProviderEnabled(provider.id); }}
-                          className={cn('relative h-5 w-9 rounded-full transition-colors duration-200', isEnabled ? 'bg-primary' : 'bg-muted')}
-                          title={isEnabled ? '点击禁用' : '点击启用'}
-                        >
-                          <div className={cn('absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200', isEnabled ? 'translate-x-[18px]' : 'translate-x-0.5')} />
-                        </button>
-                      )}
-                      {hasKey && isEnabled && !isActive && (
-                        <button onClick={() => setActiveSource(provider.id)} className="rounded-md px-2.5 py-1 text-[10px] font-medium bg-muted/50 text-muted-foreground hover:bg-muted transition-all">切换</button>
-                      )}
-                      <button onClick={() => setExpandedProvider(isExpanded ? null : provider.id)} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors">
-                        <svg className={cn('h-4 w-4 transition-transform duration-200', isExpanded && 'rotate-180')} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  {isExpanded && (
-                    <div className="px-6 pb-5 space-y-3 animate-fade-in-up">
-                      <div>
-                        <label className="text-[10px] font-medium text-muted-foreground mb-1.5 block">模型选择</label>
-                        <div className="relative">
-                          <select value={selectedModels[provider.id] || provider.models[0]?.id} onChange={(e) => updateSelectedModel(provider.id, e.target.value)} className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2.5 pr-8 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors cursor-pointer">
-                            {provider.models.map((model) => (<option key={model.id} value={model.id}>{model.name}{model.tag ? ` (${model.tag})` : ''}</option>))}
-                          </select>
-                          <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                        </div>
-                        {currentModel?.tag && (<span className={cn('inline-flex items-center mt-1.5 text-[9px] rounded-sm px-1.5 py-0.5', TAG_COLORS[currentModel.tag] || 'bg-muted text-muted-foreground')}>{currentModel.tag}</span>)}
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-medium text-muted-foreground mb-1.5 block">API Key</label>
-                        <div className="relative">
-                          <input type={isVisible ? 'text' : 'password'} value={apiKeys[provider.id] || ''} onChange={(e) => updateApiKey(provider.id, e.target.value)} placeholder={provider.placeholder} className="w-full rounded-md border border-input bg-background px-3 py-2.5 pr-10 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring transition-colors" />
-                          <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center">
-                            <button onClick={(e) => { e.stopPropagation(); toggleKeyVisibility(provider.id); }} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors" title={isVisible ? '隐藏密钥' : '显示密钥'}>
-                              {isVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => testApiKey(provider.id)} disabled={!hasKey || status.state === 'testing'} className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all', hasKey && status.state !== 'testing' ? 'bg-primary/10 text-primary hover:bg-primary/20 active:scale-95' : 'bg-muted/50 text-muted-foreground cursor-not-allowed')}>
-                          {status.state === 'testing' ? (<><Loader2 className="h-3 w-3 animate-spin" />测试中...</>) : (<><Zap className="h-3 w-3" />测试连接</>)}
-                        </button>
-                        {hasKey && (
-                          <button onClick={() => deleteApiKey(provider.id)} className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 active:scale-95 transition-all">
-                            <Trash2 className="h-3 w-3" />删除
-                          </button>
-                        )}
-                      </div>
-                      {status.state === 'success' && (
-                        <div className="rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 p-3 space-y-1">
-                          <div className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" /><span className="text-[11px] font-medium text-green-700 dark:text-green-300">{status.message}</span></div>
-                          {status.responseSnippet && (<p className="text-[10px] text-green-600/70 dark:text-green-400/70 ml-5 truncate">AI 回复: &quot;{status.responseSnippet}&quot;</p>)}
-                        </div>
-                      )}
-                      {status.state === 'error' && (
-                        <div className="rounded-md bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 p-3">
-                          <div className="flex items-center gap-1.5"><XCircle className="h-3.5 w-3.5 text-red-500 dark:text-red-400 shrink-0" /><span className="text-[11px] font-medium text-red-600 dark:text-red-300">{status.message}</span></div>
-                        </div>
-                      )}
-                      <p className="text-[10px] text-muted-foreground/60 leading-relaxed">填入密钥后开启开关即可使用。禁用后自动回退到内置 AI。</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
 
             {/* 自定义接入：任意接口地址（中转站 / 自建网关 / 本地模型） */}
             <div className="px-6 py-5">

@@ -3,11 +3,25 @@
  * 支持 OpenAI-compatible API + SSE streaming
  */
 
-import { resolveAiSource, type AiSourceConfig, type ResolvedAiSource } from "./ai-providers";
+import type { AiSourceConfig, ResolvedAiSource } from "./ai-providers";
 
-const DEFAULT_BASE_URL = process.env.AI_API_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const DEFAULT_API_KEY = process.env.AI_API_KEY || "";
-const DEFAULT_MODEL = process.env.AI_MODEL || "doubao-seed-2-0-lite-260215";
+/**
+ * 内置 AI 的配置全部来自服务端 env（见 .env.example）。
+ * 不再内置任何厂商地址与模型 id —— 旧版写死的火山方舟地址 + doubao 模型
+ * 在没有官方 Key 时必然失败，且模型 id 早已过期，属于误导性的"假默认"。
+ */
+const ENV_BASE_URL = process.env.AI_API_URL || "";
+const ENV_API_KEY = process.env.AI_API_KEY || "";
+const ENV_MODEL = process.env.AI_MODEL || "";
+
+/** 内置 AI 缺配置时的统一提示 */
+const ENV_MISSING_MSG =
+  "服务端未配置内置 AI：请在 .env.local 里填写 AI_API_URL / AI_API_KEY / AI_MODEL（参考 .env.example），或在「我的」页用自定义接入源";
+
+function envConfigError(baseUrl: string, apiKey: string, model: string): string | null {
+  if (!baseUrl || !apiKey || !model) return ENV_MISSING_MSG;
+  return null;
+}
 
 interface StreamChunk {
   content?: string;
@@ -21,9 +35,16 @@ export async function* streamChat(
   messages: { role: string; content: string }[],
   options?: { model?: string; temperature?: number; baseUrl?: string; apiKey?: string; path?: string }
 ): AsyncGenerator<StreamChunk> {
-  const baseUrl = options?.baseUrl || DEFAULT_BASE_URL;
-  const apiKey = options?.apiKey || DEFAULT_API_KEY;
-  const model = options?.model || DEFAULT_MODEL;
+  const baseUrl = options?.baseUrl || ENV_BASE_URL;
+  const apiKey = options?.apiKey || ENV_API_KEY;
+  const model = options?.model || ENV_MODEL;
+
+  const cfgErr = envConfigError(baseUrl, apiKey, model);
+  if (cfgErr) {
+    yield { error: cfgErr };
+    return;
+  }
+
   const temperature = options?.temperature ?? 0.7;
   const path = options?.path || "/chat/completions";
 
@@ -107,9 +128,12 @@ export async function invokeChat(
   messages: { role: string; content: string }[],
   options?: { model?: string; temperature?: number; baseUrl?: string; apiKey?: string; maxTokens?: number }
 ): Promise<{ content?: string; error?: string }> {
-  const baseUrl = options?.baseUrl || DEFAULT_BASE_URL;
-  const apiKey = options?.apiKey || DEFAULT_API_KEY;
-  const model = options?.model || DEFAULT_MODEL;
+  const baseUrl = options?.baseUrl || ENV_BASE_URL;
+  const apiKey = options?.apiKey || ENV_API_KEY;
+  const model = options?.model || ENV_MODEL;
+
+  const cfgErr = envConfigError(baseUrl, apiKey, model);
+  if (cfgErr) return { error: cfgErr };
 
   const url = `${baseUrl}/chat/completions`;
 
@@ -125,6 +149,12 @@ export async function invokeChat(
         messages,
         temperature: options?.temperature ?? 0.5,
         max_tokens: options?.maxTokens ?? 50,
+        // 与 streamChat 保持一致：推理型模型（GLM-5 等）默认关闭思维链。
+        // 实测不关时 token 全花在 reasoning_content 上，content 是空字符串，
+        // 测试连接会拿到"成功但没内容"的结果。
+        ...(process.env.AI_THINKING === "1"
+          ? { thinking: { type: "enabled" } }
+          : { thinking: { type: "disabled" } }),
       }),
     });
 
@@ -139,9 +169,14 @@ export async function invokeChat(
     }
 
     const data = await response.json() as Record<string, unknown>;
-    const choices = data.choices as Array<{ message: { content: string } }> | undefined;
+    const choices = data.choices as Array<{
+      message: { content?: string; reasoning_content?: string };
+    }> | undefined;
     if (choices && choices.length > 0) {
-      return { content: choices[0].message.content };
+      const msg = choices[0].message;
+      // 推理型模型在思维链被打开时会把正文放进 reasoning_content，content 为空
+      const text = (msg.content || msg.reasoning_content || "").trim();
+      if (text) return { content: text };
     }
     return { error: "模型返回空内容" };
   } catch (err) {
@@ -182,7 +217,13 @@ export async function* streamChatClaude(
   messages: { role: string; content: string }[],
   opts: { apiKey: string; model?: string; temperature?: number; baseUrl?: string }
 ): AsyncGenerator<StreamChunk> {
-  const model = opts.model || "claude-sonnet-4-6-20260219";
+  // 模型名必填：内置一个"猜的模型 id"大概率不存在（旧版写死的 id 已失效），
+  // 不如直接报错让用户填准确的。
+  const model = opts.model?.trim();
+  if (!model) {
+    yield { error: "缺少模型名：请在自定义接入源里填写准确的模型 id" };
+    return;
+  }
   const system = messages.filter(m => m.role === "system").map(m => m.content).join("\n\n");
   const chat = messages
     .filter(m => m.role !== "system")
@@ -255,7 +296,12 @@ export async function* streamChatGemini(
   messages: { role: string; content: string }[],
   opts: { apiKey: string; model?: string; temperature?: number; baseUrl?: string }
 ): AsyncGenerator<StreamChunk> {
-  const model = encodeURIComponent(opts.model || "gemini-2.5-pro");
+  const rawModel = opts.model?.trim();
+  if (!rawModel) {
+    yield { error: "缺少模型名：请在自定义接入源里填写准确的模型 id" };
+    return;
+  }
+  const model = encodeURIComponent(rawModel);
   const system = messages.filter(m => m.role === "system").map(m => m.content).join("\n\n");
   const contents = messages
     .filter(m => m.role !== "system")
@@ -345,7 +391,8 @@ export async function* streamChatAuto(
     case "minimax":
       // MiniMax chatcompletion_v2：Bearer 鉴权，SSE 沿用 OpenAI delta 格式
       yield* streamChat(messages, {
-        baseUrl: source.baseUrl || "https://api.minimax.chat/v1/text",
+        // 自定义源地址必填（resolveAiSource 已校验），不再内置官方域名兜底
+        baseUrl: source.baseUrl,
         path: source.protocol === "minimax" ? "/chatcompletion_v2" : "/chat/completions",
         apiKey: source.apiKey,
         model: source.model,

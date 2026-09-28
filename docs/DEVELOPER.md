@@ -55,7 +55,7 @@ access_logs (user_id, action, detail, ...)
 | `/api/auth` | POST | 无 | 注册/登录 (body: `{action,nickname,password}`) |
 | `/api/invite` | POST | 需登录 | 兑换邀请码 (body: `{code,nickname}`) |
 | `/api/ai/analyze` | POST | 无 | AI 分析 SSE 流式 (body: `{prompt,type,model?,apiKey?}`) |
-| `/api/ai/test-key` | POST | 无 | 测试用户 API Key (body: `{provider,apiKey}`) |
+| `/api/ai/test-key` | POST | 无 | 测连通性 (body: `{provider:'builtin'}` 或 `{provider:'custom',protocol,baseUrl,apiKey,model}`) |
 | `/api/admin` | GET/POST/PUT/DELETE | x-dev-token | 开发者后台 (用户/邀请码 CRUD) |
 
 ### 认证流程
@@ -87,7 +87,7 @@ developer → 全部模块 + AI 分析 + /admin 后台
 ### 全局状态
 
 - `AuthContext` (React Context): 用户角色/权限/邀请码兑换
-- `localStorage`: 用户信息、API Keys (8 厂商)、高级设置 (人生阶段/偏好权重)、模块访问记录
+- `localStorage`: 用户信息、AI 接入源 (`ai-sources`)、高级设置 (人生阶段/偏好权重)、模块访问记录
 - 无全局状态管理库 (无 Redux/Zustand)
 
 ### 动效系统 (globals.css)
@@ -106,17 +106,22 @@ developer → 全部模块 + AI 分析 + /admin 后台
 
 ### AI 分析 (SSE 流式)
 
-`/api/ai/analyze` 使用 `coze-coding-dev-sdk` 的 LLM 能力, Response Header:
+`/api/ai/analyze` 走自写的 `src/lib/ai-stream.ts`(不用 coze-coding-dev-sdk), Response Header:
 ```
 Content-Type: text/event-stream
 Transfer-Encoding: chunked
 ```
 前端通过 `fetch` + `body.getReader()` 逐帧读取, 打字机式渲染。
 
-### API Key 管理
+### AI 接入源管理
 
-8 个厂商密钥存储在 `localStorage`, 测试接口 `/api/ai/test-key` 逐厂商调用 API 验证:
-Gemini / Claude / GLM / Qwen / DeepSeek / 豆包 / MiniMax / MiMo
+2026-09-28 起只支持两种来源，原先写死的 8 家厂商预设（官方域名 + 过期模型列表）已删除：
+
+1. **内置 AI**：服务端 env 的 `AI_API_URL` / `AI_API_KEY` / `AI_MODEL`，模型由 env 决定
+2. **自定义源**：用户在 `/user` 页添加，存 localStorage `ai-sources`，
+   每条含 `{ name, protocol, baseUrl, apiKey, model, enabled }`，可增删改、启停、测连通、导入导出
+
+服务端用 `src/lib/ai-providers.ts` 的 `resolveAiSource()` 解析，不合规一律 400，不静默回退。
 
 ### 命运模拟器
 
@@ -124,7 +129,7 @@ SVG 手绘雷达图 (6 维度) + 滑块交互, 推演后调用 AI 生成策略�
 
 ## 已知限制
 
-- 无服务端 Session, 认证完全依赖 localStorage → 刷新不丢失但换设备需重新登录
+- 登录态为服务端签发的 HMAC 令牌（`src/lib/session.ts`），存 localStorage，7 天有效；换设备需重新登录（2026-09-27 补）
 - RLS 未启用行级安全, 权限由 API 路由层控制
 - careers.ts 1.6MB 会导致 ESLint deoptimise (仅影响 lint 速度, 不影响功能)
 - 高级设置数据存 localStorage, 未被其他模块消费

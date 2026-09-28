@@ -19,6 +19,9 @@
   （项目内置 glm 的 baseUrl 是官方 `open.bigmodel.cn`，实测报"令牌已过期或验证不正确"）
   → **已解决（2026-09-28）**：新增自定义 AI 接入源，地址/协议/Key/模型都由用户填，
     实测同一 Key 通过自定义端点：测连通 3.4 秒 ✅、analyze 出 1703 字 ✅。详见 API.md。
+- **后续清理（2026-09-28）**：既然自定义源能覆盖同样场景，已把写死的 8 家厂商预设整体删除——
+  官方地址 + 中转站 Key 对不上，硬编码的模型 id 也已过期，留着只会误导。
+  现在 AI 来源只有两种：内置 AI（服务端 env）与自定义源（用户填地址）。
 - GLM-5 是推理模型：SSE 的 delta 里先出 `reasoning_content` 再出 `content`；
   本项目只取 `delta.content`，思维链不会外泄到界面，但会拖慢首字
 - **性能**：同一请求 开启 thinking 112 秒 / 关闭 6 秒 → 已在 `ai-stream.ts` 默认关闭，
@@ -64,11 +67,17 @@
 这大概率是"效果不满意"的直接原因之一：没有 env Key 时 AI 功能形同虚设。
 
 已修：
-- 新增 `src/lib/ai-providers.ts`（厂商白名单 + baseUrl 映射）与 `src/lib/active-ai-client.ts`（前端读取当前 AI 源）；
-- `ai-stream.ts` 增加 `streamChatAuto` 多协议适配：doubao/glm/qwen/deepseek/mimo 走 OpenAI 兼容流，
-  claude/gemini 走各自私有 SSE 协议，minimax 沿 OpenAI delta 格式（**后三家未经真实 Key 实测**）；
-- `analyze` 路由接收可选 `ai: { provider, apiKey, model }`，无效配置返回 400（不静默回退）；
+- 新增 `src/lib/ai-providers.ts`（AI 源解析）与 `src/lib/active-ai-client.ts`（前端读取当前 AI 源）；
+- `ai-stream.ts` 增加 `streamChatAuto` 多协议适配（openai / claude / gemini / minimax，
+  **后三家未经真实 Key 实测**）；
+- `analyze` 路由接收可选 `ai: { provider, protocol?, baseUrl?, apiKey, model }`，无效配置返回 400（不静默回退）；
 - `AIAnalysisPanel` 每次请求自动携带用户当前选中的 AI 源，并把服务端错误消息透出。
+
+> **2026-09-28 二次改动**：原"8 家厂商白名单"整体删除（`PROVIDER_CONFIGS` / `PROVIDERS` /
+> `BUILTIN_PROVIDER.models` / `api-keys` / `api-enabled-providers` / `api-selected-models` 等），
+> 改为 `builtin` + `custom` 两种来源。理由见 #1 的"后续清理"。
+> 同时 `ai-stream.ts` 不再内置火山方舟地址与 doubao 模型兜底：
+> env 三件套缺任一项，内置 AI 直接报"未配置"而不是打一个必然失败的请求。
 
 ### #4 门控逻辑自相矛盾：未登录 = 全解锁
 `module-gate.tsx` 第 12 行 `if (!user || canAccessModule(...)) return children`——

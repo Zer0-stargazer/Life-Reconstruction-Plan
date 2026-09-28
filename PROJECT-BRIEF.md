@@ -109,7 +109,8 @@ pnpm dev
 │   ├── lib/
 │   │   ├── session.ts       # ★ HMAC 会话层（2026-09-27 新增）
 │   │   ├── ai-stream.ts     # SSE 多协议适配（OpenAI兼容/Claude/Gemini/MiniMax）
-│   │   ├── ai-providers.ts  # 8 厂商白名单 + baseUrl
+│   │   ├── ai-providers.ts  # AI 源解析（builtin / custom）
+│   │   ├── ai-sources.ts    # 自定义接入源（增删改/启停/导入导出）
 │   │   └── active-ai-client.ts  # 前端读用户自选 AI 源
 │   └── storage/database/supabase-client.ts
 └── public/

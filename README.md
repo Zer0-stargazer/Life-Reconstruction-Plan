@@ -42,7 +42,7 @@ cp .env.example .env.local    # 然后填入真实值
 | 变量 | 用途 | 缺失后果 |
 |---|---|---|
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` | 数据库 | 注册/登录/邀请码/后台全 500 |
-| `AI_API_URL` / `AI_API_KEY` / `AI_MODEL` | AI 分析（默认火山方舟豆包） | AI 分析面板报错 |
+| `AI_API_URL` / `AI_API_KEY` / `AI_MODEL` | 内置 AI 分析（三项缺一即报"未配置"） | 内置 AI 不可用，可用自定义接入源代替 |
 | `DEV_PASSWORD` | 开发者后台密码 | 无法进入 `/admin` |
 | `SESSION_SECRET` | 登录态令牌的 HMAC 签名密钥 | 回退用 `DEV_PASSWORD`；生产环境两者都缺则拒绝签发登录态 |
 
@@ -54,7 +54,7 @@ cp .env.example .env.local    # 然后填入真实值
 - **UI**：shadcn/ui（Radix UI）+ Tailwind CSS v4 + Lucide React
 - **图表**：Recharts（雷达图等）
 - **数据库**：Supabase PostgreSQL（@supabase/supabase-js 直连；drizzle 已于 2026-09-26 移除）
-- **AI**：多协议流式（`src/lib/ai-stream.ts`），默认火山方舟豆包，支持用户自带 Key
+- **AI**：多协议流式（`src/lib/ai-stream.ts`）。两种来源：内置 AI（服务端 env）+ 用户自定义接入源（任意 baseUrl，协议 openai/claude/gemini/minimax）。项目不内置任何厂商地址与模型 id
 - **密码**：bcryptjs（服务端哈希，cost=10）
 - **包管理**：pnpm 9（registry 走 npmmirror）
 
@@ -73,7 +73,7 @@ src/
 │       ├── admin/route.ts    # 后台管理（x-dev-token）
 │       └── ai/
 │           ├── analyze/route.ts  # AI 分析（SSE 流式）
-│           └── test-key/route.ts # 8 厂商 API Key 连通性测试
+│           └── test-key/route.ts # AI 连通性测试（builtin / custom）
 ├── components/
 │   ├── auth/module-gate.tsx  # 🔒 模块门控 + 角色徽章
 │   ├── layout/app-sidebar.tsx# 侧边栏（桌面 w-56 / 移动端抽屉）
@@ -89,8 +89,9 @@ src/
 ├── hooks/
 │   ├── use-advanced-settings.ts # 7 个人生阶段 + 6 维偏好权重（localStorage）
 │   └── use-module-visit.ts   # 模块访问记录（探索进度）
-├── lib/ai-stream.ts          # AI 流式客户端（OpenAI 兼容 + Claude/Gemini 协议适配）
-├── lib/ai-providers.ts       # 厂商白名单与 baseUrl 映射（analyze/test-key 共用）
+├── lib/ai-stream.ts          # AI 流式客户端（OpenAI 兼容 + Claude/Gemini/MiniMax 协议适配）
+├── lib/ai-providers.ts       # AI 源解析：builtin（env）/ custom（用户地址）
+├── lib/ai-sources.ts         # 自定义接入源的数据模型与导入导出
 ├── lib/active-ai-client.ts   # 前端读取用户当前 AI 源（localStorage）
 └── storage/database/         # supabase-client.ts
 supabase/schema.sql           # 建表 SQL（手工执行）

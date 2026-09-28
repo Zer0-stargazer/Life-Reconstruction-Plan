@@ -417,9 +417,6 @@ export default function SimulationPage() {
   const dimensionIcons: Record<string, string> = {
     family: '🏠', talent: '🧬', effort: '💪', choice: '🧭', luck: '🍀',
   };
-  const dimensionColors: Record<string, string> = {
-    family: '#ef4444', talent: '#a855f7', effort: '#22c55e', choice: '#3b82f6', luck: '#f59e0b',
-  };
 
   // 从问卷答案计算维度分数
   const calculateFromAnswers = useCallback(() => {

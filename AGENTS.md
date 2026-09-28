@@ -14,7 +14,9 @@ AI 驱动的人生规划与决策辅助工具。用户通过8个模块（名字/
 - shadcn/ui (Radix UI) + Tailwind CSS 4
 - Recharts (图表) + Lucide React (图标)
 - Supabase PostgreSQL (数据库)
-- AI: 自研 OpenAI-compatible SSE 客户端 (src/lib/ai-stream.ts)，默认火山方舟豆包，Key 在 .env.local
+- AI: 自研 OpenAI-compatible SSE 客户端 (src/lib/ai-stream.ts) + 自定义接入源 (src/lib/ai-sources.ts)。
+  项目**不内置任何厂商地址与模型 id**：内置 AI 读服务端 env（AI_API_URL/AI_API_KEY/AI_MODEL）；
+  用户也可在 /user 页添加自己的接入源（任意 baseUrl + 协议 openai/claude/gemini/minimax）
 
 ## 构建命令
 
@@ -44,7 +46,7 @@ src/
 │   ├── admin/page.tsx          # 开发者后台（用户/邀请码管理）
 │   └── api/
 │       ├── ai/analyze/route.ts # AI分析 (SSE流式)
-│       ├── ai/test-key/route.ts # API Key测试 (7厂商)
+│       ├── ai/test-key/route.ts # AI 连通性测试（builtin / custom 两种源）
 │       ├── auth/route.ts       # 注册/登录
 │       ├── invite/route.ts     # 邀请码兑换
 │       └── admin/route.ts      # 开发者管理 (x-dev-token)
@@ -62,7 +64,13 @@ src/
 ├── hooks/
 │   ├── use-mobile.ts           # 移动端检测
 │   └── use-module-visit.ts     # 模块访问追踪
-└── lib/utils.ts                # cn()
+└── lib/
+    ├── utils.ts                # cn()
+    ├── ai-stream.ts            # 多协议流式客户端（openai/claude/gemini/minimax）
+    ├── ai-providers.ts         # AI 源解析（builtin / custom）
+    ├── ai-sources.ts           # 自定义接入源的数据模型与导入导出
+    ├── active-ai-client.ts     # 客户端读取当前生效的 AI 源
+    └── session.ts              # HMAC 会话令牌（登录态）
 ```
 
 ## 数据库 (Supabase PostgreSQL)
@@ -77,7 +85,8 @@ src/
 
 1. **权限门控**: ModuleGate组件包裹🔒模块，normal只能访问3个，premium全开，developer全权限+后台
 2. **角色升级**: normal → premium 通过邀请码；developer 通过admin页面密码验证(x-dev-token)
-3. **AI能力**: 内置 AI（env 的 AI_API_KEY，走 ai-stream.ts）+ 用户自定义API Key（8厂商，localStorage存储，**已接入 analyze**）
+3. **AI能力**: 两种来源——内置 AI（服务端 env）+ 自定义接入源（localStorage `ai-sources`，已接入 analyze）。
+   2026-09-28 已删除原先写死的 8 家厂商预设（官方地址 + 过期模型列表，与第三方中转站 Key 对不上）
 4. **职业数据**: 1535个职业（已去重），tutorials只含course/video两种类型，书籍链接为豆瓣真实链接
 5. **规律引擎**: 8维度(laws-*.ts)聚合到laws.ts，4类标签(critical/danger/opportunity/neutral)
 6. **命运模拟器**: SVG雷达图 + 6维滑块，推演后AI生成策略建议

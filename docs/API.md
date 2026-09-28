@@ -85,7 +85,7 @@ Authorization: Bearer <token>       // 或 x-session-token: <token>
 
 ## POST /api/ai/analyze
 
-SSE 流式。默认用服务端 env 的 AI Key（火山方舟豆包）；**2026-09-26 起接收客户端自带 AI 源**
+SSE 流式。默认用服务端 env 的内置 AI；**2026-09-26 起接收客户端自带 AI 源**
 `ai` 字段（前端 AIAnalysisPanel 从 localStorage 自动携带，见 `src/lib/active-ai-client.ts`）：
 
 ```jsonc
@@ -96,9 +96,11 @@ SSE 流式。默认用服务端 env 的 AI Key（火山方舟豆包）；**2026-
   "question": "可选；追问文本",
   "history": [{ "role": "user|assistant", "content": "..." }],   // 可选，续聊
   "ai": {                                                         // 可选，用户自带 AI 源
-    "provider": "doubao|glm|qwen|deepseek|mimo|claude|gemini|minimax",
-    "apiKey": "用户自己的 Key",
-    "model": "模型 id（可选）"
+    "provider": "builtin|custom",
+    "protocol": "openai|claude|gemini|minimax",                   // custom 时必填
+    "baseUrl": "https://...",                                     // custom 时必填
+    "apiKey": "用户自己的 Key",                                    // custom 时必填
+    "model": "模型 id"                                            // custom 时必填
   }
 }
 // 响应流（text/event-stream）
@@ -107,33 +109,35 @@ data: [DONE]
 data: {"error": "..."}       // 失败时
 ```
 
-- `ai` 缺省或 `provider: "builtin"` → 走服务端 env；provider 不在白名单或缺 Key → **400 报错**（不静默回退）。
-- 协议适配（`src/lib/ai-providers.ts` + `ai-stream.ts`）：doubao/glm/qwen/deepseek/mimo 走 OpenAI 兼容流；
-  claude/gemini 走各自私有 SSE；minimax 沿 OpenAI delta 格式——**后三家未经真实 Key 实测**。
+- `ai` 缺省或 `provider: "builtin"` → 走服务端 env（模型由 `AI_MODEL` 决定）；provider 既不是 builtin 也不是 custom、或缺 Key / 地址非法 → **400 报错**（不静默回退）。
+- 协议适配（`src/lib/ai-providers.ts` + `ai-stream.ts`）：custom 源按 `protocol` 分流——
+  openai → `/chat/completions`、claude → 官方 Messages SSE、gemini → `streamGenerateContent`、minimax → `/chatcompletion_v2`。
+  claude / gemini / minimax 三家未经真实 Key 实测（只实测过 openai 协议的中转站）。
 - module 不在白名单时回落到 window 框架。首次分析会把内置分析框架 + 条目上下文拼成 user 消息；有 history 时直接把 question 作为 user 消息。
-- **自定义接入源**（2026-09-28）：`ai` 支持 `provider: "custom"`，此时必须带
-  `baseUrl`（http/https）+ `protocol`（openai|claude|gemini|minimax）+ `apiKey` + `model`，
-  服务端按 protocol 选协议、用你给的 baseUrl 发请求。详见下方「自定义 AI 接入源」。
+- **自定义接入源**（2026-09-28）：见下方「自定义 AI 接入源」章节。
 
 ## POST /api/ai/test-key
 
-服务端代理测试用户 API Key。支持 provider：`gemini / claude / deepseek / openai / moonshot / zhipu / qwen / doubao`（8 家，具体见 route.ts `PROVIDER_CONFIGS`）。
+服务端代理测试连通性。只支持两种 `provider`：`builtin`（测服务端 env 是否配好）与 `custom`（测用户填的地址 + Key）。
+（2026-09-28 已删除原先写死的 8 家厂商 `PROVIDER_CONFIGS`。）
 
 ```jsonc
 // 请求
-{ "provider": "deepseek", "apiKey": "sk-...", "model": "deepseek-chat" }
+{ "provider": "custom", "protocol": "openai",
+  "baseUrl": "https://api.apikey.fan/v1", "apiKey": "sk-...", "model": "glm-5.3-flash" }
 // 成功
-{ "success": true, "snippet": "模型回复的前 60 字" }
+{ "success": true, "message": "连接成功 · glm-5.3-flash", "responseSnippet": "模型回复前 60 字" }
 ```
 
-Key 只在内存中转发给厂商，不落库不落盘，但**会经过服务器进程**。
-~~该接口与 `/api/ai/analyze` 相互独立~~ → **2026-09-26 起 analyze 已接入同一套 Key**（KNOWN-ISSUES #3 已修）。
+Key 只在内存中转发给目标地址，不落库不落盘，但**会经过服务器进程**。
+按 `protocol` 自动拼路径：openai → `/chat/completions`、claude → `/messages`、
+gemini → `/models/{model}:generateContent?key=...`、minimax → `/chatcompletion_v2`；超时 30 秒。
 
 ## 自定义 AI 接入源（2026-09-28 新增）
 
-内置 8 家厂商写死了官方域名，但现实里很多人用的是**第三方中转站 / 自建网关 / 本地模型**的 Key，
-官方域名 + 中转站 Key 必然鉴权失败（实测报"令牌已过期或验证不正确"）。
-因此补了一层用户自定义源：**地址、密钥、模型全由用户填**。
+（2026-09-28）项目原本写死了 8 家厂商的官方域名 + 模型列表，已全部删除：
+一是官方域名 + 第三方中转站 Key 必然鉴权失败（实测报"令牌已过期或验证不正确"），
+二是硬编码的模型 id 早已过期。现在统一改成用户自定义源：**地址、密钥、模型全由用户填**。
 
 ### 数据存在浏览器（localStorage）
 
@@ -152,21 +156,8 @@ Key 只在内存中转发给厂商，不落库不落盘，但**会经过服务�
 }
 ```
 
-- `api-active-source` 存当前使用的源 id（`'builtin'` / 厂商 id / `src_xxx`）
+- `api-active-source` 存当前使用的源 id（`'builtin'` / `src_xxx`）
 - `/user` 页「AI 模型管理」底部提供：添加 / 编辑 / 启用停用 / 测试 / 删除 / 导入 / 导出
-
-### 测连通性
-
-```jsonc
-POST /api/ai/test-key
-{ "provider": "custom", "protocol": "openai",
-  "baseUrl": "https://api.apikey.fan/v1", "apiKey": "sk-...", "model": "glm-5.3-flash" }
-// 成功
-{ "success": true, "message": "连接成功 · glm-5.3-flash", "responseSnippet": "..." }
-```
-
-按 `protocol` 自动拼路径：openai → `/chat/completions`、claude → `/messages`、
-gemini → `/models/{model}:generateContent?key=...`、minimax → `/chatcompletion_v2`。
 
 ### 实际分析
 

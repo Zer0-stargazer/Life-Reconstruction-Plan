@@ -106,6 +106,8 @@ export async function POST(request: NextRequest) {
         detail: `用户 ${nickname} 登录`,
       });
 
+      // 解构丢弃敏感字段后再返回前端（password_hash / is_active 是有意不使用的）
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password_hash, is_active, ...safeUser } = user;
 
       // 签发服务端会话令牌（敏感接口用它识别身份，不再信任请求体自报的 userId）
