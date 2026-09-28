@@ -4,7 +4,7 @@
 > 以 [ARCHITECTURE.md](ARCHITECTURE.md) / [API.md](API.md) / [KNOWN-ISSUES.md](KNOWN-ISSUES.md) 为准：
 > 1. `coze-coding-dev-sdk` 不在依赖中，AI 走自写的 `src/lib/ai-stream.ts`（OpenAI-compatible SSE）
 > 2. "运行时注入、无需 .env" 是扣子云端行为；本地必须 `.env.local`（含 `SUPABASE_*`、`AI_*`、`DEV_PASSWORD`）
-> 3. 数据条目（2026-09-26 去重后）：careers **1535**、windows **473**、luck **250**（luck-red.ts 50 条为预留数据）
+> 3. 数据条目（2026-09-26 去重后）：careers **1535**、windows **473**、luck **250**（`luck-red.ts` 50 条预留数据已于 2026-09-28 删除）
 > 4. `/api/invite` **无鉴权**（userId 客户端自报，暂未修）；analyze 已接收用户自带 Key（`ai` 字段）
 > 5. `server.ts` 已删除、drizzle 三件套已移除；"高级设置未被消费"已过时——destiny/windows/simulation 在消费
 > 6. 本地无 Node 24 硬约束，Node 22 可跑

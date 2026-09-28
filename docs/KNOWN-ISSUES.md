@@ -158,9 +158,19 @@ windows 7 组重名标题。列表会展示两个一模一样的卡片。
 - ~~`drizzle-orm / drizzle-kit / drizzle-zod`~~：**已从 package.json 移除**；
   连带删除仅用其类型语法的 `src/storage/database/shared/schema.ts` 与 `relations.ts`
   （表结构以 `supabase/schema.sql` 为准）；
-- `luck-red.ts`：50 条"红运"节点数据，从未被页面 import。**保留**（属当年规划的功能资产，
-  53KB、未被引用时零打包成本）；若确定不做该功能可删，历史版本在 git；
+- `luck-red.ts`：50 条"红运"节点数据，从未被页面 import。**2026-09-28 已删除**
+  （与"确定不做就删"的处理一致；历史版本在 git 里随时可找回）；
 - `AGENTS.md` 自述的"命运报告可接 AI""名字模块接 AI"仍未实现（这是 TODO 不是 bug）。
+
+#### 2026-09-28 第二轮清理（删自带但已失效/未使用的部分）
+- AI：8 家写死厂商预设全部删除（`PROVIDER_CONFIGS` / `PROVIDERS` / 失效的豆包模型列表 /
+  `api-keys` 等遗留存储键），只留 builtin（env）+ custom（用户填地址）两种来源；
+  `ai-stream.ts` 不再内置火山方舟地址与 doubao 模型兜底，env 缺项直接报"未配置"；
+- 组件：45 个从未被引用的 shadcn/ui 组件删除，只留实际用到的 8 个；
+- 依赖：随之失效的 33 个包移除（radix 22 个 + cmdk/vaul/embla/react-hook-form/zod/date-fns/
+  sonner/recharts/pg/@aws-sdk 等），`pnpm install` 已重跑；
+- 其它：`scripts/*.sh`（扣子入口）、`public/` 下 5 个未引用的 Next.js 模板 svg；
+- 顺手修：`invokeChat` 未发 thinking 开关导致推理模型返回空正文（测试连接显示"成功但没内容"）。
 
 ### #11 AGENTS.md 与实现的偏差（2026-09-25 已在本文档纠正）
 - "侧边栏 56px 宽" → 实际 `w-56` = **224px**（`main` 的 `md:ml-56` 与之一致，布局无 bug，纯文档错）；

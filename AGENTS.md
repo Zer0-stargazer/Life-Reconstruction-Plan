@@ -58,7 +58,7 @@ src/
 ├── contexts/auth-context.tsx   # 全局认证（角色/权限/邀请码）
 ├── data/                       # 静态数据
 │   ├── windows.ts              # 473个人生窗口（单行+多行两种格式批次）
-│   ├── luck-nodes.ts           # 250个运气节点（luck-red.ts 50条预留未接线）
+│   ├── luck-nodes.ts           # 250个运气节点（luck-red.ts 50条预留未接线，2026-09-28 已删）
 │   ├── careers.ts              # 1535个职业（自学推荐+课程/视频资源）
 │   └── laws*.ts                # 8维度规律（各36条，共288条）
 ├── hooks/

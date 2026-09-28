@@ -104,7 +104,7 @@ pnpm dev
 │   ├── data/                # ★ 核心资产 2MB
 │   │   ├── windows.ts       # 473 窗口（注意：单行+多行两种格式批次，正则易漏计）
 │   │   ├── careers.ts       # 1535 职业（1.1MB，注意首屏体积）
-│   │   ├── luck-nodes.ts    # 250 节点；luck-red.ts 50 条预留未接线
+│   │   ├── luck-nodes.ts    # 250 节点（luck-red.ts 50 条预留未接线，2026-09-28 已删）
 │   │   └── laws*.ts         # 8 维度 × 36 条
 │   ├── lib/
 │   │   ├── session.ts       # ★ HMAC 会话层（2026-09-27 新增）

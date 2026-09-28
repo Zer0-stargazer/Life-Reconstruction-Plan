@@ -84,7 +84,6 @@ src/
 │   ├── careers.ts            # 1535 个职业
 │   ├── windows.ts            # 473 个人生窗口（单行/多行两种格式批次）
 │   ├── luck-nodes.ts         # 250 个运气节点
-│   ├── luck-red.ts           # 50 个节点（预留数据，未接线）
 │   └── laws-*.ts             # 8 维度规律，各 36 条
 ├── hooks/
 │   ├── use-advanced-settings.ts # 7 个人生阶段 + 6 维偏好权重（localStorage）

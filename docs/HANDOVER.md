@@ -34,7 +34,7 @@ AI 驱动的人生规划工具，8 个模块帮你做人生关键决策。琥珀
 | 规律 | `/laws` | 🔒 | 8 维 **288** 条规律 |
 | 努力 | `/simulation` | 🔒 | SVG 雷达图模拟器 |
 | 窗口 | `/windows` | 开放 | **473** 人生窗口卡片 |
-| 运气 | `/luck` | 🔒 | **250** 运气节点（luck-red.ts 另有 50 条预留数据未接线） |
+| 运气 | `/luck` | 🔒 | **250** 运气节点（原 `luck-red.ts` 50 条预留数据已于 2026-09-28 删除） |
 | 用户 | `/user` | 登录 | 角色/Key/设置 |
 | 后台 | `/admin` | developer | 用户/邀请码管理 |
 
@@ -82,7 +82,7 @@ shadcn/ui 组件在 `src/components/ui/`, 不要从外部引入新 UI 库。如�
 
 ### 运气节点 (luck-nodes.ts, 约 433KB)
 
-- **250** 个节点（另 `luck-red.ts` 有 50 条 `redNodes`，**预留数据未接线**，确定不做可删）
+- **250** 个节点（原 `luck-red.ts` 50 条 `redNodes` 从未被 import，2026-09-28 已删）
 - `controllability`: none/low/medium/high
 
 ### 人生窗口 (windows.ts, 约 247KB)
