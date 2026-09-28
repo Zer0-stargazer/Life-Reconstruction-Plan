@@ -12,7 +12,7 @@ AI 驱动的人生规划与决策辅助工具。用户通过8个模块（名字/
 
 - Next.js 16 (App Router) + React 19 + TypeScript 5
 - shadcn/ui (Radix UI) + Tailwind CSS 4
-- Recharts (图表) + Lucide React (图标)
+- Lucide React (图标)；图表全部手写 SVG（Recharts 已于 2026-09-28 移除）
 - Supabase PostgreSQL (数据库)
 - AI: 自研 OpenAI-compatible SSE 客户端 (src/lib/ai-stream.ts) + 自定义接入源 (src/lib/ai-sources.ts)。
   项目**不内置任何厂商地址与模型 id**：内置 AI 读服务端 env（AI_API_URL/AI_API_KEY/AI_MODEL）；

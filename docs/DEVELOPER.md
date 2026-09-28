@@ -24,10 +24,15 @@
 | next | 16.1.1 | 全栈框架 (App Router) |
 | react / react-dom | 19.2.3 | UI |
 | @supabase/supabase-js | 2.95.3 | 数据库客户端 |
-| coze-coding-dev-sdk | ^0.7.19 | AI 分析 + Web 搜索 |
-| recharts | 2.15.4 | 图表 (命运模拟器雷达图) |
 | lucide-react | ^0.468.0 | 图标 |
-| drizzle-orm / drizzle-kit | ^0.45.1 / ^0.31.8 | ~~数据库 ORM~~ **2026-09-26 已移除** |
+| bcryptjs | ^3.0.3 | 密码哈希 |
+| ~~coze-coding-dev-sdk~~ | — | 不在依赖中，AI 走自写的 `src/lib/ai-stream.ts` |
+| ~~recharts~~ | — | **2026-09-28 已移除**（雷达图是手写 SVG，全项目无引用） |
+| ~~drizzle-orm / drizzle-kit~~ | — | **2026-09-26 已移除** |
+
+> 2026-09-28 依赖瘦身：删除 42 个未引用的 shadcn 组件后，一并移除了随之失效的
+> radix / cmdk / vaul / embla / react-day-picker / react-hook-form / zod / date-fns /
+> sonner / input-otp / react-resizable-panels / recharts / pg / @aws-sdk 等 33 个依赖。
 
 ### 环境变量 (运行时注入, 无需 .env)
 

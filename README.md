@@ -52,7 +52,7 @@ cp .env.example .env.local    # 然后填入真实值
 
 - **框架**：Next.js 16.1.1（App Router）+ React 19.2.3 + TypeScript 5
 - **UI**：shadcn/ui（Radix UI）+ Tailwind CSS v4 + Lucide React
-- **图表**：Recharts（雷达图等）
+- **图表**：无第三方图表库，全部手写 SVG（雷达图 / 直方图 / 轨道图）。Recharts 已于 2026-09-28 移除（无引用）
 - **数据库**：Supabase PostgreSQL（@supabase/supabase-js 直连；drizzle 已于 2026-09-26 移除）
 - **AI**：多协议流式（`src/lib/ai-stream.ts`）。两种来源：内置 AI（服务端 env）+ 用户自定义接入源（任意 baseUrl，协议 openai/claude/gemini/minimax）。项目不内置任何厂商地址与模型 id
 - **密码**：bcryptjs（服务端哈希，cost=10）
@@ -78,7 +78,7 @@ src/
 │   ├── auth/module-gate.tsx  # 🔒 模块门控 + 角色徽章
 │   ├── layout/app-sidebar.tsx# 侧边栏（桌面 w-56 / 移动端抽屉）
 │   ├── ai/ai-analysis-panel.tsx # AI 分析侧滑面板（SSE 流式渲染）
-│   └── ui/                   # shadcn/ui 组件库（60+）
+│   └── ui/                   # shadcn/ui 组件库（只保留实际用到的 8 个）
 ├── contexts/auth-context.tsx # 全局认证（localStorage 持久化，见已知问题）
 ├── data/                     # 静态数据（约 2.1MB）
 │   ├── careers.ts            # 1535 个职业
