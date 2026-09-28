@@ -17,7 +17,8 @@
 - 中转站 `https://api.apikey.fan/v1` 可用，模型列表：glm-5.3-flash / glm-5.3-flashx / glm-5.3 / glm-5.2 / glm-5.1
 - 该 Key 标注"智谱"，但**属于中转站而非官方**，在 `/user` 页手填并选"智谱"会失败
   （项目内置 glm 的 baseUrl 是官方 `open.bigmodel.cn`，实测报"令牌已过期或验证不正确"）
-  → 若要让用户自带的中转站 Key 也能用，需要支持**自定义 baseUrl**（待办，见优先级第 8 项）
+  → **已解决（2026-09-28）**：新增自定义 AI 接入源，地址/协议/Key/模型都由用户填，
+    实测同一 Key 通过自定义端点：测连通 3.4 秒 ✅、analyze 出 1703 字 ✅。详见 API.md。
 - GLM-5 是推理模型：SSE 的 delta 里先出 `reasoning_content` 再出 `content`；
   本项目只取 `delta.content`，思维链不会外泄到界面，但会拖慢首字
 - **性能**：同一请求 开启 thinking 112 秒 / 关闭 6 秒 → 已在 `ai-stream.ts` 默认关闭，

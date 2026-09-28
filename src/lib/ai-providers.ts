@@ -21,19 +21,38 @@ export const ALL_AI_PROVIDERS: string[] = [
   ...NON_OPENAI_PROVIDERS,
 ];
 
+/** 自定义源（用户自建端点）允许的协议 */
+export const CUSTOM_PROTOCOLS = ["openai", "claude", "gemini", "minimax"] as const;
+export type CustomProtocol = (typeof CUSTOM_PROTOCOLS)[number];
+
 /** 前端传来的用户 AI 源配置 */
 export interface AiSourceConfig {
   provider?: string;
   apiKey?: string;
   model?: string;
+  /** 自定义源：接口地址（http/https） */
+  baseUrl?: string;
+  /** 自定义源：协议类型，决定用哪种请求格式 */
+  protocol?: string;
+}
+
+function isSafeBaseUrl(url: string): boolean {
+  const v = url.trim();
+  if (!v || v.length > 500) return false;
+  // 只允许 http/https，挡掉 javascript:、file: 等
+  return /^https?:\/\/[^\s]+$/i.test(v);
+}
+
+function normalizeBaseUrl(url: string): string {
+  return url.trim().replace(/\/+$/, "");
 }
 
 export type ResolvedAiSource =
   | { kind: "env"; model?: string }
-  | { kind: "openai"; baseUrl: string; apiKey: string; model?: string; provider: string }
-  | { kind: "minimax"; apiKey: string; model?: string; provider: string }
-  | { kind: "claude"; apiKey: string; model?: string; provider: string }
-  | { kind: "gemini"; apiKey: string; model?: string; provider: string }
+  | { kind: "openai"; baseUrl: string; apiKey: string; model?: string; provider: string; protocol?: string }
+  | { kind: "minimax"; baseUrl: string; apiKey: string; model?: string; provider: string; protocol?: string }
+  | { kind: "claude"; baseUrl: string; apiKey: string; model?: string; provider: string; protocol?: string }
+  | { kind: "gemini"; baseUrl: string; apiKey: string; model?: string; provider: string; protocol?: string }
   | { kind: "invalid"; reason: string };
 
 /**
@@ -50,9 +69,6 @@ export function resolveAiSource(cfg?: AiSourceConfig): ResolvedAiSource {
   const apiKey = (cfg.apiKey || "").trim();
   const model = cfg.model?.trim() || undefined;
 
-  if (!ALL_AI_PROVIDERS.includes(provider)) {
-    return { kind: "invalid", reason: `不支持的 AI 厂商: ${provider}` };
-  }
   if (!apiKey) {
     return { kind: "invalid", reason: `${provider} 缺少 API Key` };
   }
@@ -60,11 +76,45 @@ export function resolveAiSource(cfg?: AiSourceConfig): ResolvedAiSource {
     return { kind: "invalid", reason: "API Key 格式异常" };
   }
 
-  if (provider === "claude") return { kind: "claude", apiKey, model, provider };
-  if (provider === "gemini") return { kind: "gemini", apiKey, model, provider };
-  if (provider === "minimax") return { kind: "minimax", apiKey, model, provider };
+  // 自定义源：地址由用户提供（第三方中转站 / 自建网关 / 本地 ollama 等）
+  // 注意：这个分支必须在下面的厂商白名单校验之前，custom 不在白名单里
+  if (provider === "custom") {
+    const rawUrl = (cfg.baseUrl || "").trim();
+    if (!isSafeBaseUrl(rawUrl)) {
+      return { kind: "invalid", reason: "接口地址无效（需以 http:// 或 https:// 开头）" };
+    }
+    const baseUrl = normalizeBaseUrl(rawUrl);
+    const protocol = (cfg.protocol && CUSTOM_PROTOCOLS.includes(cfg.protocol as CustomProtocol)
+      ? cfg.protocol
+      : "openai") as CustomProtocol;
+
+    switch (protocol) {
+      case "claude":
+        return { kind: "claude", baseUrl, apiKey, model, provider, protocol };
+      case "gemini":
+        return { kind: "gemini", baseUrl, apiKey, model, provider, protocol };
+      case "minimax":
+        return { kind: "minimax", baseUrl, apiKey, model, provider, protocol };
+      default:
+        return { kind: "openai", baseUrl, apiKey, model, provider, protocol: "openai" };
+    }
+  }
+
+  if (!ALL_AI_PROVIDERS.includes(provider)) {
+    return { kind: "invalid", reason: `不支持的 AI 厂商: ${provider}` };
+  }
+
+  if (provider === "claude") {
+    return { kind: "claude", baseUrl: "https://api.anthropic.com/v1", apiKey, model, provider };
+  }
+  if (provider === "gemini") {
+    return { kind: "gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta", apiKey, model, provider };
+  }
+  if (provider === "minimax") {
+    return { kind: "minimax", baseUrl: "https://api.minimax.chat/v1/text", apiKey, model, provider };
+  }
 
   const baseUrl = OPENAI_COMPAT_BASE_URLS[provider];
   if (!baseUrl) return { kind: "invalid", reason: `厂商配置缺失: ${provider}` };
-  return { kind: "openai", baseUrl, apiKey, model, provider };
+  return { kind: "openai", baseUrl, apiKey, model, provider, protocol: "openai" };
 }

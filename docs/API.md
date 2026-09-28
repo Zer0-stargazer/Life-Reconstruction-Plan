@@ -23,7 +23,6 @@
 注意：注册无验证码/频率限制；登录成功会更新 `last_login_at`。
 
 ### 会话令牌 `token`
-
 由 `src/lib/session.ts` 签发，格式 `<base64url(payload)>.<base64url(hmac-sha256)>`，
 载荷 `{ userId, nickname, role, exp }`，有效期 **7 天**。
 
@@ -112,6 +111,9 @@ data: {"error": "..."}       // 失败时
 - 协议适配（`src/lib/ai-providers.ts` + `ai-stream.ts`）：doubao/glm/qwen/deepseek/mimo 走 OpenAI 兼容流；
   claude/gemini 走各自私有 SSE；minimax 沿 OpenAI delta 格式——**后三家未经真实 Key 实测**。
 - module 不在白名单时回落到 window 框架。首次分析会把内置分析框架 + 条目上下文拼成 user 消息；有 history 时直接把 question 作为 user 消息。
+- **自定义接入源**（2026-09-28）：`ai` 支持 `provider: "custom"`，此时必须带
+  `baseUrl`（http/https）+ `protocol`（openai|claude|gemini|minimax）+ `apiKey` + `model`，
+  服务端按 protocol 选协议、用你给的 baseUrl 发请求。详见下方「自定义 AI 接入源」。
 
 ## POST /api/ai/test-key
 
@@ -126,3 +128,56 @@ data: {"error": "..."}       // 失败时
 
 Key 只在内存中转发给厂商，不落库不落盘，但**会经过服务器进程**。
 ~~该接口与 `/api/ai/analyze` 相互独立~~ → **2026-09-26 起 analyze 已接入同一套 Key**（KNOWN-ISSUES #3 已修）。
+
+## 自定义 AI 接入源（2026-09-28 新增）
+
+内置 8 家厂商写死了官方域名，但现实里很多人用的是**第三方中转站 / 自建网关 / 本地模型**的 Key，
+官方域名 + 中转站 Key 必然鉴权失败（实测报"令牌已过期或验证不正确"）。
+因此补了一层用户自定义源：**地址、密钥、模型全由用户填**。
+
+### 数据存在浏览器（localStorage）
+
+```jsonc
+// key: ai-sources（数组）
+{
+  "id": "src_m3x9k2_a1b2c3",
+  "name": "我的中转站 · GLM",
+  "protocol": "openai",          // openai | claude | gemini | minimax
+  "baseUrl": "https://api.apikey.fan/v1",
+  "apiKey": "sk-...",
+  "model": "glm-5.3-flash",
+  "enabled": true,
+  "createdAt": 1790563055000,
+  "lastTest": { "ok": true, "at": 1790563100000, "message": "..." }
+}
+```
+
+- `api-active-source` 存当前使用的源 id（`'builtin'` / 厂商 id / `src_xxx`）
+- `/user` 页「AI 模型管理」底部提供：添加 / 编辑 / 启用停用 / 测试 / 删除 / 导入 / 导出
+
+### 测连通性
+
+```jsonc
+POST /api/ai/test-key
+{ "provider": "custom", "protocol": "openai",
+  "baseUrl": "https://api.apikey.fan/v1", "apiKey": "sk-...", "model": "glm-5.3-flash" }
+// 成功
+{ "success": true, "message": "连接成功 · glm-5.3-flash", "responseSnippet": "..." }
+```
+
+按 `protocol` 自动拼路径：openai → `/chat/completions`、claude → `/messages`、
+gemini → `/models/{model}:generateContent?key=...`、minimax → `/chatcompletion_v2`。
+
+### 实际分析
+
+```jsonc
+POST /api/ai/analyze
+{ "module": "window", "item": "25-28岁 人脉质变期",
+  "ai": { "provider": "custom", "protocol": "openai",
+          "baseUrl": "https://api.apikey.fan/v1", "apiKey": "sk-...", "model": "glm-5.3-flash" } }
+```
+
+服务端校验：`baseUrl` 必须以 `http://` 或 `https://` 开头（挡 `javascript:` 等）、长度 ≤500；
+`apiKey` 非空且 ≤1000；`protocol` 不在四种之内时按 openai 处理。不合规返回 400。
+
+**实测**：中转站 + glm-5.3-flash，测连通 3.4 秒，analyze 出 1703 字正文，全部正常。

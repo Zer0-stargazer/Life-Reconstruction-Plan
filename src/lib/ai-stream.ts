@@ -180,7 +180,7 @@ async function* sseDataFrames(
  */
 export async function* streamChatClaude(
   messages: { role: string; content: string }[],
-  opts: { apiKey: string; model?: string; temperature?: number }
+  opts: { apiKey: string; model?: string; temperature?: number; baseUrl?: string }
 ): AsyncGenerator<StreamChunk> {
   const model = opts.model || "claude-sonnet-4-6-20260219";
   const system = messages.filter(m => m.role === "system").map(m => m.content).join("\n\n");
@@ -190,7 +190,8 @@ export async function* streamChatClaude(
 
   let response: Response;
   try {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
+    // 自定义源时地址由用户指定（自建/中转网关），否则用官方地址
+    response = await fetch(`${opts.baseUrl || "https://api.anthropic.com/v1"}/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -252,7 +253,7 @@ export async function* streamChatClaude(
  */
 export async function* streamChatGemini(
   messages: { role: string; content: string }[],
-  opts: { apiKey: string; model?: string; temperature?: number }
+  opts: { apiKey: string; model?: string; temperature?: number; baseUrl?: string }
 ): AsyncGenerator<StreamChunk> {
   const model = encodeURIComponent(opts.model || "gemini-2.5-pro");
   const system = messages.filter(m => m.role === "system").map(m => m.content).join("\n\n");
@@ -266,7 +267,7 @@ export async function* streamChatGemini(
   let response: Response;
   try {
     response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`,
+      `${opts.baseUrl || "https://generativelanguage.googleapis.com/v1beta"}/models/${model}:streamGenerateContent?alt=sse`,
       {
         method: "POST",
         headers: {
@@ -344,8 +345,8 @@ export async function* streamChatAuto(
     case "minimax":
       // MiniMax chatcompletion_v2：Bearer 鉴权，SSE 沿用 OpenAI delta 格式
       yield* streamChat(messages, {
-        baseUrl: "https://api.minimax.chat/v1/text",
-        path: "/chatcompletion_v2",
+        baseUrl: source.baseUrl || "https://api.minimax.chat/v1/text",
+        path: source.protocol === "minimax" ? "/chatcompletion_v2" : "/chat/completions",
         apiKey: source.apiKey,
         model: source.model,
         temperature: options?.temperature,
@@ -353,6 +354,7 @@ export async function* streamChatAuto(
       return;
     case "claude":
       yield* streamChatClaude(messages, {
+        baseUrl: source.baseUrl,
         apiKey: source.apiKey,
         model: source.model,
         temperature: options?.temperature,
@@ -360,6 +362,7 @@ export async function* streamChatAuto(
       return;
     case "gemini":
       yield* streamChatGemini(messages, {
+        baseUrl: source.baseUrl,
         apiKey: source.apiKey,
         model: source.model,
         temperature: options?.temperature,

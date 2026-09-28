@@ -11,6 +11,8 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth, ALL_MODULES, NORMAL_USER_MODULES } from '@/contexts/auth-context';
+import { AiSourceManager } from '@/components/ai/ai-source-manager';
+import type { AiSource } from '@/lib/ai-sources';
 
 const modules = [
   { name: '名字', path: '/name', icon: '01' },
@@ -116,6 +118,8 @@ export default function UserPage() {
   const [selectedModels, setSelectedModels] = useState<Record<AiSourceId, string>>({} as Record<AiSourceId, string>);
   const [enabledProviders, setEnabledProviders] = useState<Record<ProviderId, boolean>>({} as Record<ProviderId, boolean>);
   const [activeAiSource, setActiveAiSource] = useState<AiSourceId>('builtin');
+  // 用户自定义接入源（独立存储 ai-sources，供顶部"当前使用"显示）
+  const [customSources, setCustomSources] = useState<AiSource[]>([]);
   const [visibleKeys, setVisibleKeys] = useState<Record<ProviderId, boolean>>({} as Record<ProviderId, boolean>);
   const [keyStatuses, setKeyStatuses] = useState<Record<string, KeyStatus>>({});
   const [expandedProvider, setExpandedProvider] = useState<ProviderId | null>(null);
@@ -175,6 +179,10 @@ export default function UserPage() {
     try {
       const storedActive = localStorage.getItem('api-active-source');
       if (storedActive) setActiveAiSource(storedActive as AiSourceId);
+    } catch { /* ignore */ }
+    try {
+      const storedCustom = localStorage.getItem('ai-sources');
+      if (storedCustom) setCustomSources(JSON.parse(storedCustom));
     } catch { /* ignore */ }
     try {
       const storedAge = localStorage.getItem('default-age');
@@ -296,8 +304,9 @@ export default function UserPage() {
     setEnabledProviders(prev => { const next = { ...prev, [providerId]: !prev[providerId] }; persist('api-enabled-providers', next); return next; });
   }, [persist]);
 
-  const setActiveSource = useCallback((sourceId: AiSourceId) => {
-    setActiveAiSource(sourceId);
+  // 参数放宽为 string：自定义源 id 是运行时生成的（src_xxx），不在 AiSourceId 字面量里
+  const setActiveSource = useCallback((sourceId: AiSourceId | string) => {
+    setActiveAiSource(sourceId as AiSourceId);
     persist('api-active-source', sourceId);
   }, [persist]);
 
@@ -422,6 +431,9 @@ export default function UserPage() {
       const model = provider.models.find(m => m.id === modelId);
       return { name: model?.name || modelId, source: provider.name };
     }
+    // 自定义源（src_xxx）
+    const custom = customSources.find(s => s.id === activeAiSource);
+    if (custom) return { name: custom.model, source: custom.name };
     return { name: '未知', source: '未知' };
   };
 
@@ -886,6 +898,18 @@ export default function UserPage() {
                 </div>
               );
             })}
+
+            {/* 自定义接入：任意接口地址（中转站 / 自建网关 / 本地模型） */}
+            <div className="px-6 py-5">
+              <AiSourceManager onActiveChanged={() => {
+                // 自定义源被设为当前 / 增删后，刷新顶部"当前使用"显示
+                const cur = localStorage.getItem('api-active-source');
+                if (cur) setActiveSource(cur);
+                try {
+                  setCustomSources(JSON.parse(localStorage.getItem('ai-sources') || '[]'));
+                } catch { /* ignore */ }
+              }} />
+            </div>
           </div>
         </div>
 
