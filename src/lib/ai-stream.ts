@@ -41,6 +41,12 @@ export async function* streamChat(
       temperature,
       stream: true,
       max_tokens: 4096,
+      // 推理型模型（如 GLM-5 系列）默认会先吐一大段思维链再给正文，
+      // 实测同一请求：开启 112 秒、关闭 6 秒。这里默认关闭，
+      // 需要深度推理时用 AI_THINKING=1 打开。不支持该字段的厂商会忽略它。
+      ...(process.env.AI_THINKING === "1"
+        ? { thinking: { type: "enabled" } }
+        : { thinking: { type: "disabled" } }),
     }),
   });
 

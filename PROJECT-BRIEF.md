@@ -139,7 +139,10 @@ pnpm dev
 | dev 全页面（10 个路由） | ✅ 全 200，日志 0 编译错误 |
 | 会话层单元验证 | ✅ 6/6（往返/篡改 payload/篡改签名/空值/过期/请求头解析） |
 | 时间轴分类逻辑 | ✅ 8 个年龄段分组合计均=473 |
-| AI 多协议流式 | ⚠️ OpenAI 兼容系（豆包/GLM/Qwen/DeepSeek）走通；claude/gemini/minimax 适配**未经真实 Key 实测** |
+| **AI 分析端到端** | ✅ **2026-09-28 实测跑通**（GLM-5.3-flash，71 秒出 1756 字，结构完整、有真洞察） |
+| AI 多协议流式 | ⚠️ OpenAI 兼容系已实测一条；claude/gemini/minimax 适配**未经真实 Key 实测** |
+| 用户自带 Key（`/user` 页） | ⚠️ 若 Key 属第三方中转站（非官方域名），因项目内置的是官方 baseUrl 会失败 → 待加"自定义接口地址"支持 |
+| 登录 / 邀请码 / admin | ❌ 缺 Supabase 三件套，仍 500 |
 | 生产构建 (`next build`) | ❓ 未跑（dev 可用，build 待验证） |
 | 未登录时的产品行为 | ⚠️ 有自相矛盾（见 §9 #4），待拍板 |
 
@@ -149,7 +152,7 @@ pnpm dev
 
 | # | 问题 | 状态 |
 |---|---|---|
-| 1 | 缺 `.env`（Supabase/AI/DEV_PASSWORD/SESSION_SECRET 四组） | ⏳ 等用户提供 |
+| 1 | 缺 `.env` | 🟡 **AI 已通**（2026-09-28）；**仍缺 Supabase 三件套** |
 | 2/2b/2c | node_modules 各层损坏（顶层链接/语法/虚拟 store） | ✅ 全修，含重建文档 |
 | 3 | 自定义 AI Key 是死功能 | ✅ 已修（部分协议未实测） |
 | **4** | **未登录策略自相矛盾**：`module-gate` 未登录全放行 vs `auth-context` 未登录全锁——实际"未登录看 7 模块、登录反而只剩 3 个" | ⏳ **需产品决策**（方案 A 全锁 / B 未登录=普通用户） |
@@ -168,14 +171,18 @@ pnpm dev
 ```bash
 cp .env.example .env.local   # 然后填：
 
-SUPABASE_URL=                # 数据库三件套（注册/登录/邀请码/后台依赖）
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-AI_API_URL=                  # AI 三件套（默认火山方舟豆包）
+# ✅ 已配（AI 链路已跑通）
+AI_API_URL=                  # OpenAI 兼容接口地址
 AI_API_KEY=
-AI_MODEL=
+AI_MODEL=                    # 例如 glm-5.3-flash
+AI_THINKING=0                # 推理模型默认关闭思维链（112秒 → 6秒）
 DEV_PASSWORD=                # /admin 后台密码
 SESSION_SECRET=              # 会话签名密钥（openssl rand -hex 32）
+
+# ❌ 仍缺：登录/邀请码/后台依赖
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 ---
@@ -217,7 +224,13 @@ SESSION_SECRET=              # 会话签名密钥（openssl rand -hex 32）
   - ⏳ 1.4 首页仪表盘化
 
 ### 待启动 ⏳
-- **阶段 2：跑通真实数据链路**——用户补 Key → Supabase 连通 → AI 全协议实测 → `next build` 验证
+- **阶段 2：跑通真实数据链路**（部分已完成）
+  - ✅ AI 三件套已配并端到端跑通（GLM-5.3-flash）
+  - ⏳ 补 Supabase 三件套 → 注册登录 / 邀请码 / admin 可用
+  - ⏳ AI 全协议实测（claude / gemini / minimax 三个适配代码从未被真实 Key 验证过）
+  - ⏳ `next build` 生产构建验证
+  - ⏳ 支持**自定义接口地址（baseUrl）**：现实里很多人用的是第三方中转站 Key（如本项目实测的
+    `api.apikey.fan`），项目内置的是各厂商官方域名，这类 Key 在 `/user` 页手填必然失败
 - **阶段 3：部署上线**——静态化/边缘部署方案（参考同作者阅读项目走的 Cloudflare Pages + 免费后端路线）
 - **阶段 4：功能深化**——读书记录/打卡类社交功能的可能性评估
 

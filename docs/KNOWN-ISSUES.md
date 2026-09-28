@@ -5,10 +5,25 @@
 
 ## P0 · 阻塞运行（2026-09-25 已处理 / 需用户配合）
 
-### #1 缺 `.env` / `.env.local`
-只有 `.env.example`。缺 Supabase、AI、DEV_PASSWORD 三组变量时：
-登录/邀请码/后台直接 500，AI 分析面板报错。页面本身（静态模块）可以看。
-→ **需要用户提供 Supabase 项目与 AI Key 才能恢复**（旧 Supabase 项目是否还活着未知）。
+### #1 缺 `.env` / `.env.local` 🟡 部分解决（2026-09-28 更新）
+已提供并验证 **AI 三件套**（api.apikey.fan 中转站 / 智谱 GLM-5.3-flash）：
+`AI_API_URL` `AI_API_KEY` `AI_MODEL=glm-5.3-flash`，`DEV_PASSWORD` 与 `SESSION_SECRET` 也已配本地值。
+→ **AI 分析链路已端到端跑通**（详见下方"AI 实测记录"）。
+
+**仍缺 Supabase 三件套**：`SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`。
+缺它们时：注册登录、邀请码兑换、admin 后台仍然 500；静态页面与 AI 分析（走 env Key）不受影响。
+
+#### AI 实测记录（2026-09-28）
+- 中转站 `https://api.apikey.fan/v1` 可用，模型列表：glm-5.3-flash / glm-5.3-flashx / glm-5.3 / glm-5.2 / glm-5.1
+- 该 Key 标注"智谱"，但**属于中转站而非官方**，在 `/user` 页手填并选"智谱"会失败
+  （项目内置 glm 的 baseUrl 是官方 `open.bigmodel.cn`，实测报"令牌已过期或验证不正确"）
+  → 若要让用户自带的中转站 Key 也能用，需要支持**自定义 baseUrl**（待办，见优先级第 8 项）
+- GLM-5 是推理模型：SSE 的 delta 里先出 `reasoning_content` 再出 `content`；
+  本项目只取 `delta.content`，思维链不会外泄到界面，但会拖慢首字
+- **性能**：同一请求 开启 thinking 112 秒 / 关闭 6 秒 → 已在 `ai-stream.ts` 默认关闭，
+  可用 `AI_THINKING=1` 打开
+- **端到端（/api/ai/analyze）**：71 秒出全文，1756 字，结构完整
+  （窗口本质 / 时间判断 / 行动清单 / 错过后果 / 补救路径），含具体数字与反常识洞察
 
 ### #2 node_modules 顶层软链断裂 ✅ 已修
 `.pnpm` 里 901 个包完好，但 `node_modules/next`、`node_modules/typescript` 等顶层链接失效
