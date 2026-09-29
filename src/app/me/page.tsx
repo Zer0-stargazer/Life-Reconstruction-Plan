@@ -7,7 +7,7 @@
  * "正在开启 / 已经错过 / 尚未到来"，把一个平铺数据库
  * 变成一张"与我有关的地图"。
  *
- * 纯前端计算，年龄存 localStorage('me-age')。
+ * 纯前端计算，年龄存全局主键 localStorage('default-age')（与 /user、/windows、首页共用）。
  */
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -365,6 +365,7 @@ export default function MePage() {
   const [age, setAge] = useState<number | null>(null);
   const [tab, setTab] = useState<TabKey>('open');
   const [missedShowAll, setMissedShowAll] = useState(false);
+  const [openShowAll, setOpenShowAll] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   // 读全局年龄（兼容旧 me-age 键：首次读取时迁移）
@@ -393,6 +394,7 @@ export default function MePage() {
     [all]
   );
   const urgentList = useMemo(() => openList.filter((w) => w.state === 'urgent'), [openList]);
+  const openCalm = useMemo(() => openList.filter((w) => w.state !== 'urgent'), [openList]);
   const missedPermanent = useMemo(
     () => all.filter((w) => w.state === 'missed' && w.missType === 'permanent')
       .sort((a, b) => a.range.end - b.range.end),
@@ -524,7 +526,7 @@ export default function MePage() {
           {tabs.map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => { setTab(t.key); setOpenShowAll(false); setMissedShowAll(false); }}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all',
                 tab === t.key
@@ -541,15 +543,52 @@ export default function MePage() {
           ))}
         </div>
 
-        {/* 正在开启 */}
+        {/* 正在开启：紧急的置顶全显，其余默认只看最近 8 个 */}
         {tab === 'open' && (
-          <div className="space-y-2.5 animate-fade-in">
+          <div className="space-y-4 animate-fade-in">
             {openList.length === 0 && (
               <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
                 这个年龄段没有正在开启的窗口——往上看看「尚未到来」的。
               </div>
             )}
-            {openList.map((w) => <WindowCard key={w.id} w={w} />)}
+            {urgentList.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Flame className="h-4 w-4 text-red-500" />
+                  <h3 className="text-sm font-semibold text-foreground">
+                    即将关闭的 <span className="tabular-nums">{urgentList.length}</span> 个
+                    <span className="text-xs text-muted-foreground font-normal ml-2">5 年内关上，优先处理</span>
+                  </h3>
+                </div>
+                <div className="space-y-2.5">
+                  {urgentList.map((w) => <WindowCard key={w.id} w={w} />)}
+                </div>
+              </div>
+            )}
+            {openCalm.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Hourglass className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <h3 className="text-sm font-semibold text-foreground">
+                    还在开启的 <span className="tabular-nums">{openCalm.length}</span> 个
+                    <span className="text-xs text-muted-foreground font-normal ml-2">按剩余时间排序</span>
+                  </h3>
+                </div>
+                <div className="space-y-2.5">
+                  {(openShowAll ? openCalm : openCalm.slice(0, 8)).map((w) => (
+                    <WindowCard key={w.id} w={w} />
+                  ))}
+                </div>
+                {openCalm.length > 8 && (
+                  <button
+                    onClick={() => setOpenShowAll(!openShowAll)}
+                    className="mt-3 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                  >
+                    {openShowAll ? '收起' : `展开其余 ${openCalm.length - 8} 个`}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 

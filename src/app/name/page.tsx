@@ -40,6 +40,12 @@ const charPool: Record<string, string[]> = {
 
 const secondCharPool = ['瑞', '泽', '晨', '曦', '岚', '瑜', '琳', '瑶', '琪', '轩', '逸', '辰', '昊', '宇', '翔', '然', '晖', '煜', '嘉', '慧', '思', '雅', '文', '博', '明', '远', '清', '晗', '妍', '欣', '悦', '宁', '和', '谦', '诚'];
 
+// 性别倾向字池：第二字优先从这里取，让性别选择真正影响生成结果
+const genderCharPool: Record<string, string[]> = {
+  male: ['轩', '宇', '辰', '昊', '翔', '煜', '博', '远', '铮', '锋', '毅', '霖', '旭', '泽', '瑞', '诚', '谦', '策', '钧', '鹏'],
+  female: ['瑶', '琳', '妍', '欣', '悦', '岚', '慧', '雅', '诗', '韵', '月', '晗', '莹', '婷', '婉', '晴', '语', '溪', '蕊', '薇'],
+};
+
 interface GeneratedName {
   name: string;
   surname: string;
@@ -56,7 +62,11 @@ function generateName(gender: string, style: string, fixedSurname?: string): Gen
 
   const pool = charPool[style] || charPool.classic;
   const char1 = pool[Math.floor(Math.random() * pool.length)];
-  const char2 = secondCharPool[Math.floor(Math.random() * secondCharPool.length)];
+  // 第二字：70% 概率取性别倾向池，30% 取通用池，兼顾性别感与多样性
+  const gPool = genderCharPool[gender] || secondCharPool;
+  const char2 = Math.random() < 0.7
+    ? gPool[Math.floor(Math.random() * gPool.length)]
+    : secondCharPool[Math.floor(Math.random() * secondCharPool.length)];
   const given = isDouble ? char1 + char2 : char1;
   const name = surname + given;
 
@@ -111,14 +121,18 @@ export default function NamePage() {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [displayedChars, setDisplayedChars] = useState<Record<number, string>>({});
   const resultsRef = useRef<HTMLDivElement>(null);
+  const typeIntervalsRef = useRef<ReturnType<typeof setInterval>[]>([]);
 
   const handleGenerate = useCallback(() => {
+    // 清掉上一轮可能还在跑的打字机 interval，避免旧结果污染新输出
+    typeIntervalsRef.current.forEach(clearInterval);
+    typeIntervalsRef.current = [];
     setIsGenerating(true);
     setDisplayedResults([]);
     setDisplayedChars({});
 
-    // 取用户输入的姓氏（trim后取第一个字），为空则随机
-    const fixedSurname = surnameInput.trim() ? surnameInput.trim().charAt(0) : undefined;
+    // 取用户输入的姓氏（支持复姓，输入框限 2 字），为空则随机
+    const fixedSurname = surnameInput.trim() || undefined;
 
     setTimeout(() => {
       const newResults: GeneratedName[] = [];
@@ -145,10 +159,11 @@ export default function NamePage() {
               clearInterval(typeInterval);
             }
           }, 80);
+          typeIntervalsRef.current.push(typeInterval);
         }, i * 300);
       });
     }, 500);
-  }, [gender, style]);
+  }, [gender, style, surnameInput]);
 
   useEffect(() => {
     if (displayedResults.length > 0 && resultsRef.current) {
@@ -381,7 +396,7 @@ export default function NamePage() {
                 <div className="flex gap-4 mb-3 text-xs text-muted-foreground">
                   <span>姓：{result.surname}</span>
                   <span>名：{result.given}</span>
-                  <span>笔画：{result.given.length}字</span>
+                  <span>名长：{result.given.length}字</span>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{result.analysis}</p>
               </div>

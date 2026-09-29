@@ -80,20 +80,19 @@ const DIFFICULTY_LABELS: Record<number, { label: string; color: string }> = {
 
 /* ============ Helper functions ============ */
 
+const CONTROLLABILITY_SCORE: Record<LuckNode['controllability'], number> = {
+  none: 0, low: 25, medium: 50, high: 75,
+};
+
+// 期望影响指数（统一口径）：强度×概率归一到 0-100；消耗类节点为负、杠杆类为正
 function getDrainValue(node: LuckNode): number {
-  if (node.category === 'red') return -node.impact * 17;
-  if (node.category === 'purple') return -node.impact * 18;
-  if (node.category === 'blue') return node.impact * 15;
-  if (node.category === 'cyan') return node.impact * 10;
-  return 0;
+  const expected = Math.round(node.impact * node.probability * 20);
+  return node.category === 'red' || node.category === 'purple' ? -expected : expected;
 }
 
+// 可控度：数据字段的 controllability 映射为 0-75 指数
 function getGainValue(node: LuckNode): number {
-  if (node.category === 'red') return Math.round(node.probability * 100) > 20 ? Math.round(node.probability * 100) : 0;
-  if (node.category === 'purple') return Math.round((1 - node.probability) * 100) > 50 ? Math.round((1 - node.probability) * 100) : 0;
-  if (node.category === 'blue') return node.impact * 16;
-  if (node.category === 'cyan') return node.impact * 14;
-  return 0;
+  return CONTROLLABILITY_SCORE[node.controllability] ?? 0;
 }
 
 /* ============ Inline AI Chat Panel ============ */
@@ -398,7 +397,7 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
             'text-lg font-bold font-mono tabular-nums',
             gainValue > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground/40'
           )}>
-            {gainValue > 0 ? `+${gainValue}` : '0'}%
+            {gainValue}%
           </span>
         </div>
       </div>
@@ -556,7 +555,7 @@ function LuckDetailPanel({
                       'text-3xl font-bold font-mono tabular-nums',
                       gainValue > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground/30'
                     )}>
-                      {gainValue > 0 ? `+${gainValue}` : '0'}%
+                      {gainValue}%
                     </span>
                   </div>
                 </div>

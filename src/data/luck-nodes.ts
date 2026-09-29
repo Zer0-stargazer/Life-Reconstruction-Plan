@@ -24,10 +24,10 @@ export interface LuckNode {
 }
 
 export const LUCK_CATEGORY_CONFIG: Record<LuckCategory, { label: string; subLabel: string; color: string; bgColor: string; borderColor: string; icon: string; drainLabel: string; gainLabel: string }> = {
-  red: { label: '人际吸血', subLabel: '消耗你生命力的关系暗流', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-950/30', borderColor: 'border-red-200 dark:border-red-800', icon: 'droplet', drainLabel: '吸血率', gainLabel: '补血率' },
-  purple: { label: '人生天坑', subLabel: '足以击穿人生的深渊', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-50 dark:bg-purple-950/30', borderColor: 'border-purple-200 dark:border-purple-800', icon: 'skull', drainLabel: '吞噬率', gainLabel: '存活率' },
-  blue: { label: '人际杠杆', subLabel: '放大你收益的关系支点', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950/30', borderColor: 'border-blue-200 dark:border-blue-800', icon: 'trending-up', drainLabel: '杠杆率', gainLabel: '补血率' },
-  cyan: { label: '命运暗门', subLabel: '少数人拥有的隐藏通道', color: 'text-teal-600 dark:text-teal-400', bgColor: 'bg-teal-50 dark:bg-teal-950/30', borderColor: 'border-teal-200 dark:border-teal-800', icon: 'sparkles', drainLabel: '触发率', gainLabel: '兑现率' },
+  red: { label: '人际吸血', subLabel: '消耗你生命力的关系暗流', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-50 dark:bg-red-950/30', borderColor: 'border-red-200 dark:border-red-800', icon: 'droplet', drainLabel: '影响指数', gainLabel: '可控度' },
+  purple: { label: '人生天坑', subLabel: '足以击穿人生的深渊', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-50 dark:bg-purple-950/30', borderColor: 'border-purple-200 dark:border-purple-800', icon: 'skull', drainLabel: '影响指数', gainLabel: '可控度' },
+  blue: { label: '人际杠杆', subLabel: '放大你收益的关系支点', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50 dark:bg-blue-950/30', borderColor: 'border-blue-200 dark:border-blue-800', icon: 'trending-up', drainLabel: '影响指数', gainLabel: '可控度' },
+  cyan: { label: '命运暗门', subLabel: '少数人拥有的隐藏通道', color: 'text-teal-600 dark:text-teal-400', bgColor: 'bg-teal-50 dark:bg-teal-950/30', borderColor: 'border-teal-200 dark:border-teal-800', icon: 'sparkles', drainLabel: '影响指数', gainLabel: '可控度' },
 };
 
 export const luckNodes: LuckNode[] = [

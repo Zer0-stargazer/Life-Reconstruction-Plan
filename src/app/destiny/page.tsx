@@ -15,7 +15,6 @@ import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, Target
 
 interface DestinyInput {
   birthYear: string;
-  gender: 'male' | 'female';
   familyBackground: 'wealthy' | 'middle' | 'poor';
   educationLevel: 'top' | 'good' | 'average' | 'low';
   location: 'tier1' | 'tier2' | 'tier3' | 'rural';
@@ -146,7 +145,7 @@ function generateReport(input: DestinyInput, weightMap?: Record<string, number>)
     effort = Math.min(effort + 5, 70);
   }
   // 性格关键词微调
-  if (/自律|坚持|自律|拼命|狠人|刻苦/.test(customText)) effort = Math.min(effort + 10, 80);
+  if (/自律|坚持|拼命|狠人|刻苦/.test(customText)) effort = Math.min(effort + 10, 80);
   if (/摆烂|拖延|懒|躺平|三天打鱼/.test(customText)) effort = Math.max(effort - 10, 30);
 
   // 偏好权重影响：用户重视的维度放大，不重视的缩小
@@ -224,10 +223,15 @@ function generateReport(input: DestinyInput, weightMap?: Record<string, number>)
   const phase = age < 25 ? '探索期' : age < 35 ? '积累期' : age < 45 ? '收获期' : '传承期';
   const nextWindow = age < 25 ? '专业选择与第一份实习' : age < 30 ? '职业分水岭与婚恋决策' : age < 35 ? '管理转型与副业窗口' : '财富积累与经验变现';
 
+  // 三大成分对总分（totalScore）的真实贡献占比，随用户偏好权重动态变化
+  const contribFate = fate * (wFate / wSum);
+  const contribFortune = fortune * (wFortune / wSum);
+  const contribEffort = effort * (wEffort / wSum);
+  const contribSum = contribFate + contribFortune + contribEffort || 1;
   const destinySplit = [
-    { label: '命', ratio: 30, color: '#ef4444' },
-    { label: '运', ratio: 30, color: '#3b82f6' },
-    { label: '努力', ratio: 40, color: '#22c55e' },
+    { label: '命', ratio: Math.round((contribFate / contribSum) * 100), color: '#ef4444' },
+    { label: '运', ratio: Math.round((contribFortune / contribSum) * 100), color: '#3b82f6' },
+    { label: '努力', ratio: Math.round((contribEffort / contribSum) * 100), color: '#22c55e' },
   ];
 
   return {
@@ -277,7 +281,6 @@ export default function DestinyPage() {
   const { defaultAge, weightMap } = useAdvancedSettings();
   const [input, setInput] = useState<DestinyInput>({
     birthYear: String(new Date().getFullYear() - defaultAge),
-    gender: 'male',
     familyBackground: 'middle',
     educationLevel: 'good',
     location: 'tier2',
@@ -301,7 +304,12 @@ export default function DestinyPage() {
   const aiEndRef = useRef<HTMLDivElement>(null);
 
   const handleGenerate = () => {
-    const result = generateReport(input, weightMap);
+    // 出生年份钳制到合理区间（1950 ~ 去年），避免生成负年龄报告
+    const currentYear = new Date().getFullYear();
+    const year = parseInt(input.birthYear) || 1995;
+    const safeYear = Math.min(Math.max(year, 1950), currentYear - 5);
+    const safeInput = { ...input, birthYear: String(safeYear) };
+    const result = generateReport(safeInput, weightMap);
     setReport(result);
     setShowReport(false);
     requestAnimationFrame(() => {
@@ -318,11 +326,10 @@ export default function DestinyPage() {
   // AI 流式分析
   // ============================================================
   const startAIAnalysis = useCallback(async (question?: string) => {
+    if (!report) return;
     setAiStreaming(true);
     setAiContent('');
     abortRef.current = new AbortController();
-
-    if (!report) return;
 
     // 构建包含自定义内容的上下文
     const customContext = customFillCount > 0
@@ -480,30 +487,6 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
               onChange={(e) => setInput(prev => ({ ...prev, birthYear: e.target.value }))}
               className="w-32 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
-          </div>
-
-          {/* Gender */}
-          <div className="animate-fade-in-up stagger-2">
-            <label className="text-sm font-semibold text-foreground mb-2 block">性别</label>
-            <div className="flex gap-3">
-              {[
-                { value: 'male' as const, label: '男' },
-                { value: 'female' as const, label: '女' },
-              ].map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setInput(prev => ({ ...prev, gender: opt.value }))}
-                  className={cn(
-                    'rounded-md border px-5 py-2 text-sm font-medium transition-all btn-press',
-                    input.gender === opt.value
-                      ? 'border-primary bg-primary/10 text-primary shadow-sm'
-                      : 'border-border text-muted-foreground hover:bg-accent'
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Family, Education, Location - grid */}

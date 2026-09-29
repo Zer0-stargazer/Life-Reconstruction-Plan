@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface LifeStage { id: string; label: string; range: [number, number]; }
 export interface WeightItem { id: string; label: string; value: number; icon: string; }
@@ -45,6 +45,12 @@ export function useAdvancedSettings() {
     setLoaded(true);
   }, []);
 
+  /** 保存全局年龄：写入 state + localStorage，所有页面（/me、/windows、首页图表）共用 */
+  const saveDefaultAge = useCallback((age: number) => {
+    setDefaultAge(age);
+    try { localStorage.setItem('default-age', JSON.stringify(age)); } catch { /* ignore */ }
+  }, []);
+
   /** 根据年龄获取人生阶段标签 */
   const getStageLabel = (age: number): string => {
     for (const s of stages) {
@@ -58,5 +64,5 @@ export function useAdvancedSettings() {
     ? Object.fromEntries(weights.map(w => [w.id, w.value / 100]))
     : Object.fromEntries(DEFAULT_WEIGHTS.map(w => [w.id, w.value / 100]));
 
-  return { defaultAge, stages, weights, weightMap, getStageLabel, loaded };
+  return { defaultAge, saveDefaultAge, stages, weights, weightMap, getStageLabel, loaded };
 }

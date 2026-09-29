@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { careers, CAREER_CATEGORIES, type Career } from '@/data/careers';
+import { careers, CAREER_CATEGORIES, type Career, getTutorials, getBooks, getLearningChannels, getAiAdvice } from '@/data/careers';
 import { cn } from '@/lib/utils';
 import {
   Briefcase, TrendingUp, TrendingDown, Minus, Bot, Filter, X, BarChart3,
   ArrowUpRight, ArrowDownRight, MinusCircle, Sparkles,
-  GraduationCap, ExternalLink, BookOpen, Video,
-  ChevronDown, ChevronUp, MessageSquare, Star, AlertTriangle,
+  GraduationCap, BookOpen, Video,
+  ChevronDown, ChevronUp, MessageSquare, Star,
 } from 'lucide-react';
 import { AIAnalysisPanel } from '@/components/ai/ai-analysis-panel';
 
@@ -341,7 +341,7 @@ export default function CareerPage() {
                         className="flex items-center gap-1 text-[10px] text-primary/60 hover:text-primary transition-colors"
                       >
                         <GraduationCap className="h-3 w-3" />
-                        <span>学习资源 ({career.tutorials.length > 0 ? career.tutorials.length : '无教程'})</span>
+                        <span>学习资源 · {getTutorials(career).length} 项</span>
                         {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </button>
                       <span className="text-[9px] text-muted-foreground/40">{selfStudyLabel(career.selfStudyScore)}</span>
@@ -351,15 +351,8 @@ export default function CareerPage() {
                   {/* 展开的资源面板 */}
                   {isExpanded && (
                     <div className="rounded-b-lg border border-t-0 border-border bg-card/50 px-4 pb-4 pt-2 animate-fade-in-up">
-                      {/* 自学难度提示 */}
-                      {career.selfStudyNote && (
-                        <div className="flex items-start gap-1.5 mb-2.5 p-2 rounded-md bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/30 dark:border-amber-800/20">
-                          <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
-                          <p className="text-[10px] text-amber-700 dark:text-amber-300 leading-relaxed">{career.selfStudyNote}</p>
-                        </div>
-                      )}
                       <div className="space-y-2.5">
-                        {career.tutorials.map((t, i) => {
+                        {getTutorials(career).map((t, i) => {
                           const TypeIcon = tutorialTypeIcon[t.type];
                           return (
                             <div key={i} className="group flex items-start gap-2.5">
@@ -377,20 +370,7 @@ export default function CareerPage() {
                                   <span className="text-[9px] text-muted-foreground/50">{t.platform}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  {t.url ? (
-                                    <a
-                                      href={t.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="text-xs font-medium text-foreground hover:text-primary transition-colors group-hover:underline"
-                                    >
-                                      {t.title}
-                                    </a>
-                                  ) : (
-                                    <span className="text-xs font-medium text-foreground">{t.title}</span>
-                                  )}
-                                  {t.url && <ExternalLink className="h-2.5 w-2.5 text-muted-foreground/30 group-hover:text-primary/50 shrink-0" />}
+                                  <span className="text-xs font-medium text-foreground">{t.title}</span>
                                 </div>
                                 {t.note && (
                                   <p className="text-[10px] text-muted-foreground/60 mt-0.5 leading-relaxed">{t.note}</p>
@@ -401,23 +381,16 @@ export default function CareerPage() {
                         })}
                       </div>
                       {/* 书籍 */}
-                      {career.books.length > 0 && (
+                      {getBooks(career).length > 0 && (
                         <div className="mt-3 pt-2.5 border-t border-border/30">
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <BookOpen className="h-3 w-3 text-muted-foreground/40" />
                             <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">推荐书籍</span>
                           </div>
                           <div className="space-y-1">
-                            {career.books.map((b, i) => (
+                            {getBooks(career).map((b, i) => (
                               <p key={i} className="text-[10px] text-muted-foreground">
-                                {b.url ? (
-                                  <a href={b.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="font-medium text-foreground/70 hover:text-primary transition-colors inline-flex items-center gap-0.5">
-                                    {b.title}
-                                    <ExternalLink className="h-2 w-2 text-muted-foreground/30" />
-                                  </a>
-                                ) : (
-                                  <span className="font-medium text-foreground/70">{b.title}</span>
-                                )}
+                                <span className="font-medium text-foreground/70">{b.title}</span>
                                 <span className="text-muted-foreground/40"> — {b.author}</span>
                               </p>
                             ))}
@@ -550,19 +523,11 @@ export default function CareerPage() {
                   <div className="flex items-center gap-2">
                     <GraduationCap className="h-3.5 w-3.5 text-primary/60" />
                     <h4 className="text-xs font-semibold text-foreground">推荐学习资源</h4>
-                    <span className="text-[9px] text-muted-foreground/40">{selected.tutorials.length > 0 ? `${selected.tutorials.length}项` : '自学难度高'}</span>
+                    <span className="text-[9px] text-muted-foreground/40">{getTutorials(selected).length} 项</span>
                   </div>
 
-                  {/* 自学难度提示 */}
-                  {selected.selfStudyNote && (
-                    <div className="flex items-start gap-1.5 p-2 rounded-md bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/30 dark:border-amber-800/20">
-                      <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-[10px] text-amber-700 dark:text-amber-300 leading-relaxed">{selected.selfStudyNote}</p>
-                    </div>
-                  )}
-
                   <div className="space-y-2">
-                    {selected.tutorials.map((t, i) => {
+                    {getTutorials(selected).map((t, i) => {
                       const TypeIcon = tutorialTypeIcon[t.type];
                       return (
                         <div key={i} className="group rounded-md border border-border/50 bg-background/50 p-2.5 hover:border-primary/20 transition-colors">
@@ -580,19 +545,7 @@ export default function CareerPage() {
                                 <span className="text-[8px] text-muted-foreground/30">·</span>
                                 <span className="text-[8px] text-muted-foreground/40">{t.platform}</span>
                               </div>
-                              {t.url ? (
-                                <a
-                                  href={t.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs font-medium text-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
-                                >
-                                  {t.title}
-                                  <ExternalLink className="h-2.5 w-2.5 text-muted-foreground/30" />
-                                </a>
-                              ) : (
-                                <span className="text-xs font-medium text-foreground">{t.title}</span>
-                              )}
+                              <span className="text-xs font-medium text-foreground">{t.title}</span>
                               {t.note && (
                                 <p className="text-[10px] text-muted-foreground/60 mt-0.5 leading-relaxed">{t.note}</p>
                               )}
@@ -604,23 +557,16 @@ export default function CareerPage() {
                   </div>
 
                   {/* Books */}
-                  {selected.books.length > 0 && (
+                  {getBooks(selected).length > 0 && (
                     <div className="mt-3">
                       <div className="flex items-center gap-2 mb-2">
                         <BookOpen className="h-3.5 w-3.5 text-primary/60" />
                         <h4 className="text-xs font-semibold text-foreground">推荐书籍</h4>
                       </div>
                       <div className="space-y-1.5">
-                        {selected.books.map((b, i) => (
+                        {getBooks(selected).map((b, i) => (
                           <div key={i} className="rounded-md border border-border/50 bg-background/50 px-2.5 py-2 hover:border-primary/20 transition-colors">
-                            {b.url ? (
-                              <a href={b.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-foreground hover:text-primary transition-colors inline-flex items-center gap-1">
-                                {b.title}
-                                <ExternalLink className="h-2.5 w-2.5 text-muted-foreground/30" />
-                              </a>
-                            ) : (
-                              <p className="text-xs font-medium text-foreground">{b.title}</p>
-                            )}
+                            <p className="text-xs font-medium text-foreground">{b.title}</p>
                             <p className="text-[10px] text-muted-foreground/50">{b.author}</p>
                           </div>
                         ))}
@@ -629,14 +575,14 @@ export default function CareerPage() {
                   )}
 
                   {/* Learning Channels */}
-                  {selected.learningChannels.length > 0 && (
+                  {getLearningChannels(selected).length > 0 && (
                     <div className="mt-3">
                       <div className="flex items-center gap-2 mb-2">
                         <MessageSquare className="h-3 w-3 text-primary/60" />
                         <h4 className="text-[10px] font-semibold text-foreground">学习渠道</h4>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {selected.learningChannels.map((ch, i) => (
+                        {getLearningChannels(selected).map((ch, i) => (
                           <span key={i} className="rounded-sm bg-muted/50 px-2 py-0.5 text-[9px] text-muted-foreground">
                             {ch}
                           </span>
@@ -696,7 +642,7 @@ export default function CareerPage() {
           module="career"
           moduleLabel="职业分析"
           itemTitle={aiPanel.career.name}
-          itemDescription={`行业：${aiPanel.career.category} | 薪资：${aiPanel.career.salary} | 趋势：${trendLabel[aiPanel.career.trend]} | AI替代风险：${aiRiskLabel[aiPanel.career.aiRisk]}\n自学推荐指数：${aiPanel.career.selfStudyScore}/10 | 自学难度：${aiPanel.career.selfStudyDifficulty}\n核心技能：${aiPanel.career.keySkill}\n\n${aiPanel.career.description}\n\n${aiPanel.career.aiAdvice}`}
+          itemDescription={`行业：${aiPanel.career.category} | 薪资：${aiPanel.career.salary} | 趋势：${trendLabel[aiPanel.career.trend]} | AI替代风险：${aiRiskLabel[aiPanel.career.aiRisk]}\n自学推荐指数：${aiPanel.career.selfStudyScore}/10 | 自学难度：${aiPanel.career.selfStudyDifficulty}\n核心技能：${aiPanel.career.keySkill}\n\n${aiPanel.career.description}\n\n${getAiAdvice(aiPanel.career)}`}
         />
       )}
     </div>

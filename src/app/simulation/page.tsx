@@ -355,14 +355,14 @@ function polarToCartesian(angle: number, radius: number): { x: number; y: number
 // 步骤枚举
 // ============================================================
 
-type Step = 'assessment' | 'result' | 'simulate';
+type Step = 'assessment' | 'result';
 
 // ============================================================
 // 主组件
 // ============================================================
 
 export default function SimulationPage() {
-  const { defaultAge, weightMap: advWeightMap } = useAdvancedSettings();
+  const { defaultAge } = useAdvancedSettings();
   const [step, setStep] = useState<Step>('assessment');
   const [dimensions, setDimensions] = useState<SimDimension[]>(createDefaultDimensions());
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -378,18 +378,8 @@ export default function SimulationPage() {
   const abortRef = useRef<AbortController | null>(null);
   const aiEndRef = useRef<HTMLDivElement>(null);
 
-  // Build weight map from advanced settings (map settings keys to sim dimension keys)
-  const simWeightMap = useMemo(() => {
-    return {
-      family: advWeightMap.family_background,
-      talent: advWeightMap.talent,
-      effort: advWeightMap.effort,
-      choice: advWeightMap.choice,
-      luck: advWeightMap.luck,
-    };
-  }, [advWeightMap]);
-
-  const score = calculateScore(dimensions, simWeightMap);
+  // 模拟器五维（出身/天赋/努力/选择/运气）用内置权重，与 /user 偏好权重（健康/财富等）是两个不同概念
+  const score = calculateScore(dimensions);
   const scoreInfo = getScoreLabel(score);
   const scenarioText = simulated ? getScenarioText(dimensions) : '';
   const advice = simulated ? getStrategyAdvice(dimensions) : null;
@@ -451,6 +441,7 @@ export default function SimulationPage() {
   const handleReset = useCallback(() => {
     setDimensions(createDefaultDimensions());
     setSimulated(false);
+    setAnswers({});
   }, []);
 
   // 重新评估
@@ -487,9 +478,7 @@ export default function SimulationPage() {
     abortRef.current = new AbortController();
 
     const dimSummary = dimensions.map(d => {
-      const totalW = Object.values(simWeightMap).reduce((a: number, b: number) => a + b, 0);
-      const customW = simWeightMap[d.key as keyof typeof simWeightMap] ?? d.weight;
-      const wPct = Math.round((customW / totalW) * 100);
+      const wPct = Math.round(d.weight * 100);
       return `${d.label}：${d.value}/100（权重${wPct}%）`;
     }).join('\n');
     const contextStr = `综合评分：${score}分（${scoreInfo.tier}）\n${dimSummary}\n\n${scenarioText}\n${advice ? `\n策略：${advice.strategy}\n杠杆：${advice.leverage}\n短板修复：${advice.weakFix}` : ''}`;
@@ -573,7 +562,7 @@ ${contextStr}
       setAiContent('');
       setAiStreaming(false);
     }
-  }, [dimensions, score, scoreInfo, scenarioText, advice, aiMessages, defaultAge, simWeightMap]);
+  }, [dimensions, score, scoreInfo, scenarioText, advice, aiMessages, defaultAge]);
 
   const handleAISend = () => {
     const trimmed = aiQuestion.trim();
@@ -602,15 +591,13 @@ ${contextStr}
             <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
               <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 05</span>
               <span className="h-px flex-1 bg-border" />
-              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">6-DIM</span>
+              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">5-DIM</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">命运模拟器</h1>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up stagger-2">
               {step === 'assessment'
                 ? '先回答量化问卷，客观评估你的五个维度。无法评判自己？选项替你量化。'
-                : step === 'result'
-                  ? '问卷结果已出。你可以微调滑块，然后推演你的人生画像和破局策略。'
-                  : '推演完成。查看你的人生画像、策略建议，或让AI给出深度分析与行动方案。'
+                : '问卷结果已出。微调滑块推演你的人生画像，或让AI给出深度分析与行动方案。'
               }
               {defaultAge > 0 && (
                 <span className="ml-2 text-xs text-muted-foreground/50 font-mono">
@@ -623,12 +610,10 @@ ${contextStr}
             <div className="flex items-center gap-3 mt-5 animate-fade-in-up stagger-3">
               {[
                 { key: 'assessment', label: '量化评估', icon: ClipboardCheck },
-                { key: 'result', label: '结果微调', icon: BarChart3 },
-                { key: 'simulate', label: '推演分析', icon: Play },
+                { key: 'result', label: '结果与推演', icon: BarChart3 },
               ].map((s, i) => {
                 const isActive = s.key === step;
-                const isDone = (s.key === 'assessment' && step !== 'assessment') ||
-                  (s.key === 'result' && step === 'simulate');
+                const isDone = s.key === 'assessment' && step !== 'assessment';
                 return (
                   <div key={s.key} className="flex items-center gap-2">
                     <div className={cn(
@@ -976,183 +961,6 @@ ${contextStr}
           </div>
         )}
 
-        {/* ==================== 步骤3: 推演结果（同result布局，simulated=true） ==================== */}
-        {step === 'simulate' && (
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 animate-fade-in-up">
-            {/* Left: Dimensions + Scenario */}
-            <div className="lg:col-span-3 space-y-5">
-              {/* 维度得分卡 */}
-              <div className="grid grid-cols-5 gap-2">
-                {dimensions.map(d => (
-                  <div key={d.key} className="rounded-lg border border-border bg-card p-3 text-center">
-                    <span className="text-lg">{d.icon}</span>
-                    <div className={cn(
-                      'text-lg font-mono font-bold mt-1',
-                      d.value >= 70 ? 'text-green-600 dark:text-green-400' :
-                      d.value >= 40 ? 'text-amber-600 dark:text-amber-400' :
-                      'text-red-600 dark:text-red-400'
-                    )}>{d.value}</div>
-                    <div className="text-[10px] text-muted-foreground">{d.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Scenario text */}
-              {scenarioText && (
-                <div className="rounded-lg border border-primary/20 bg-primary/[0.02] p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">你的人生推演</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{scenarioText}</p>
-                </div>
-              )}
-
-              {/* Strategy advice */}
-              {advice && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="rounded-lg border border-border bg-card p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                      <h4 className="text-xs font-semibold text-foreground">现状分析</h4>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{advice.strategy}</p>
-                  </div>
-                  <div className="rounded-lg border border-primary/10 bg-primary/[0.01] p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Lightbulb className="h-3.5 w-3.5 text-primary" />
-                      <h4 className="text-xs font-semibold text-foreground">杠杆策略</h4>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{advice.leverage}</p>
-                  </div>
-                  <div className="rounded-lg border border-green-200/40 dark:border-green-800/30 bg-green-50/30 dark:bg-green-950/10 p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                      <h4 className="text-xs font-semibold text-foreground">短板修复</h4>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{advice.weakFix}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* 可微调滑块 */}
-              <div className="rounded-lg border border-border bg-card p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-semibold text-foreground">微调维度</h3>
-                  <button onClick={() => { setStep('result'); setSimulated(false); }} className="text-[10px] text-primary hover:text-primary/80 transition-colors">
-                    返回完整微调
-                  </button>
-                </div>
-                {dimensions.map(d => (
-                  <div key={d.key} className="flex items-center gap-3 py-1.5">
-                    <span className="text-xs">{d.icon}</span>
-                    <span className="text-xs text-muted-foreground w-8">{d.label}</span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={d.value}
-                      onChange={(e) => handleSliderChange(d.key, parseInt(e.target.value))}
-                      className="flex-1"
-                      style={{
-                        background: `linear-gradient(to right, ${d.color} 0%, ${d.color} ${d.value}%, var(--muted) ${d.value}%, var(--muted) 100%)`,
-                      }}
-                    />
-                    <span className="text-[10px] font-mono text-foreground tabular-nums w-6 text-right">{d.value}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* 操作按钮 */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleReassess}
-                  className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-xs font-medium text-foreground transition-all hover:bg-accent active:scale-[0.98] btn-press"
-                >
-                  <ClipboardCheck className="h-3.5 w-3.5" />
-                  重新评估
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-xs font-medium text-foreground transition-all hover:bg-accent active:scale-[0.98] btn-press"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  重置
-                </button>
-              </div>
-            </div>
-
-            {/* Right: Score + Radar + AI */}
-            <div className="lg:col-span-2 space-y-5">
-              {/* Score */}
-              <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <div className="text-[10px] text-muted-foreground/60 uppercase tracking-[0.15em] mb-2">综合评分</div>
-                <div className={cn('text-5xl font-serif font-bold mb-1 transition-colors duration-300', scoreInfo.color)}>
-                  {scoreInfo.label}
-                </div>
-                <div className="text-3xl font-mono font-light text-foreground mb-2 tabular-nums">{animatedScore}</div>
-                <div className="text-[10px] text-muted-foreground font-medium">{scoreInfo.tier}</div>
-                <div className="mt-3 text-[10px] text-muted-foreground/60 leading-relaxed">{scoreInfo.desc}</div>
-              </div>
-
-              {/* Radar Chart */}
-              <div className="rounded-lg border border-border bg-card p-5 flex flex-col items-center">
-                <svg width={CHART_SIZE} height={CHART_SIZE} className="mb-1">
-                  {gridLevels.map(level => {
-                    const r = level * CHART_RADIUS;
-                    const pts = angles.map(a => {
-                      const p = polarToCartesian(a, r);
-                      return `${p.x},${p.y}`;
-                    });
-                    return <polygon key={level} points={pts.join(' ')} fill="none" stroke="currentColor" className="text-border" strokeWidth={1} />;
-                  })}
-                  {angles.map((a, i) => {
-                    const end = polarToCartesian(a, CHART_RADIUS);
-                    return <line key={i} x1={CHART_CENTER} y1={CHART_CENTER} x2={end.x} y2={end.y} stroke="currentColor" className="text-border/60" strokeWidth={0.5} />;
-                  })}
-                  <path d={radarPath} fill="currentColor" className="text-primary/10" stroke="currentColor" strokeWidth={2} style={{ stroke: 'var(--primary)' }} />
-                  {dimensions.map((d, i) => {
-                    const r = (d.value / 100) * CHART_RADIUS;
-                    const p = polarToCartesian(angles[i], r);
-                    return (
-                      <g key={d.key}>
-                        <circle cx={p.x} cy={p.y} r={6} fill={d.color} opacity={0.15} />
-                        <circle cx={p.x} cy={p.y} r={3.5} fill={d.color} />
-                        <circle cx={p.x} cy={p.y} r={1.5} fill="white" opacity={0.5} />
-                      </g>
-                    );
-                  })}
-                  {dimensions.map((d, i) => {
-                    const labelR = CHART_RADIUS + 20;
-                    const p = polarToCartesian(angles[i], labelR);
-                    return (
-                      <text key={d.key} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" className="fill-muted-foreground text-[11px]">
-                        {d.label}
-                      </text>
-                    );
-                  })}
-                </svg>
-              </div>
-
-              {/* AI 深度分析 + 解惑 */}
-              <button
-                onClick={() => { setAiOpen(true); if (aiMessages.length === 0) startAIAnalysis(); }}
-                className="w-full group rounded-lg border border-primary/20 bg-primary/[0.03] p-4 flex items-center justify-between transition-all hover:bg-primary/[0.06] hover:border-primary/30"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Bot className="h-4 w-4" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-foreground">AI 深度分析 + 解惑</p>
-                    <p className="text-[11px] text-muted-foreground">维度画像、破局路径、行动时间表</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-4 w-4 text-primary/40 group-hover:text-primary transition-colors" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ==================== AI 深度分析面板 ==================== */}

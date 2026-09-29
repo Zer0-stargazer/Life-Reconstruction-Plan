@@ -78,11 +78,12 @@ function LockForceBar({ score }: { score: number }) {
 }
 
 export default function WindowsPage() {
-  const { defaultAge, stages } = useAdvancedSettings();
+  const { defaultAge, saveDefaultAge, stages } = useAdvancedSettings();
   const [filter, setFilter] = useState<WindowStatus | 'all'>('all');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['青年起步', '壮年奋斗', '中年深耕']));
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   const [userAge, setUserAge] = useState<string>(String(defaultAge));
+  const [ageTouched, setAgeTouched] = useState(false);
   const [showAgeInput, setShowAgeInput] = useState(false);
   const [aiPlanning, setAiPlanning] = useState(false);
   const [aiContent, setAiContent] = useState('');
@@ -96,6 +97,16 @@ export default function WindowsPage() {
     const n = parseInt(userAge);
     return isNaN(n) || n < 0 || n > 120 ? null : n;
   }, [userAge]);
+
+  // 全局年龄加载完成后同步到本地输入框（用户未手动改过时）
+  useEffect(() => {
+    if (!ageTouched) setUserAge(String(defaultAge));
+  }, [defaultAge, ageTouched]);
+
+  // 手动修改年龄 → 写回全局 default-age（/me、首页图表、/user 偏好共用）
+  useEffect(() => {
+    if (ageTouched && parsedAge !== null) saveDefaultAge(parsedAge);
+  }, [ageTouched, parsedAge, saveDefaultAge]);
 
   const filtered = useMemo(() => {
     const base = filter === 'all'
@@ -330,7 +341,7 @@ export default function WindowsPage() {
                     min={0}
                     max={120}
                     value={userAge}
-                    onChange={e => setUserAge(e.target.value)}
+                    onChange={e => { setUserAge(e.target.value); setAgeTouched(true); }}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && parsedAge !== null && relevantWindows.length > 0) {
                         const firstW = relevantWindows[0];
@@ -366,7 +377,7 @@ export default function WindowsPage() {
                       </button>
                     </>
                   )}
-                  <button onClick={() => { setShowAgeInput(false); setUserAge(''); }} className="text-muted-foreground hover:text-foreground">
+                  <button onClick={() => { setShowAgeInput(false); setAgeTouched(false); setUserAge(String(defaultAge)); }} className="text-muted-foreground hover:text-foreground">
                     <X className="h-3 w-3" />
                   </button>
                 </div>
@@ -375,7 +386,7 @@ export default function WindowsPage() {
                   onClick={() => setShowAgeInput(true)}
                   className="text-xs text-muted-foreground hover:text-primary transition-colors"
                 >
-                  设置你的年龄，查看相关窗口
+                  年龄已设为 <span className="font-mono text-foreground/70">{defaultAge}</span> 岁 · 点击修改
                 </button>
               )}
             </div>
