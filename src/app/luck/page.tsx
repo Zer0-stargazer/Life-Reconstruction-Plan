@@ -780,7 +780,7 @@ export default function LuckPage() {
           <div className="flex items-start justify-between gap-6 flex-wrap">
             <div className="flex-1 min-w-[280px]">
               <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
-              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 07</span>
+              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 06</span>
               <span className="h-px flex-1 bg-border" />
               <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">N=250</span>
             </div>

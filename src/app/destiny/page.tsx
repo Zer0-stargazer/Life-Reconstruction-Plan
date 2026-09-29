@@ -445,7 +445,7 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
           <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent pointer-events-none" />
           <div className="relative">
             <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
-              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 03</span>
+              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 07</span>
               <span className="h-px flex-1 bg-border" />
               <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">REPORT</span>
             </div>

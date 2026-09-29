@@ -4,20 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import {
-  PenTool, Briefcase, Compass, SlidersHorizontal,
-  Clock, Dice5, ArrowRight, Flame, ChevronDown, Scale, Hourglass
+  ArrowRight, Flame, ChevronDown, Hourglass
 } from 'lucide-react';
 import { WindowDensityChart } from '@/components/home/window-density-chart';
 import { WINDOW_DENSITY_META } from '@/data/window-density';
 
+/** 模块按决策链排序：身份 → 赛道 → 认知 → 时机 → 推演 → 风险 → 报告 */
 const modules = [
-  { href: '/name', icon: PenTool, tag: '01', title: '名字', desc: '一个好名字是人生的第一张牌', metric: '∞', unit: '组合' },
-  { href: '/career', icon: Briefcase, tag: '02', title: '职业', desc: '你选的赛道决定了上限', metric: '1535', unit: '职业' },
-  { href: '/destiny', icon: Compass, tag: '03', title: '命运', desc: '命是天注定的，运是自己挣的', metric: '6', unit: '维度' },
-  { href: '/laws', icon: Scale, tag: '04', title: '规律', desc: '混沌系统中的确定性齿轮', metric: '288', unit: '条规律' },
-  { href: '/simulation', icon: SlidersHorizontal, tag: '05', title: '努力', desc: '切换维度才是破局', metric: '6', unit: '维推演' },
-  { href: '/windows', icon: Clock, tag: '06', title: '窗口', desc: '人生的转折点只开一瞬', metric: '473', unit: '个窗口' },
-  { href: '/luck', icon: Dice5, tag: '07', title: '运气', desc: '运气是概率，但你可以改变概率', metric: '250', unit: '个因子' },
+  { href: '/name', tag: '01', title: '名字', desc: '人生第一张牌', metric: '∞', unit: 'COMBOS' },
+  { href: '/career', tag: '02', title: '职业', desc: '赛道决定上限', metric: '1,535', unit: 'JOBS' },
+  { href: '/laws', tag: '03', title: '规律', desc: '人生暗箱齿轮', metric: '288', unit: 'LAWS' },
+  { href: '/windows', tag: '04', title: '窗口', desc: '关键时机识别', metric: '473', unit: 'WINDOWS' },
+  { href: '/simulation', tag: '05', title: '努力', desc: '命运模拟推演', metric: '6', unit: 'DIMS' },
+  { href: '/luck', tag: '06', title: '运气', desc: '概率结构拆解', metric: '250', unit: 'FACTORS' },
+  { href: '/destiny', tag: '07', title: '命运', desc: '命势运综合报告', metric: 'AI', unit: 'REPORT' },
 ];
 
 /** 全站数据点总数：288 规律 + 473 窗口 + 250 运气 + 1535 职业 */
@@ -232,9 +232,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== 模块 ===== */}
+      {/* ===== 模块数据总览 ===== */}
       <section className="max-w-6xl mx-auto px-6 sm:px-8 py-16 sm:py-20">
-        <SectionHead index="MODULES · 01–07" title="作战模块" desc="六大维度，拆解你的人生" />
+        <SectionHead index="MODULES · 01–07" title="模块与数据" desc="按人生决策链排序：身份 → 赛道 → 认知 → 时机 → 推演 → 风险 → 报告" />
 
         {/* 个性化主线入口 */}
         <Link
@@ -268,50 +268,29 @@ export default function HomePage() {
           </div>
         </Link>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {modules.map((m, idx) => {
-            const Icon = m.icon;
-            return (
-              <Link
-                key={m.href}
-                href={m.href}
-                className={cn(
-                  'group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-300 card-hover hover:border-primary/30',
-                  'animate-fade-in-up',
-                  idx < 8 ? `stagger-${idx + 1}` : ''
-                )}
-              >
-                <span className="pointer-events-none absolute -right-1 -top-3 select-none font-mono text-6xl font-bold leading-none text-foreground/[0.035] transition-colors duration-300 group-hover:text-primary/[0.09]">
-                  {m.tag}
-                </span>
-
-                <div className="relative flex items-start justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-muted text-foreground/70 transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  {/* 数据角标 */}
-                  <div className="text-right">
-                    <div className="font-mono text-sm font-bold text-foreground/80 tabular-nums leading-none">
-                      {m.metric}
-                    </div>
-                    <div className="mt-1 font-mono text-[9px] text-muted-foreground/50">{m.unit}</div>
-                  </div>
-                </div>
-
-                <h3 className="relative mt-4 text-[15px] font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {m.title}
-                </h3>
-                <p className="relative mt-1.5 text-[13px] text-muted-foreground leading-relaxed">
-                  {m.desc}
-                </p>
-
-                <div className="relative mt-4 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground/50 transition-colors duration-300 group-hover:text-primary">
-                  进入模块
-                  <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
-                </div>
-              </Link>
-            );
-          })}
+        {/* 数据行总览 */}
+        <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden animate-fade-in-up stagger-2">
+          {modules.map((m) => (
+            <Link
+              key={m.href}
+              href={m.href}
+              className="group flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 transition-colors hover:bg-primary/[0.04]"
+            >
+              <span className="w-6 shrink-0 font-mono text-[10px] text-muted-foreground/40 tabular-nums">{m.tag}</span>
+              <span className="w-12 shrink-0 text-[15px] font-semibold text-foreground transition-colors group-hover:text-primary">{m.title}</span>
+              <span className="hidden sm:block flex-1 min-w-0 truncate text-[13px] text-muted-foreground">{m.desc}</span>
+              <span className="flex-1 sm:hidden min-w-0 truncate text-[12px] text-muted-foreground">{m.desc}</span>
+              <span className="shrink-0 text-right font-mono tabular-nums leading-none">
+                <b className="text-sm font-bold text-foreground/85 group-hover:text-primary transition-colors">{m.metric}</b>
+                <span className="ml-1.5 text-[9px] text-muted-foreground/50 tracking-wider">{m.unit}</span>
+              </span>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/25 transition-all duration-300 group-hover:text-primary group-hover:translate-x-0.5" />
+            </Link>
+          ))}
+          <div className="flex items-center justify-between px-4 sm:px-5 py-2.5 font-mono text-[10px] text-muted-foreground/40">
+            <span>TOTAL DATA POINTS</span>
+            <span className="tabular-nums">{TOTAL_DATA_POINTS.toLocaleString('en-US')}</span>
+          </div>
         </div>
       </section>
 
@@ -329,33 +308,6 @@ export default function HomePage() {
                   {q.text}
                 </blockquote>
               </figure>
-            ))}
-          </div>
-          <div className="mt-10 max-w-3xl rounded-xl border border-primary/15 bg-primary/[0.03] p-5 sm:p-6 animate-fade-in-up stagger-3">
-            <p className="font-serif text-base sm:text-lg text-foreground/90 leading-relaxed">
-              这个工具不做算命——它帮你看清牌面、计算概率、识别窗口。
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 如何使用 ===== */}
-      <section className="border-t border-border">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-16 sm:py-20">
-          <SectionHead index="WORKFLOW · 01–03" title="如何使用" />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10">
-            {[
-              { step: '01', title: '看清牌面', desc: '通过窗口和运气模块，识别你人生中哪些因素可控、哪些不可控。' },
-              { step: '02', title: '计算概率', desc: '通过命运报告和模拟器，量化不同选择的预期结果。' },
-              { step: '03', title: '把握窗口', desc: '识别人生的关键时机，在对的时间做对的决策。' },
-            ].map((item, i) => (
-              <div key={i} className={cn('animate-fade-in-up', `stagger-${i + 1}`)}>
-                <div className="font-mono text-5xl font-bold text-primary/20 tabular-nums leading-none">
-                  {item.step}
-                </div>
-                <h3 className="text-base font-semibold text-foreground mt-4 mb-2">{item.title}</h3>
-                <p className="text-[13px] text-muted-foreground leading-relaxed">{item.desc}</p>
-              </div>
             ))}
           </div>
         </div>

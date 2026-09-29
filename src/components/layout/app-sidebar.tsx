@@ -33,11 +33,11 @@ const navItems = [
   { href: '/me', label: '时间轴', icon: CalendarRange, tag: '★', desc: '属于你的窗口' },
   { href: '/name', label: '名字', icon: PenTool, tag: '01', desc: '人生第一张牌' },
   { href: '/career', label: '职业', icon: Briefcase, tag: '02', desc: '赛道决定上限' },
-  { href: '/destiny', label: '命运', icon: Compass, tag: '03', desc: '命与运的报告' },
-  { href: '/laws', label: '规律', icon: Scale, tag: '04', desc: '人生暗箱齿轮' },
+  { href: '/laws', label: '规律', icon: Scale, tag: '03', desc: '人生暗箱齿轮' },
+  { href: '/windows', label: '窗口', icon: Clock, tag: '04', desc: '关键时机识别' },
   { href: '/simulation', label: '努力', icon: SlidersHorizontal, tag: '05', desc: '命运模拟推演' },
-  { href: '/windows', label: '窗口', icon: Clock, tag: '06', desc: '关键时机识别' },
-  { href: '/luck', label: '运气', icon: Dice5, tag: '07', desc: '概率结构拆解' },
+  { href: '/luck', label: '运气', icon: Dice5, tag: '06', desc: '概率结构拆解' },
+  { href: '/destiny', label: '命运', icon: Compass, tag: '07', desc: '命势运综合报告' },
   { href: '/user', label: '我的', icon: User, tag: '08', desc: '偏好与设置' },
 ];
 

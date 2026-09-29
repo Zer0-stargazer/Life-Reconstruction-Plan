@@ -24,7 +24,10 @@ import {
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MAX_AGE = 100;
-const AGE_STORAGE_KEY = 'me-age';
+/** 全局年龄主键：/user 设置、/me 滑块、/windows 年龄、首页图表指针共用这一个值 */
+const AGE_STORAGE_KEY = 'default-age';
+/** 旧键（/me 曾单独存一份），首次读取时迁移到主键 */
+const LEGACY_AGE_KEY = 'me-age';
 
 function parseAgeRange(age: string): { start: number; end: number } {
   const trimmed = age.trim();
@@ -364,11 +367,17 @@ export default function MePage() {
   const [missedShowAll, setMissedShowAll] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // 读 localStorage
+  // 读全局年龄（兼容旧 me-age 键：首次读取时迁移）
   useEffect(() => {
-    const stored = localStorage.getItem(AGE_STORAGE_KEY);
-    const parsed = stored ? parseInt(stored, 10) : NaN;
-    setAge(!Number.isNaN(parsed) && parsed >= 0 && parsed <= MAX_AGE ? parsed : 28);
+    const legacy = localStorage.getItem(LEGACY_AGE_KEY);
+    const primary = localStorage.getItem(AGE_STORAGE_KEY);
+    const raw = primary ?? legacy;
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    const v = !Number.isNaN(parsed) && parsed >= 0 && parsed <= MAX_AGE ? parsed : 28;
+    setAge(v);
+    if (!primary && legacy) {
+      try { localStorage.setItem(AGE_STORAGE_KEY, String(v)); } catch { /* ignore */ }
+    }
   }, []);
 
   const updateAge = (v: number) => {
@@ -430,9 +439,9 @@ export default function MePage() {
 
           <h1 className="text-3xl sm:text-5xl font-serif font-bold text-foreground tracking-tight leading-[1.1] mb-4 animate-fade-in-up stagger-1">
             {openList.length > 0 ? (
-              <>你今年 <span className="text-primary tabular-nums">{age}</span> 岁，
+              <><span className="text-primary tabular-nums">{age}</span> 岁 ·
               <br className="sm:hidden" />
-              此刻有 <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openList.length}</span> 扇门正开着</>
+              <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openList.length}</span> 扇门正在开启</>
             ) : (
               <>拖动下面的滑块，看看你的人生时间轴</>
             )}
@@ -446,14 +455,13 @@ export default function MePage() {
             )}
           </p>
 
-          {/* 仪表读数行 */}
+          {/* 仪表读数行（年龄在下方控制台里调，这里不重复显示） */}
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[11px] text-muted-foreground/60 animate-fade-in-up stagger-3">
-            <span>AGE <b className="text-primary tabular-nums">{age}</b></span>
             <span>OPEN <b className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openList.length}</b></span>
             <span>URGENT <b className="text-red-500 tabular-nums">{urgentList.length}</b></span>
             <span>MISSED <b className="text-muted-foreground tabular-nums">{all.filter((w) => w.state === 'missed').length}</b></span>
             <span>FUTURE <b className="text-foreground/80 tabular-nums">{all.filter((w) => w.state === 'future').length}</b></span>
-            <span className="hidden sm:inline">SRC windows.ts</span>
+            <span className="hidden sm:inline">SRC windows.ts · N=473</span>
           </div>
 
           {/* 年龄滑块：控制台 */}
@@ -482,6 +490,9 @@ export default function MePage() {
             <div className="flex justify-between text-[10px] font-mono text-muted-foreground/50 tabular-nums mt-1.5">
               <span>0</span><span>25</span><span>50</span><span>75</span><span>{MAX_AGE}</span>
             </div>
+            <p className="mt-3 pt-3 border-t border-border/60 font-mono text-[9px] text-muted-foreground/40">
+              SYNC · 此年龄全局生效：/user 偏好、/windows 年龄筛选、首页图表指针共用同一个值
+            </p>
           </div>
         </div>
       </section>

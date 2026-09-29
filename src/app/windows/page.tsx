@@ -283,7 +283,7 @@ export default function WindowsPage() {
         }} />
         <div className="relative max-w-5xl mx-auto px-8 py-10 sm:py-12">
           <div className="flex items-center gap-3 mb-8 animate-fade-in-up">
-            <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 06</span>
+            <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 04</span>
             <span className="h-px flex-1 bg-border" />
             <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">WINDOWS · N=473</span>
           </div>
