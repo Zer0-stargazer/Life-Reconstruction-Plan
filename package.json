@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 5000",
+    "dev": "node scripts/next-run.mjs dev",
     "build": "next build",
-    "start": "next start -p 5000",
+    "start": "node scripts/next-run.mjs start",
     "lint": "eslint",
     "ts-check": "tsc -p tsconfig.json",
     "lint:build": "eslint . --quiet",
-    "validate": "pnpm run --parallel '/^(ts-check|lint:build)$/'",
+    "validate": "pnpm run ts-check && pnpm run lint:build",
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
@@ -41,12 +41,12 @@
     "only-allow": "^1.2.2",
     "shadcn": "latest",
     "tailwindcss": "^4",
-    "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
+    "node": ">=20.9.0",
     "pnpm": ">=9.0.0"
   }
 }

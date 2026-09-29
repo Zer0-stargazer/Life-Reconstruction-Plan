@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check + lint
+        run: pnpm run validate
+
+      - name: Build
+        run: pnpm run build
+        env:
+          # 构建期不需要真实密钥；这里给占位值，避免因缺 env 直接失败
+          NEXT_TELEMETRY_DISABLED: "1"

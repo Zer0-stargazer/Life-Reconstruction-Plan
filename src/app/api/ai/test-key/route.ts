@@ -1,5 +1,9 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { invokeChat } from "@/lib/ai-stream";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+
+/** 测试连接最多等 30s，给平台留一点余量 */
+export const maxDuration = 45;
 
 interface TestKeyRequest {
   provider: string;
@@ -14,6 +18,16 @@ interface TestKeyRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    // 单 IP 限流：测试连接会实际发起外部请求，防止被当作探测工具滥用
+    const ip = getClientIp(request);
+    const rl = rateLimit(`ai-test-key:${ip}`, 10, 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { success: false, error: `请求过于频繁，请 ${rl.retryAfter} 秒后再试` },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+      );
+    }
+
     // 注意：这里重命名，避免与下面内置厂商分支里的 `const baseUrl = config.url(...)` 冲突
     const { provider, apiKey, model, baseUrl: reqBaseUrl, protocol } = (await request.json()) as TestKeyRequest;
 

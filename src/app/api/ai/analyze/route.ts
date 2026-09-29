@@ -1,6 +1,7 @@
 ﻿import { NextRequest } from "next/server";
 import { streamChatAuto } from "@/lib/ai-stream";
 import { resolveAiSource, type AiSourceConfig } from "@/lib/ai-providers";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const SYSTEM_PROMPT = `你是"人生重构计划"的AI分析顾问，专注于人生决策、职业规划、命运概率分析。你的角色是帮助用户深入理解每个模块的内涵，给出具体、可操作的建议。
 
@@ -98,8 +99,27 @@ const MODULE_PROMPTS: Record<string, string> = {
 5. **执行路径**：当前到最优的逐步调整策略`,
 };
 
+/** 流式分析耗时较长，给 Serverless 平台留出足够执行时间 */
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
+    // 单 IP 限流：分析接口是流式长请求，防止被脚本刷爆额度
+    const ip = getClientIp(request);
+    const rl = rateLimit(`ai-analyze:${ip}`, 15, 60_000);
+    if (!rl.ok) {
+      return new Response(
+        JSON.stringify({ error: `请求过于频繁，请 ${rl.retryAfter} 秒后再试` }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': String(rl.retryAfter),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { module, item, question, history, ai } = body as {
       module: string;

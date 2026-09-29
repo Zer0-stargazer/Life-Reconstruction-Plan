@@ -5,12 +5,12 @@ version = "legacy"
 appliedPatches = [ "nextjs/validate@0.0.20" ]
 
 [dev]
-build = [ "bash", "./scripts/prepare.sh" ]
-run = [ "bash", "./scripts/dev.sh" ]
+build = [ "pnpm", "install" ]
+run = [ "pnpm", "run", "dev" ]
 deps = [ "git" ]
-validate = [ "bash", "./scripts/validate.sh" ]
+validate = [ "pnpm", "run", "validate" ]
 
 [deploy]
-build = [ "bash", "./scripts/build.sh" ]
-run = [ "bash", "./scripts/start.sh" ]
+build = [ "pnpm", "run", "build" ]
+run = [ "pnpm", "run", "start" ]
 deps = [ "git" ]
