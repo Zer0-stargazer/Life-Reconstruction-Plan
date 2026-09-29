@@ -30,12 +30,14 @@ export const WINDOW_STATUS_CONFIG: Record<WindowStatus, { label: string; color: 
   elite: { label: '精英', color: 'text-primary', bgColor: 'bg-primary/5 border-primary/20' },
 };
 
-export const REMEDY_LEVEL_CONFIG: Record<RemedyLevel, { label: string; color: string; icon: string }> = {
-  irreversible: { label: '不可逆', color: 'text-red-600 dark:text-red-400', icon: '🔴' },
-  extreme: { label: '代价极高', color: 'text-orange-600 dark:text-orange-400', icon: '🟠' },
-  high: { label: '代价较高', color: 'text-amber-600 dark:text-amber-400', icon: '🟡' },
-  medium: { label: '可弥补', color: 'text-blue-600 dark:text-blue-400', icon: '🔵' },
-  low: { label: '容易补救', color: 'text-green-600 dark:text-green-400', icon: '🟢' },
+// icon 字段（🔴🟠🟡🔵🟢 emoji）已于 2026-09-29 删除：全项目无引用，且 emoji 色点与
+// "琥珀金克制"的视觉语言不符；等级语义由 color 文字色承担。
+export const REMEDY_LEVEL_CONFIG: Record<RemedyLevel, { label: string; color: string }> = {
+  irreversible: { label: '不可逆', color: 'text-red-600 dark:text-red-400' },
+  extreme: { label: '代价极高', color: 'text-orange-600 dark:text-orange-400' },
+  high: { label: '代价较高', color: 'text-amber-600 dark:text-amber-400' },
+  medium: { label: '可弥补', color: 'text-blue-600 dark:text-blue-400' },
+  low: { label: '容易补救', color: 'text-green-600 dark:text-green-400' },
 };
 
 export const MISS_TYPE_CONFIG: Record<MissType, { label: string; description: string; color: string }> = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { careers, CAREER_CATEGORIES, type Career } from '@/data/careers';
 import { cn } from '@/lib/utils';
 import {
@@ -130,6 +130,13 @@ export default function CareerPage() {
 
     return result;
   }, [selectedCategory, activeSorts]);
+
+  // 1535 条全量渲染会卡：先渲染 60 条，点击"加载更多"再追加
+  const PAGE_SIZE = 60;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [selectedCategory, activeSorts]);
+  const visibleCareers = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hiddenCount = filtered.length - visibleCareers.length;
 
   const aiHighRisk = careers.filter(c => c.aiRisk === 'high').length;
   const trendingUp = careers.filter(c => c.trend === 'up').length;
@@ -276,8 +283,13 @@ export default function CareerPage() {
       <div className="max-w-5xl mx-auto px-6 sm:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Career Grid */}
-          <div className={cn('lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3')}>
-            {filtered.map(career => {
+          <div className={cn('lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 content-start')}>
+            {/* 显示进度读数 */}
+            <div className="col-span-full flex items-center justify-between font-mono text-[10px] text-muted-foreground/60 mb-1">
+              <span>SHOWING {visibleCareers.length} / {filtered.length}</span>
+              {filtered.length !== careers.length && <span>FILTER: {selectedCategory === 'all' ? 'ALL' : selectedCategory.toUpperCase()}</span>}
+            </div>
+            {visibleCareers.map(career => {
               const TrendIcon = trendIcon[career.trend];
               const isExpanded = showResources === career.id;
               return (
@@ -417,6 +429,20 @@ export default function CareerPage() {
                 </div>
               );
             })}
+            {/* 加载更多 */}
+            {hiddenCount > 0 && (
+              <button
+                onClick={() => setVisibleCount(v => v + PAGE_SIZE * 2)}
+                className="col-span-full rounded-lg border border-dashed border-border py-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+              >
+                加载更多 · 还有 <span className="font-mono tabular-nums">{hiddenCount}</span> 个
+              </button>
+            )}
+            {hiddenCount === 0 && filtered.length > PAGE_SIZE && (
+              <div className="col-span-full py-2 text-center font-mono text-[10px] text-muted-foreground/40">
+                END · 已显示全部 {filtered.length} 个职业
+              </div>
+            )}
           </div>
 
           {/* Detail Panel */}
