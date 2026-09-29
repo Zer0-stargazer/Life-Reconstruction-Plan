@@ -14,6 +14,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { lifeWindows, type LifeWindow, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LOCK_FORCE_LABELS } from '@/data/windows';
 import { cn } from '@/lib/utils';
+import { PanelHead, HudCorners } from '@/components/shared/fig-kit';
 import {
   Flame, Hourglass, CheckCircle2, CalendarClock, ChevronDown, ChevronRight,
   ArrowRight, Lock, AlertTriangle, Info,
@@ -67,21 +68,6 @@ function classify(age: number): ClassifiedWindow[] {
 }
 
 /* ============ 小组件 ============ */
-
-/** FIG 风格面板头：编号 + 标题 + 右侧数据注记 */
-function PanelHead({ fig, title, note }: { fig: string; title: string; note?: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-border pb-3 mb-4">
-      <div className="flex items-baseline gap-2.5 min-w-0">
-        <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70 shrink-0">{fig}</span>
-        <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
-      </div>
-      {note && (
-        <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">{note}</span>
-      )}
-    </div>
-  );
-}
 
 function StateBadge({ w }: { w: ClassifiedWindow }) {
   if (w.state === 'urgent') {
@@ -472,10 +458,7 @@ export default function MePage() {
 
           {/* 年龄滑块：控制台 */}
           <div className="relative mt-8 rounded-xl border border-border bg-card p-5 sm:p-6 animate-fade-in-up stagger-4">
-            <span className="pointer-events-none absolute left-0 top-0 h-3 w-3 border-l border-t border-primary/40 rounded-tl-xl" />
-            <span className="pointer-events-none absolute right-0 top-0 h-3 w-3 border-r border-t border-primary/40 rounded-tr-xl" />
-            <span className="pointer-events-none absolute bottom-0 left-0 h-3 w-3 border-b border-l border-primary/40 rounded-bl-xl" />
-            <span className="pointer-events-none absolute bottom-0 right-0 h-3 w-3 border-b border-r border-primary/40 rounded-br-xl" />
+            <HudCorners />
 
             <div className="flex items-baseline justify-between mb-4">
               <label className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">

@@ -105,6 +105,71 @@ interface ChatMessage {
   content: string;
 }
 
+/* ============ 维度 × 危险度分布（页头 FIG） ============ */
+
+const TAG_BAR: Record<LawTag, string> = {
+  critical: 'bg-red-500/70',
+  danger: 'bg-amber-500/60',
+  opportunity: 'bg-emerald-500/60',
+  neutral: 'bg-muted-foreground/25',
+};
+
+const TAG_LEGEND: { tag: LawTag; label: string }[] = [
+  { tag: 'critical', label: '致命' },
+  { tag: 'danger', label: '危险' },
+  { tag: 'opportunity', label: '机会' },
+  { tag: 'neutral', label: '中性' },
+];
+
+function LawsDistribution({ dims }: { dims: LawDimension[] }) {
+  const total = dims.reduce((s, d) => s + d.items.length, 0);
+  return (
+    <div className="relative mt-6 rounded-xl border border-border bg-card/70 backdrop-blur-sm p-5 animate-fade-in-up stagger-3">
+      <div className="flex items-baseline justify-between gap-3 border-b border-border pb-3 mb-4">
+        <div className="flex items-baseline gap-2.5 min-w-0">
+          <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70 shrink-0">FIG. 04</span>
+          <h2 className="text-sm font-semibold text-foreground truncate">维度 × 危险度分布</h2>
+        </div>
+        <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">N={total} · {dims.length} 维</span>
+      </div>
+      <div className="space-y-2">
+        {dims.map((d) => {
+          const n = d.items.length || 1;
+          return (
+            <div key={d.id} className="flex items-center gap-3">
+              <span className="w-16 sm:w-20 shrink-0 truncate font-mono text-[10px] text-muted-foreground/80">{d.name}</span>
+              <div className="flex h-3 flex-1 overflow-hidden rounded-sm bg-muted/40">
+                {TAG_LEGEND.map(({ tag }) => {
+                  const c = d.items.filter((i) => i.tag === tag).length;
+                  if (!c) return null;
+                  return (
+                    <div
+                      key={tag}
+                      className={cn('h-full', TAG_BAR[tag])}
+                      style={{ width: `${(c / n) * 100}%` }}
+                      title={`${d.name} · ${c} 条${TAG_LEGEND.find((l) => l.tag === tag)?.label}`}
+                    />
+                  );
+                })}
+              </div>
+              <span className="w-7 shrink-0 text-right font-mono text-[10px] tabular-nums text-muted-foreground/60">{d.items.length}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        {TAG_LEGEND.map(({ tag, label }) => (
+          <div key={tag} className="flex items-center gap-1.5">
+            <span className={cn('h-2 w-2 rounded-[1px] inline-block', TAG_BAR[tag])} />
+            <span className="font-mono text-[10px] text-muted-foreground/70">{label}</span>
+          </div>
+        ))}
+        <span className="ml-auto font-mono text-[10px] text-muted-foreground/50">SRC laws-*.ts</span>
+      </div>
+    </div>
+  );
+}
+
 /* ============ Inline AI Chat Panel ============ */
 
 function InlineAIChat({
@@ -751,21 +816,26 @@ export default function LawsPage() {
       {/* Top Banner */}
       <div className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background grain-texture" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }} />
         <div className="relative px-6 py-8 md:px-10 md:py-10">
-          <div className="flex items-center gap-2 mb-3">
-            <Lock className="h-5 w-5 text-primary" />
-            <span className="text-[10px] font-mono tracking-[0.2em] text-primary/60 uppercase">LAW DIMENSIONS</span>
+          <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
+            <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 04</span>
+            <span className="h-px flex-1 bg-border" />
+            <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">LAW ENGINE · N=288</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-serif font-bold text-foreground tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight animate-fade-in-up stagger-1">
             人生规律引擎
           </h1>
-          <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
+          <p className="text-sm text-muted-foreground mt-3 max-w-2xl leading-relaxed animate-fade-in-up stagger-2">
             混沌系统中的确定性规律——8个维度揭示人生暗箱里的齿轮如何转动。
             看清规律，才能在不确定性中找到行动的锚点。
           </p>
 
           {/* Global stats */}
-          <div className="flex items-center gap-4 mt-4">
+          <div className="flex items-center gap-4 mt-4 animate-fade-in-up stagger-2">
             <div className="flex items-center gap-1.5">
               <span className="text-2xl font-bold font-mono text-foreground tabular-nums">{LAW_DIMENSIONS.reduce((s, d) => s + d.items.length, 0)}</span>
               <span className="text-xs text-muted-foreground">条规律</span>
@@ -781,6 +851,8 @@ export default function LawsPage() {
               <span className="text-xs text-muted-foreground">致命条目</span>
             </div>
           </div>
+
+          <LawsDistribution dims={LAW_DIMENSIONS} />
         </div>
       </div>
 

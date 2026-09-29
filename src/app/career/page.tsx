@@ -158,13 +158,12 @@ export default function CareerPage() {
         <div className="relative max-w-5xl mx-auto px-6 sm:px-8 py-8">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent pointer-events-none" />
           <div className="relative">
-            <div className="flex items-center gap-3 mb-3 animate-fade-in-up">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 shadow-sm">
-                <Briefcase className="h-4.5 w-4.5" />
-              </div>
-              <span className="text-[10px] font-mono text-muted-foreground/60 tracking-[0.2em]">MODULE 02</span>
+            <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
+              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 02</span>
+              <span className="h-px flex-1 bg-border" />
+              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">N=1535</span>
             </div>
-            <h1 className="text-2xl font-serif font-bold text-foreground mb-2 animate-fade-in-up stagger-1">职业遍历</h1>
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">职业遍历</h1>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up stagger-2">
               选对赛道比努力更重要。浏览各行各业的薪资、趋势和AI替代风险，找到你的最优职业策略。
             </p>

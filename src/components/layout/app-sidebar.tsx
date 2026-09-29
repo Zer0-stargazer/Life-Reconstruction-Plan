@@ -83,16 +83,16 @@ export function AppSidebar() {
 
   const sidebarContent = (
     <>
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-          <Flame className="h-4 w-4" />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-sm font-semibold text-foreground tracking-tight font-serif">人生重构计划</span>
-          <span className="text-[9px] text-muted-foreground/70 tracking-[0.2em] uppercase font-mono">LIFE REBOOT</span>
-        </div>
-      </div>
+      {/* Logo + 数据读数 */}
+      <div className="px-5 py-5 border-b border-border">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
+            <Flame className="h-4 w-4" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-foreground tracking-tight font-serif">人生重构计划</span>
+            <span className="text-[9px] text-muted-foreground/70 tracking-[0.2em] uppercase font-mono">LIFE REBOOT</span>
+          </div>
           {mounted && (
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -102,6 +102,12 @@ export function AppSidebar() {
               {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
             </button>
           )}
+        </div>
+        <div className="mt-3 flex items-center justify-between font-mono text-[9px] text-muted-foreground/40 tabular-nums">
+          <span>2,546 DATA PTS</span>
+          <span>08 MODULES</span>
+        </div>
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">

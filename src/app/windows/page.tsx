@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { lifeWindows, WINDOW_STATUS_CONFIG, WINDOW_GROUP_LABELS, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LOCK_FORCE_LABELS, type LifeWindow, type WindowStatus } from '@/data/windows';
 import { cn } from '@/lib/utils';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
-import { Clock, Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send, Loader2 } from 'lucide-react';
+import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send, Loader2 } from 'lucide-react';
 
 const statusOptions: { value: WindowStatus | 'all'; label: string; dotColor: string }[] = [
   { value: 'all', label: '全部', dotColor: '' },
@@ -276,17 +276,20 @@ export default function WindowsPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="max-w-5xl mx-auto px-8 py-8">
-          <div className="flex items-center gap-3 mb-3 animate-fade-in-up">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 shadow-sm">
-              <Clock className="h-4.5 w-4.5" />
-            </div>
-            <span className="text-[10px] font-mono text-muted-foreground/60 tracking-[0.2em]">MODULE 06</span>
+      <div className="relative overflow-hidden border-b border-border bg-card grain-texture">
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }} />
+        <div className="relative max-w-5xl mx-auto px-8 py-10 sm:py-12">
+          <div className="flex items-center gap-3 mb-8 animate-fade-in-up">
+            <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 06</span>
+            <span className="h-px flex-1 bg-border" />
+            <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">WINDOWS · N=473</span>
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-serif font-bold text-foreground mb-2 animate-fade-in-up stagger-1">人生关键窗口</h1>
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">人生关键窗口</h1>
               <p className="text-sm text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up stagger-2">
                 每个人生阶段都有打开又关闭的窗口。有些错过了就永远关上了，有些只有精英才能看见。
                 看清窗口，才知道什么时候该全力以赴。

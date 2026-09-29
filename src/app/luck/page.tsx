@@ -779,13 +779,12 @@ export default function LuckPage() {
         <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             <div className="flex-1 min-w-[280px]">
-              <div className="flex items-center gap-3 mb-3 animate-fade-in-up">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/30 dark:text-teal-400 shadow-sm">
-                  <Sparkles className="h-4.5 w-4.5" />
-                </div>
-                <span className="text-[10px] font-mono text-muted-foreground/60 tracking-[0.2em]">MODULE 07</span>
-              </div>
-              <h1 className="text-2xl font-serif font-bold text-foreground mb-1.5 animate-fade-in-up stagger-1">神卡与天坑</h1>
+              <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
+              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 07</span>
+              <span className="h-px flex-1 bg-border" />
+              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">N=250</span>
+            </div>
+              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">神卡与天坑</h1>
               <p className="text-sm text-muted-foreground max-w-md leading-relaxed animate-fade-in-up stagger-2">
                 随机给角色匹配两种卡改变命运走向。有些在暗中吸血，有些能撬动人生——认清它们，才能在对的位置出牌。
               </p>

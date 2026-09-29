@@ -4,8 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { ModuleGate } from '@/components/auth/module-gate';
-import {
-  SlidersHorizontal, RotateCcw, Play, Sparkles, TrendingUp,
+import { RotateCcw, Play, Sparkles, TrendingUp,
   AlertTriangle, Lightbulb, ChevronRight,
   Bot, X, Send, Loader2, ClipboardCheck, ArrowRight, BarChart3,
 } from 'lucide-react';
@@ -600,13 +599,12 @@ ${contextStr}
         <div className="relative max-w-5xl mx-auto px-6 sm:px-8 py-8">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent pointer-events-none" />
           <div className="relative">
-            <div className="flex items-center gap-3 mb-3 animate-fade-in-up">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400 shadow-sm">
-                <SlidersHorizontal className="h-4.5 w-4.5" />
-              </div>
-              <span className="text-[10px] font-mono text-muted-foreground/60 tracking-[0.2em]">MODULE 05</span>
+            <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
+              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 05</span>
+              <span className="h-px flex-1 bg-border" />
+              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">6-DIM</span>
             </div>
-            <h1 className="text-2xl font-serif font-bold text-foreground mb-2 animate-fade-in-up stagger-1">命运模拟器</h1>
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">命运模拟器</h1>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up stagger-2">
               {step === 'assessment'
                 ? '先回答量化问卷，客观评估你的五个维度。无法评判自己？选项替你量化。'
