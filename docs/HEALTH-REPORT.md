@@ -7,6 +7,23 @@
 
 ---
 
+## 修复进展（2026-09-29 更新）
+
+本报告是**快照**，部分条目已修复。当前状态：
+
+| 提交 | 内容 | 对应本报告条目 |
+|---|---|---|
+| `117bf74` | 全站模块审计：laws 提示词缺失、simulation 权重映射失效、name 假功能、destiny 假输入、luck 口径、career 假资源 | P1/P2 多条 |
+| `8945efe` | AI 源键名统一（推翻 P1#1 原「已修」结论）、AI 错误链路可见、careers 移除 778 条生成填充、luck 占位策略 | P1#1、P1#3、P2 |
+| `7dd9869` | 补 `not-found`/`error`/`global-error`/`loading`；AI 路由限流 + `maxDuration`；端口读 `$PORT`；`validate` 修复；删 `tsup`；修 `.coze`；加 CI | P0#3、P0#4、工程底座 |
+| `e13a417` | 无障碍系统性补全、宣传数字纠偏、模块口径统一 | 产品侧，详见下 |
+
+**仍待处理**：Supabase 三件套与 `SESSION_SECRET`（P0#1/#2，属部署配置非代码）、`streamChat` 首 fetch 缺 try/catch（P1#2）、零测试、`ui/` 8 个组件零引用。
+
+> 产品体验侧的完整审计（视觉 / 交互 / 文案 / 移动端 / 无障碍）见 [`PRODUCT-AUDIT.md`](./PRODUCT-AUDIT.md)。
+
+---
+
 ## 一、结论与优先级总览
 
 | 级别 | 数量 | 含义 |
