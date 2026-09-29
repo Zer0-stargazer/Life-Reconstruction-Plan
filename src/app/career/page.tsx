@@ -131,7 +131,7 @@ export default function CareerPage() {
     return result;
   }, [selectedCategory, activeSorts]);
 
-  // 1535 条全量渲染会卡：先渲染 60 条，点击"加载更多"再追加
+  // 全量渲染会卡：先渲染 60 条，点击"加载更多"再追加
   const PAGE_SIZE = 60;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [selectedCategory, activeSorts]);
@@ -168,7 +168,7 @@ export default function CareerPage() {
             <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
               <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 02</span>
               <span className="h-px flex-1 bg-border" />
-              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">N=1535</span>
+              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">N={careers.length}</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">职业遍历</h1>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up stagger-2">

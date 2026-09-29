@@ -486,8 +486,9 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
 
           {/* Birth Year */}
           <div className="animate-fade-in-up stagger-2">
-            <label className="text-sm font-semibold text-foreground mb-2 block">出生年份</label>
+            <label htmlFor="destiny-birth-year" className="text-sm font-semibold text-foreground mb-2 block">出生年份</label>
             <input
+              id="destiny-birth-year"
               type="number"
               min={1950}
               max={2010}
@@ -500,12 +501,13 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
           {/* Family, Education, Location - grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in-up stagger-3">
             <div>
-              <label className="text-xs font-semibold text-foreground mb-2 block">家庭背景</label>
-              <div className="space-y-1.5">
+              <span id="destiny-family-label" className="text-xs font-semibold text-foreground mb-2 block">家庭背景</span>
+              <div role="group" aria-labelledby="destiny-family-label" className="space-y-1.5">
                 {(Object.keys(familyLabelMap) as Array<keyof typeof familyLabelMap>).map(key => (
                   <button
                     key={key}
                     onClick={() => setInput(prev => ({ ...prev, familyBackground: key }))}
+                    aria-pressed={input.familyBackground === key}
                     className={cn(
                       'w-full rounded-md border px-3 py-1.5 text-xs font-medium text-left transition-all',
                       input.familyBackground === key
@@ -520,12 +522,13 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-foreground mb-2 block">学历</label>
-              <div className="space-y-1.5">
+              <span id="destiny-education-label" className="text-xs font-semibold text-foreground mb-2 block">学历</span>
+              <div role="group" aria-labelledby="destiny-education-label" className="space-y-1.5">
                 {(Object.keys(educationLabelMap) as Array<keyof typeof educationLabelMap>).map(key => (
                   <button
                     key={key}
                     onClick={() => setInput(prev => ({ ...prev, educationLevel: key }))}
+                    aria-pressed={input.educationLevel === key}
                     className={cn(
                       'w-full rounded-md border px-3 py-1.5 text-xs font-medium text-left transition-all',
                       input.educationLevel === key
@@ -540,12 +543,13 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-foreground mb-2 block">所在地</label>
-              <div className="space-y-1.5">
+              <span id="destiny-location-label" className="text-xs font-semibold text-foreground mb-2 block">所在地</span>
+              <div role="group" aria-labelledby="destiny-location-label" className="space-y-1.5">
                 {(Object.keys(locationLabelMap) as Array<keyof typeof locationLabelMap>).map(key => (
                   <button
                     key={key}
                     onClick={() => setInput(prev => ({ ...prev, location: key }))}
+                    aria-pressed={input.location === key}
                     className={cn(
                       'w-full rounded-md border px-3 py-1.5 text-xs font-medium text-left transition-all',
                       input.location === key
@@ -564,6 +568,8 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
           <div className="animate-fade-in-up stagger-4">
             <button
               onClick={() => setShowCustom(!showCustom)}
+              aria-expanded={showCustom}
+              aria-controls="destiny-custom-fields"
               className="w-full flex items-center gap-2 mb-4 group"
             >
               <PenLine className="h-3.5 w-3.5 text-primary/60" />
@@ -583,19 +589,20 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
           </div>
 
           {showCustom && (
-            <div className="space-y-4 animate-fade-in-up">
+            <div id="destiny-custom-fields" className="space-y-4 animate-fade-in-up">
               {customFields.map(field => {
                 const Icon = field.icon;
                 return (
                   <div key={field.key} className="rounded-lg border border-border bg-card p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Icon className="h-3.5 w-3.5 text-muted-foreground/60" />
-                      <label className="text-xs font-semibold text-foreground">{field.label}</label>
+                      <Icon className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
+                      <label htmlFor={`destiny-custom-${field.key}`} className="text-xs font-semibold text-foreground">{field.label}</label>
                       {input[field.key] && (
                         <span className="text-[9px] text-primary font-medium">已填写</span>
                       )}
                     </div>
                     <textarea
+                      id={`destiny-custom-${field.key}`}
                       value={input[field.key]}
                       onChange={(e) => setInput(prev => ({ ...prev, [field.key]: e.target.value }))}
                       placeholder={field.placeholder}
@@ -909,7 +916,7 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
                   onClick={handleAISend}
                   disabled={aiStreaming || !aiQuestion.trim()}
                   className="h-8 w-8 flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
+                 aria-label="发送追问">
                   <Send className="h-3.5 w-3.5" />
                 </button>
               </div>

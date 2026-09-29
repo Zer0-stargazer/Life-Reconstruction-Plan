@@ -38,7 +38,7 @@ const navItems = [
   { href: '/simulation', label: '努力', icon: SlidersHorizontal, tag: '05', desc: '命运模拟推演' },
   { href: '/luck', label: '运气', icon: Dice5, tag: '06', desc: '概率结构拆解' },
   { href: '/destiny', label: '命运', icon: Compass, tag: '07', desc: '命势运综合报告' },
-  { href: '/user', label: '我的', icon: User, tag: '08', desc: '偏好与设置' },
+  { href: '/user', label: '我的', icon: User, desc: '偏好与设置' },
 ];
 
 export function AppSidebar() {
@@ -104,8 +104,8 @@ export function AppSidebar() {
           )}
         </div>
         <div className="mt-3 flex items-center justify-between font-mono text-[9px] text-muted-foreground/40 tabular-nums">
-          <span>2,546 DATA PTS</span>
-          <span>08 MODULES</span>
+          <span>1,768 DATA PTS</span>
+          <span>07 MODULES</span>
         </div>
       </div>
 

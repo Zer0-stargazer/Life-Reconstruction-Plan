@@ -12,16 +12,16 @@ import { WINDOW_DENSITY_META } from '@/data/window-density';
 /** 模块按决策链排序：身份 → 赛道 → 认知 → 时机 → 推演 → 风险 → 报告 */
 const modules = [
   { href: '/name', tag: '01', title: '名字', desc: '人生第一张牌', metric: '∞', unit: 'COMBOS' },
-  { href: '/career', tag: '02', title: '职业', desc: '赛道决定上限', metric: '1,535', unit: 'JOBS' },
+  { href: '/career', tag: '02', title: '职业', desc: '赛道决定上限', metric: '757', unit: 'JOBS' },
   { href: '/laws', tag: '03', title: '规律', desc: '人生暗箱齿轮', metric: '288', unit: 'LAWS' },
   { href: '/windows', tag: '04', title: '窗口', desc: '关键时机识别', metric: '473', unit: 'WINDOWS' },
-  { href: '/simulation', tag: '05', title: '努力', desc: '命运模拟推演', metric: '6', unit: 'DIMS' },
+  { href: '/simulation', tag: '05', title: '努力', desc: '命运模拟推演', metric: '5', unit: 'DIMS' },
   { href: '/luck', tag: '06', title: '运气', desc: '概率结构拆解', metric: '250', unit: 'FACTORS' },
   { href: '/destiny', tag: '07', title: '命运', desc: '命势运综合报告', metric: 'AI', unit: 'REPORT' },
 ];
 
-/** 全站数据点总数：288 规律 + 473 窗口 + 250 运气 + 1535 职业 */
-const TOTAL_DATA_POINTS = 288 + 473 + 250 + 1535;
+/** 全站数据点总数：288 规律 + 473 窗口 + 250 运气 + 757 职业 = 1,768 */
+const TOTAL_DATA_POINTS = 288 + 473 + 250 + 757;
 
 function AnimatedNumber({ target, className }: { target: number; className?: string }) {
   const [count, setCount] = useState(0);
@@ -114,7 +114,7 @@ export default function HomePage() {
             <span className="text-foreground/70">LIFE REBOOT PLAN</span>
           </div>
           <div className="flex items-center gap-4 sm:gap-6">
-            <span>08 MODULES</span>
+            <span>07 MODULES</span>
             <span className="hidden sm:inline">{TOTAL_DATA_POINTS.toLocaleString('en-US')} DATA POINTS</span>
             <span className="hidden md:inline">BUILD v1.0</span>
           </div>
@@ -157,7 +157,7 @@ export default function HomePage() {
                 如果人生是一场策略游戏，你是先看攻略，还是硬闯？
               </p>
               <p className="text-sm text-muted-foreground max-w-md leading-relaxed mb-8 animate-fade-in-up stagger-3">
-                六大维度拆解命运——从名字的隐性暗示到运气的概率结构，
+                七大维度拆解命运——从名字的隐性暗示到运气的概率结构，
                 每个模块都是一张人生作战地图。不是算命，是算概率。
               </p>
 

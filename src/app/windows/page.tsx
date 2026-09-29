@@ -762,7 +762,7 @@ export default function WindowsPage() {
                   onClick={handleAISend}
                   disabled={aiStreaming || !aiQuestion.trim()}
                   className="h-8 w-8 flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
+                 aria-label="发送追问">
                   <Send className="h-3.5 w-3.5" />
                 </button>
               </div>

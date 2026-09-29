@@ -202,7 +202,7 @@ export function AIAnalysisPanel({
           <button
             onClick={handleClose}
             className="shrink-0 ml-2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
+           aria-label="关闭分析面板">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -270,7 +270,7 @@ export function AIAnalysisPanel({
               onClick={handleSend}
               disabled={isStreaming || !input.trim()}
               className="h-9 w-9 flex items-center justify-center rounded-md bg-primary text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed btn-press"
-            >
+             aria-label="发送消息">
               <Send className="h-4 w-4" />
             </button>
           </div>

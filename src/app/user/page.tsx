@@ -17,11 +17,11 @@ import { STORAGE_KEY_ACTIVE, type AiSource } from '@/lib/ai-sources';
 const modules = [
   { name: '名字', path: '/name', icon: '01' },
   { name: '职业', path: '/career', icon: '02' },
-  { name: '命运', path: '/destiny', icon: '03' },
-  { name: '规律', path: '/laws', icon: '04' },
+  { name: '规律', path: '/laws', icon: '03' },
+  { name: '窗口', path: '/windows', icon: '04' },
   { name: '努力', path: '/simulation', icon: '05' },
-  { name: '窗口', path: '/windows', icon: '06' },
-  { name: '运气', path: '/luck', icon: '07' },
+  { name: '运气', path: '/luck', icon: '06' },
+  { name: '命运', path: '/destiny', icon: '07' },
 ];
 
 // ---- AI provider types ----
@@ -87,6 +87,7 @@ export default function UserPage() {
   const [loginNickname, setLoginNickname] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [loginPending, setLoginPending] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   // Invite code
@@ -154,6 +155,16 @@ export default function UserPage() {
     }
   }, [pathname]);
 
+  // 登录弹层：Esc 关闭（无键盘出口的弹层对键盘用户等于困住）
+  useEffect(() => {
+    if (!showLoginDialog) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowLoginDialog(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showLoginDialog]);
+
   const persist = useCallback((key: string, value: unknown) => {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
   }, []);
@@ -173,7 +184,9 @@ export default function UserPage() {
       setLoginError('密码至少4位');
       return;
     }
+    setLoginPending(true);
     const result = await authRegister(loginNickname.trim(), loginPassword);
+    setLoginPending(false);
     if (result.success) {
       setShowLoginDialog(false);
       setLoginError('');
@@ -189,7 +202,9 @@ export default function UserPage() {
       setLoginError('请输入昵称和密码');
       return;
     }
+    setLoginPending(true);
     const result = await authLogin(loginNickname.trim(), loginPassword);
+    setLoginPending(false);
     if (result.success) {
       setShowLoginDialog(false);
       setLoginError('');
@@ -476,16 +491,25 @@ export default function UserPage() {
         {/* ===== Login Dialog ===== */}
         {showLoginDialog && (
           <>
-            <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowLoginDialog(false)} />
-            <div className="fixed z-50 inset-x-4 top-[20%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md animate-scale-in">
+            <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowLoginDialog(false)} aria-hidden="true" />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="login-dialog-title"
+              className="fixed z-50 inset-x-4 top-[20%] sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md animate-scale-in"
+            >
               <div className="rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
                 <div className="px-6 py-5 border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-base font-serif font-semibold text-foreground">
+                    <h3 id="login-dialog-title" className="text-base font-serif font-semibold text-foreground">
                       {loginMode === 'register' ? '创建账号' : '欢迎回来'}
                     </h3>
-                    <button onClick={() => setShowLoginDialog(false)} className="p-1 text-muted-foreground hover:text-foreground">
-                      <XCircle className="h-4 w-4" />
+                    <button
+                      onClick={() => setShowLoginDialog(false)}
+                      aria-label="关闭对话框"
+                      className="p-1.5 -m-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+                    >
+                      <XCircle className="h-4 w-4" aria-hidden="true" />
                     </button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -494,8 +518,9 @@ export default function UserPage() {
                 </div>
                 <div className="px-6 py-5 space-y-4">
                   <div>
-                    <label className="text-[10px] font-medium text-muted-foreground mb-1.5 block">昵称</label>
+                    <label htmlFor="login-nickname" className="text-[10px] font-medium text-muted-foreground mb-1.5 block">昵称</label>
                     <input
+                      id="login-nickname"
                       type="text"
                       value={loginNickname}
                       onChange={(e) => setLoginNickname(e.target.value)}
@@ -507,8 +532,9 @@ export default function UserPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-medium text-muted-foreground mb-1.5 block">密码</label>
+                    <label htmlFor="login-password" className="text-[10px] font-medium text-muted-foreground mb-1.5 block">密码</label>
                     <input
+                      id="login-password"
                       type="password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
@@ -519,14 +545,17 @@ export default function UserPage() {
                   </div>
 
                   {loginError && (
-                    <p className="text-xs text-red-600 dark:text-red-400">{loginError}</p>
+                    <p role="alert" className="text-xs text-destructive">{loginError}</p>
                   )}
 
                   <button
                     onClick={loginMode === 'register' ? handleRegister : handleLogin}
-                    className="w-full rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all btn-press"
+                    disabled={loginPending}
+                    aria-busy={loginPending}
+                    className="w-full rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all btn-press disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {loginMode === 'register' ? '注册' : '登录'}
+                    {loginPending && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+                    {loginPending ? '处理中…' : loginMode === 'register' ? '注册' : '登录'}
                   </button>
 
                   <div className="text-center">

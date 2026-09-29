@@ -209,8 +209,8 @@ export default function NamePage() {
         <div className="space-y-6 mb-8">
           {/* Gender */}
           <div className="animate-fade-in-up stagger-2">
-            <label className="text-sm font-semibold text-foreground mb-3 block">性别</label>
-            <div className="flex gap-3">
+            <span id="name-gender-label" className="text-sm font-semibold text-foreground mb-3 block">性别</span>
+            <div role="group" aria-labelledby="name-gender-label" className="flex gap-3">
               {[
                 { value: 'male' as const, label: '男' },
                 { value: 'female' as const, label: '女' },
@@ -218,6 +218,7 @@ export default function NamePage() {
                 <button
                   key={opt.value}
                   onClick={() => setGender(opt.value)}
+                  aria-pressed={gender === opt.value}
                   className={cn(
                     'rounded-md border px-6 py-2.5 text-sm font-medium transition-all btn-press',
                     gender === opt.value
@@ -233,9 +234,10 @@ export default function NamePage() {
 
           {/* Surname */}
           <div className="animate-fade-in-up stagger-2">
-            <label className="text-sm font-semibold text-foreground mb-3 block">姓氏</label>
+            <label htmlFor="name-surname" className="text-sm font-semibold text-foreground mb-3 block">姓氏</label>
             <div className="flex items-center gap-3 mb-3">
               <input
+                id="name-surname"
                 type="text"
                 value={surnameInput}
                 onChange={(e) => setSurnameInput(e.target.value.slice(0, 2))}
@@ -245,9 +247,10 @@ export default function NamePage() {
               {surnameInput && (
                 <button
                   onClick={() => setSurnameInput('')}
-                  className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  aria-label="清空姓氏"
+                  className="h-9 w-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               )}
               {!surnameInput && (
@@ -274,12 +277,13 @@ export default function NamePage() {
 
           {/* Style */}
           <div className="animate-fade-in-up stagger-3">
-            <label className="text-sm font-semibold text-foreground mb-3 block">风格</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <span id="name-style-label" className="text-sm font-semibold text-foreground mb-3 block">风格</span>
+            <div role="group" aria-labelledby="name-style-label" className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               {nameStyles.map(s => (
                 <button
                   key={s.value}
                   onClick={() => setStyle(s.value)}
+                  aria-pressed={style === s.value}
                   className={cn(
                     'rounded-lg border p-3 text-left transition-all btn-press',
                     style === s.value
@@ -288,7 +292,7 @@ export default function NamePage() {
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-sm">{s.icon}</span>
+                    <span className="text-sm" aria-hidden="true">{s.icon}</span>
                     <span className={cn(
                       'text-sm font-semibold block',
                       style === s.value ? 'text-primary' : 'text-foreground'

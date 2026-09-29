@@ -252,7 +252,7 @@ function InlineAIChat({
           <button
             onClick={onBack}
             className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
-          >
+           aria-label="返回节点列表">
             <ChevronLeft className="h-4 w-4" />
           </button>
           <SubIcon className="h-4 w-4 text-primary" />
@@ -333,7 +333,7 @@ function InlineAIChat({
             onClick={handleSend}
             disabled={isStreaming || !input.trim()}
             className="h-9 w-9 flex items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed btn-press"
-          >
+           aria-label="发送消息">
             <Send className="h-4 w-4" />
           </button>
         </div>
@@ -505,13 +505,13 @@ function LuckDetailPanel({
                 <button
                   onClick={() => setIsFullWidth(!isFullWidth)}
                   className="h-7 w-7 flex items-center justify-center rounded-full bg-white/80 dark:bg-black/20 text-muted-foreground hover:text-foreground transition-colors"
-                >
+                 aria-label="切换全宽显示">
                   <Maximize2 className="h-3.5 w-3.5" />
                 </button>
                 <button
                   onClick={onClose}
                   className="h-7 w-7 flex items-center justify-center rounded-full bg-white/80 dark:bg-black/20 text-muted-foreground hover:text-foreground transition-colors"
-                >
+                 aria-label="关闭">
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -675,7 +675,7 @@ function LuckDetailPanel({
                 <button
                   onClick={onPrev}
                   className="h-8 w-8 flex items-center justify-center rounded-full bg-card border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
-                >
+                 aria-label="上一个节点">
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <span className="text-xs font-mono text-muted-foreground tabular-nums">
@@ -684,7 +684,7 @@ function LuckDetailPanel({
                 <button
                   onClick={onNext}
                   className="h-8 w-8 flex items-center justify-center rounded-full bg-card border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
-                >
+                 aria-label="下一个节点">
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>

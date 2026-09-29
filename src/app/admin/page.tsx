@@ -351,7 +351,7 @@ export default function AdminPage() {
               onClick={fetchAllData}
               className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               title="刷新"
-            >
+             aria-label="刷新数据">
               <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
             </button>
             <button

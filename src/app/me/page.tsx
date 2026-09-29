@@ -471,9 +471,9 @@ export default function MePage() {
             <HudCorners />
 
             <div className="flex items-baseline justify-between mb-4">
-              <label className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">
+              <span id="me-age-label" className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">
                 CTRL · 01 你的年龄
-              </label>
+              </span>
               <div className="text-right">
                 <span className="text-3xl font-serif font-bold text-primary tabular-nums">{age}</span>
                 <span className="text-xs text-muted-foreground ml-1">岁</span>
@@ -486,8 +486,9 @@ export default function MePage() {
               max={MAX_AGE}
               value={age}
               onChange={(e) => updateAge(parseInt(e.target.value, 10))}
-              className="w-full accent-red-500 cursor-pointer"
-              aria-label="选择年龄"
+              className="w-full accent-primary cursor-pointer"
+              aria-labelledby="me-age-label"
+              aria-valuetext={`${age} 岁`}
             />
             <div className="flex justify-between text-[10px] font-mono text-muted-foreground/50 tabular-nums mt-1.5">
               <span>0</span><span>25</span><span>50</span><span>75</span><span>{MAX_AGE}</span>
