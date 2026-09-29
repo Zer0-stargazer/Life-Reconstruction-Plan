@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth, ALL_MODULES, NORMAL_USER_MODULES } from '@/contexts/auth-context';
 import { AiSourceManager } from '@/components/ai/ai-source-manager';
-import type { AiSource } from '@/lib/ai-sources';
+import { STORAGE_KEY_ACTIVE, type AiSource } from '@/lib/ai-sources';
 
 const modules = [
   { name: '名字', path: '/name', icon: '01' },
@@ -119,7 +119,7 @@ export default function UserPage() {
     }
 
     try {
-      const storedActive = localStorage.getItem('api-active-source');
+      const storedActive = localStorage.getItem(STORAGE_KEY_ACTIVE);
       if (storedActive) setActiveAiSource(storedActive as AiSourceId);
     } catch { /* ignore */ }
     try {
@@ -236,7 +236,7 @@ export default function UserPage() {
   // 参数放宽为 string：自定义源 id 是运行时生成的（src_xxx），不在 AiSourceId 字面量里
   const setActiveSource = useCallback((sourceId: AiSourceId | string) => {
     setActiveAiSource(sourceId as AiSourceId);
-    persist('api-active-source', sourceId);
+    persist(STORAGE_KEY_ACTIVE, sourceId);
   }, [persist]);
 
 
@@ -689,7 +689,7 @@ export default function UserPage() {
             <div className="px-6 py-5">
               <AiSourceManager onActiveChanged={() => {
                 // 自定义源被设为当前 / 增删后，刷新顶部"当前使用"显示
-                const cur = localStorage.getItem('api-active-source');
+                const cur = localStorage.getItem(STORAGE_KEY_ACTIVE);
                 if (cur) setActiveSource(cur);
                 try {
                   setCustomSources(JSON.parse(localStorage.getItem('ai-sources') || '[]'));

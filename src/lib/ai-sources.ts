@@ -8,7 +8,7 @@ import type { AiSourceConfig } from "@/lib/ai-providers";
  * 官方域名 + 中转站 Key 必然鉴权失败（实测报"令牌已过期或验证不正确"）。
  * 这里补上"像软件里接入自定义模型一样"的能力：地址、密钥、模型都由用户填。
  *
- * 存储：localStorage `ai-sources`（数组）+ `ai-active-source`（当前源 id）
+ * 存储：localStorage `ai-sources`（数组）+ `api-active-source`（当前源 id）
  */
 
 export type AiProtocol = "openai" | "claude" | "gemini" | "minimax";
@@ -29,7 +29,7 @@ export interface AiSource {
 }
 
 export const STORAGE_KEY_SOURCES = "ai-sources";
-export const STORAGE_KEY_ACTIVE = "ai-active-source";
+export const STORAGE_KEY_ACTIVE = "api-active-source";
 
 export const PROTOCOL_OPTIONS: { id: AiProtocol; label: string; hint: string }[] = [
   { id: "openai", label: "OpenAI 兼容", hint: "绝大多数中转站/自建网关都走这个，推荐先试" },

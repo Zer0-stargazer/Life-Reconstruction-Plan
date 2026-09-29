@@ -15,7 +15,7 @@
  */
 
 import type { AiSource } from "./ai-sources";
-import { STORAGE_KEY_SOURCES } from "./ai-sources";
+import { STORAGE_KEY_SOURCES, STORAGE_KEY_ACTIVE } from "./ai-sources";
 
 export interface ActiveAiConfig {
   provider?: string;
@@ -27,7 +27,7 @@ export interface ActiveAiConfig {
 
 export function getActiveAiConfig(): ActiveAiConfig {
   try {
-    const sourceId = localStorage.getItem("api-active-source");
+    const sourceId = localStorage.getItem(STORAGE_KEY_ACTIVE);
     if (!sourceId || sourceId === "builtin") return { provider: "builtin" };
 
     const sources = JSON.parse(localStorage.getItem(STORAGE_KEY_SOURCES) || "[]") as AiSource[];

@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { lifeWindows, WINDOW_STATUS_CONFIG, WINDOW_GROUP_LABELS, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LOCK_FORCE_LABELS, type LifeWindow, type WindowStatus } from '@/data/windows';
 import { cn } from '@/lib/utils';
+import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send, Loader2 } from 'lucide-react';
 
@@ -28,7 +29,7 @@ function getGroupFromWindow(w: { age: string; status: WindowStatus }, stages: { 
   return getGroup(w.age, stages);
 }
 
-const groupOrder = ['婴幼儿', '童年', '青少年', '青春期', '青年', '青年起步', '壮年前期', '壮年奋斗', '壮年后期', '中年深耕', '中晚年', '成熟收获', '暮年', '晚年', '精英', '其他'];
+
 
 // 检查窗口是否与用户年龄相关
 // 匹配规则：用户年龄在窗口范围内 / 窗口刚结束3年内(回头看) / 窗口即将在5年内开启(向前看)
@@ -114,6 +115,12 @@ export default function WindowsPage() {
       : lifeWindows.filter(w => w && w.status === filter);
     return base;
   }, [filter]);
+
+  // 分组顺序从可配置的人生阶段派生（/user 改了阶段这里自动跟着变），末尾补非阶段分组
+  const groupOrder = useMemo(
+    () => [...stages.map(s => s.label), '精英', '其他'],
+    [stages]
+  );
 
   const groups: Record<string, typeof lifeWindows> = {};
   for (const w of filtered) {
@@ -216,6 +223,7 @@ export default function WindowsPage() {
           item: systemContext,
           question: question || '请给出我当前阶段的长期主义深度规划和避坑指南',
           history: historyForApi,
+          ai: getActiveAiConfig(),
         }),
         signal: abortRef.current.signal,
       });
@@ -244,14 +252,20 @@ export default function WindowsPage() {
               setAiStreaming(false);
               return;
             }
-            try {
-              const parsed = JSON.parse(data);
+            let parsed: { content?: string; error?: string } | null = null;
+            try { parsed = JSON.parse(data); } catch { parsed = null; }
+            if (parsed) {
               if (parsed.content) {
                 accumulated += parsed.content;
                 setAiContent(accumulated);
               }
-              if (parsed.error) throw new Error(parsed.error);
-            } catch { /* ignore */ }
+              if (parsed.error) {
+                setAiMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${parsed.error}` }]);
+                setAiContent('');
+                setAiStreaming(false);
+                return;
+              }
+            }
           }
         }
       }

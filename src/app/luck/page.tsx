@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { luckNodes, LUCK_CATEGORY_CONFIG, type LuckCategory, type LuckNode } from '@/data/luck-nodes';
 import { cn } from '@/lib/utils';
+import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { ModuleGate } from '@/components/auth/module-gate';
 import {
   Droplet, TrendingUp, Skull, Sparkles, Search,
@@ -160,6 +161,7 @@ function InlineAIChat({
           item: itemContext,
           question,
           history: historyForApi,
+          ai: getActiveAiConfig(),
         }),
         signal: abortRef.current.signal,
       });
@@ -190,17 +192,19 @@ function InlineAIChat({
               setIsStreaming(false);
               return;
             }
-            try {
-              const parsed = JSON.parse(data);
+            let parsed: { content?: string; error?: string } | null = null;
+            try { parsed = JSON.parse(data); } catch { parsed = null; }
+            if (parsed) {
               if (parsed.content) {
                 accumulated += parsed.content;
                 setStreamingContent(accumulated);
               }
               if (parsed.error) {
-                throw new Error(parsed.error);
+                setMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${parsed.error}` }]);
+                setStreamingContent('');
+                setIsStreaming(false);
+                return;
               }
-            } catch {
-              // Ignore parse errors
             }
           }
         }

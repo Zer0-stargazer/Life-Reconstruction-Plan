@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { ModuleGate } from '@/components/auth/module-gate';
 import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, Target, Zap, Clock,
@@ -371,6 +372,7 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
           item: systemContext,
           question: question || '请综合我的信息和命运报告，给出个性化深度分析与行动方案',
           history: historyForApi,
+          ai: getActiveAiConfig(),
         }),
         signal: abortRef.current.signal,
       });
@@ -399,14 +401,20 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
               setAiStreaming(false);
               return;
             }
-            try {
-              const parsed = JSON.parse(data);
+            let parsed: { content?: string; error?: string } | null = null;
+            try { parsed = JSON.parse(data); } catch { parsed = null; }
+            if (parsed) {
               if (parsed.content) {
                 accumulated += parsed.content;
                 setAiContent(accumulated);
               }
-              if (parsed.error) throw new Error(parsed.error);
-            } catch { /* ignore */ }
+              if (parsed.error) {
+                setAiMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${parsed.error}` }]);
+                setAiContent('');
+                setAiStreaming(false);
+                return;
+              }
+            }
           }
         }
       }

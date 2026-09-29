@@ -116,17 +116,19 @@ export function AIAnalysisPanel({
               setIsStreaming(false);
               return;
             }
-            try {
-              const parsed = JSON.parse(data);
+            let parsed: { content?: string; error?: string } | null = null;
+            try { parsed = JSON.parse(data); } catch { parsed = null; }
+            if (parsed) {
               if (parsed.content) {
                 accumulated += parsed.content;
                 setStreamingContent(accumulated);
               }
               if (parsed.error) {
-                throw new Error(parsed.error);
+                setMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${parsed.error}` }]);
+                setStreamingContent('');
+                setIsStreaming(false);
+                return;
               }
-            } catch {
-              // Ignore parse errors for partial chunks
             }
           }
         }

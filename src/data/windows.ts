@@ -57,20 +57,21 @@ export const LOCK_FORCE_LABELS: Record<number, { label: string; color: string }>
 };
 
 
+/**
+ * 分组副标题。key 必须与 useAdvancedSettings().stages 的 label 一致
+ * （默认：童年/青少年/青年起步/壮年奋斗/中年深耕/成熟收获/晚年），
+ * 另加两个非阶段分组：精英 / 其他。改 stages 时记得同步这里。
+ */
 export const WINDOW_GROUP_LABELS: Record<string, string> = {
-  "婴儿期": "0-3岁婴幼儿期",
-  "童年期": "3-6岁童年期",
-  "青春期": "12-18岁青春期",
-  "青年期": "18-25岁青年探索期",
-  "壮年前期": "25-35岁职业上升期",
-  "壮年奋斗期": "35-45岁中年深耕期",
-  "壮年巅峰期": "45-55岁事业巅峰期",
-  "中年转型期": "55-65岁转型期",
-  "银发智慧期": "65-75岁智慧期",
-  "晚年收获期": "75+岁人生回顾期",
-  "暮年期": "80+岁晚年",
-  "精英": "精英特例窗口",
-  "其他": "其他窗口",
+  "童年": "0-12岁 · 认知与习惯的底座",
+  "青少年": "13-18岁 · 身份与方向的萌芽",
+  "青年起步": "19-25岁 · 试错成本最低的阶段",
+  "壮年奋斗": "26-35岁 · 复利开始显现",
+  "中年深耕": "36-50岁 · 纵深与杠杆",
+  "成熟收获": "51-65岁 · 兑现与传承",
+  "晚年": "66岁以上 · 留存与回望",
+  "精英": "少数人能触发的特殊窗口",
+  "其他": "未归入标准阶段的窗口",
 };
 export const lifeWindows: LifeWindow[] = [
 { id: 1, age: '18-20', title: '专业选择', description: '选专业≈选赛道，4年后的就业市场可能已翻天覆地', status: 'past', tag: '方向', lockedForce: '时间窗口已关闭', remedyCost: '窗口已过，补救代价极高', planningStatus: 'unplanned', completionStatus: 'completed', lockForceScore: 5, remedyLevel: 'irreversible', bestExecuteAge: '18岁高考志愿', executePhase: '试错验证期(低成本快速迭代)', missType: 'permanent' },
