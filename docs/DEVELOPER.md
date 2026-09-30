@@ -1,13 +1,16 @@
 # 人生重构计划 - 开发者文档
 
-> ⚠ **2026-09-25 校注（09-26 更新）**：本文写于扣子云端环境（2026-07），以下条目已过时，
+> ⚠ **2026-09-25 校注（2026-10-01 更新）**：本文写于扣子云端环境（2026-07），以下条目已过时，
 > 以 [ARCHITECTURE.md](ARCHITECTURE.md) / [API.md](API.md) / [KNOWN-ISSUES.md](KNOWN-ISSUES.md) 为准：
 > 1. `coze-coding-dev-sdk` 不在依赖中，AI 走自写的 `src/lib/ai-stream.ts`（OpenAI-compatible SSE）
-> 2. "运行时注入、无需 .env" 是扣子云端行为；本地必须 `.env.local`（含 `SUPABASE_*`、`AI_*`、`DEV_PASSWORD`）
-> 3. 数据条目（2026-09-26 去重后）：careers **1535**、windows **473**、luck **250**（`luck-red.ts` 50 条预留数据已于 2026-09-28 删除）
-> 4. `/api/invite` **无鉴权**（userId 客户端自报，暂未修）；analyze 已接收用户自带 Key（`ai` 字段）
+> 2. "运行时注入、无需 .env" 是扣子云端行为；本地必须 `.env.local`（含 `SUPABASE_*`、`AI_*`、`DEV_PASSWORD`、`SESSION_SECRET`）
+> 3. 数据条目（**2026-10-01** 实测）：careers **757**、windows **473**、luck **250**、laws **288**，合计 **1,768**
+>    （careers 曾为 1539 → 1535 → 757，两次清理见 KNOWN-ISSUES #8/#9）
+> 4. ~~`/api/invite` 无鉴权~~ 已修（2026-09-27 会话鉴权 + 乐观锁 + 限流）；analyze 已接收用户自带 Key（`ai` 字段）
 > 5. `server.ts` 已删除、drizzle 三件套已移除；"高级设置未被消费"已过时——destiny/windows/simulation 在消费
 > 6. 本地无 Node 24 硬约束，Node 22 可跑
+> 7. **信息架构已重做（2026-09-30）**：模块编号/顺序看 `src/lib/module-identity.ts`；
+>    页尾 `ModuleNextNav` 挂在 root layout；长列表统一「每组 12 条 + 聚焦区」——详见 ARCHITECTURE.md「信息架构」节
 
 ## 技术架构
 

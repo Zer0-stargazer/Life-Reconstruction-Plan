@@ -4,10 +4,13 @@
 > 方法：静态审计 + 实际运行验证（`tsc` / `eslint` / `next build` / 构建产物体积统计 / 数据文件全量结构化统计）
 > 结论速览：**功能完整度 B+，数据内容质量 B-，工程化基座 D，部署就绪度 C-**
 > 本次实测：`pnpm ts-check` 0 错误、`pnpm lint` 0 错误 0 告警、`pnpm build` **首次跑通**（20 个静态页）
+>
+> 后续：2026-09-30 复跑 `next build` 通过（**21 个静态页**，新增 `/icon.svg`、`/manifest.webmanifest`）；
+> `src/data` 体积由 1.35MB 降至约 1.1MB（careers 清理）
 
 ---
 
-## 修复进展（2026-09-29 更新）
+## 修复进展（2026-10-01 更新）
 
 本报告是**快照**，部分条目已修复。当前状态：
 
@@ -16,11 +19,25 @@
 | `117bf74` | 全站模块审计：laws 提示词缺失、simulation 权重映射失效、name 假功能、destiny 假输入、luck 口径、career 假资源 | P1/P2 多条 |
 | `8945efe` | AI 源键名统一（推翻 P1#1 原「已修」结论）、AI 错误链路可见、careers 移除 778 条生成填充、luck 占位策略 | P1#1、P1#3、P2 |
 | `7dd9869` | 补 `not-found`/`error`/`global-error`/`loading`；AI 路由限流 + `maxDuration`；端口读 `$PORT`；`validate` 修复；删 `tsup`；修 `.coze`；加 CI | P0#3、P0#4、工程底座 |
-| `e13a417` | 无障碍系统性补全、宣传数字纠偏、模块口径统一 | 产品侧，详见下 |
+| `e13a417` | 无障碍系统性补全、宣传数字纠偏、模块口径统一 | 产品侧，详见 PRODUCT-AUDIT |
+| `875d87b` | 文档：新增 `PRODUCT-AUDIT.md`，本报告加修复进展表 | — |
+| `50507bb` `fa39faf` `6d40100` `5935ddb` | **信息架构重做**：模块身份唯一真源、首页七大模块导览、长列表聚焦与折叠、滚动进场、站点图标 | 视觉一致性 / 交互完整度（详见 PRODUCT-AUDIT 第十节） |
 
-**仍待处理**：Supabase 三件套与 `SESSION_SECRET`（P0#1/#2，属部署配置非代码）、`streamChat` 首 fetch 缺 try/catch（P1#2）、零测试、`ui/` 8 个组件零引用。
+### 逐条状态
 
-> 产品体验侧的完整审计（视觉 / 交互 / 文案 / 移动端 / 无障碍）见 [`PRODUCT-AUDIT.md`](./PRODUCT-AUDIT.md)。
+| 报告条目 | 状态 |
+|---|---|
+| P1#3 careers 197 条截断 `keySkill`、P1#4 51% 模板 description | ✅ **已解决**（`8945efe` 移除 778 条机器填充，careers 1535 → 757） |
+| P2 体积描述全面过期（careers「1.1MB / 1538条」） | ✅ 已更新：**careers 192KB / 757 条**，`src/data` 合计约 1.1MB |
+| 页面声称数字准确（careers 1535） | ✅ 已纠偏为 **757**，全站合计 **1,768** |
+| P1#1 AI 源键名分叉 | ✅ 已修（`8945efe`），但**自定义源仍未经真实 Key 全协议实测** |
+| P0#1/#2 Supabase 三件套与 `SESSION_SECRET` | ⏳ 仍待部署配置（非代码问题） |
+| P1#2 `streamChat` 首 fetch 缺 try/catch | ⏳ **仍未修**（`src/lib/ai-stream.ts:53` 裸 fetch） |
+| 零测试、`ui/` 8 个组件零引用 | ⏳ 未处理 |
+| P2 laws 同维度重名、P3 careers `selfStudyScore` 三档伪装十分制 | ⏳ 未处理 |
+
+> 产品体验侧的完整审计（视觉 / 交互 / 文案 / 移动端 / 无障碍）见 [`PRODUCT-AUDIT.md`](./PRODUCT-AUDIT.md)；
+> 其中**第十节「第二轮：信息架构重做」**是 2026-09-30 的主要工作。
 
 ---
 
