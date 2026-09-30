@@ -8,17 +8,8 @@ import {
 } from 'lucide-react';
 import { WindowDensityChart } from '@/components/home/window-density-chart';
 import { WINDOW_DENSITY_META } from '@/data/window-density';
-
-/** 模块按决策链排序：身份 → 赛道 → 认知 → 时机 → 推演 → 风险 → 报告 */
-const modules = [
-  { href: '/name', tag: '01', title: '名字', desc: '人生第一张牌', metric: '∞', unit: 'COMBOS' },
-  { href: '/career', tag: '02', title: '职业', desc: '赛道决定上限', metric: '757', unit: 'JOBS' },
-  { href: '/laws', tag: '03', title: '规律', desc: '人生暗箱齿轮', metric: '288', unit: 'LAWS' },
-  { href: '/windows', tag: '04', title: '窗口', desc: '关键时机识别', metric: '473', unit: 'WINDOWS' },
-  { href: '/simulation', tag: '05', title: '努力', desc: '命运模拟推演', metric: '5', unit: 'DIMS' },
-  { href: '/luck', tag: '06', title: '运气', desc: '概率结构拆解', metric: '250', unit: 'FACTORS' },
-  { href: '/destiny', tag: '07', title: '命运', desc: '命势运综合报告', metric: 'AI', unit: 'REPORT' },
-];
+import { MODULE_IDENTITIES, TIMELINE_IDENTITY } from '@/lib/module-identity';
+import { Reveal } from '@/components/shared/reveal';
 
 /** 全站数据点总数：288 规律 + 473 窗口 + 250 运气 + 757 职业 = 1,768 */
 const TOTAL_DATA_POINTS = 288 + 473 + 250 + 757;
@@ -80,6 +71,73 @@ function SectionHead({ index, title, desc }: { index: string; title: string; des
       <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">{title}</h2>
       {desc && <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{desc}</p>}
     </div>
+  );
+}
+
+/**
+ * 模块导览卡。
+ *
+ * 视觉主角是「这个模块能回答什么问题」，不是数据量——
+ * 用户不关心你有 288 条规律，只关心这能帮他什么。
+ */
+function ModuleCard({ m, wide = false }: { m: (typeof MODULE_IDENTITIES)[number]; wide?: boolean }) {
+  const Icon = m.icon;
+  return (
+    <Link
+      href={m.href}
+      className={cn(
+        'group relative flex h-full flex-col rounded-xl border border-border bg-card p-5',
+        'transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.04]',
+        m.ring,
+        wide && 'sm:flex-row sm:items-center sm:gap-6'
+      )}
+    >
+      {/* 顶：图标 + 数据量 */}
+      <div className={cn('flex items-start justify-between', wide ? 'sm:w-auto' : 'mb-4')}>
+        <span
+          className={cn(
+            'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md',
+            'transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6',
+            m.iconGradient
+          )}
+        >
+          <Icon className="h-5 w-5" />
+        </span>
+        <span className={cn('text-right font-mono leading-none', wide ? 'hidden' : 'block')}>
+          <b className="block text-sm font-bold text-foreground/85">{m.metric}</b>
+          <span className="text-[9px] text-muted-foreground/50 tracking-wider">{m.unit}</span>
+        </span>
+      </div>
+
+      <div className={cn('min-w-0', wide && 'flex-1')}>
+        {/* 编号 + 名称 */}
+        <div className="flex items-baseline gap-2 mb-1.5">
+          <span className={cn('font-mono text-[10px] tracking-[0.15em]', m.tagColor)}>{m.tag}</span>
+          <h3 className="text-lg font-bold text-foreground transition-colors group-hover:text-primary">
+            {m.title}
+          </h3>
+        </div>
+
+        {/* 核心：能回答的问题 */}
+        <p className={cn(
+          'font-semibold text-foreground/90 leading-snug',
+          wide ? 'text-base sm:text-lg' : 'text-[15px]'
+        )}>
+          {m.question}
+        </p>
+
+        <p className="mt-2 text-[12px] text-muted-foreground leading-relaxed">{m.desc}</p>
+      </div>
+
+      {/* 底：进去了 */}
+      <div className={cn(
+        'flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground/50 transition-colors group-hover:text-primary',
+        wide ? 'mt-4 sm:mt-0 sm:shrink-0' : 'mt-4'
+      )}>
+        进去看看
+        <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-0.5" />
+      </div>
+    </Link>
   );
 }
 
@@ -178,29 +236,57 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 右：数据面板 */}
+            {/* 右：七大模块索引 —— 第一屏就说清这产品有哪七块 */}
             <div className="lg:col-span-7 animate-fade-in-up stagger-3">
-              <div className="relative rounded-xl border border-border bg-card/70 backdrop-blur-sm p-4 sm:p-5 shadow-sm">
+              <div className="relative rounded-xl border border-border bg-card/70 backdrop-blur-sm p-3 sm:p-4 shadow-sm">
                 {/* 面板头 */}
-                <div className="flex items-baseline justify-between border-b border-border pb-3 mb-3">
+                <div className="flex items-baseline justify-between border-b border-border pb-2.5 mb-1">
                   <div className="flex items-baseline gap-2.5">
-                    <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">FIG. 01</span>
-                    <h2 className="text-sm font-semibold text-foreground">人生窗口密度分布</h2>
+                    <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">MAP · 01–07</span>
+                    <h2 className="text-sm font-semibold text-foreground">七大模块</h2>
                   </div>
                   <span className="font-mono text-[10px] text-muted-foreground/50">
-                    N={meta.total} · 5 岁/桶
+                    身份 → 赛道 → 认知 → 时机 → 推演 → 风险 → 报告
                   </span>
                 </div>
 
-                <WindowDensityChart />
+                <div className="divide-y divide-border/60">
+                  {MODULE_IDENTITIES.map((m) => {
+                    const Icon = m.icon;
+                    return (
+                      <Link
+                        key={m.href}
+                        href={m.href}
+                        className="group flex items-center gap-3 py-[7px] px-1 -mx-1 rounded-md transition-colors hover:bg-primary/[0.05]"
+                      >
+                        <span
+                          className={cn(
+                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br text-white shadow-sm transition-transform duration-200 group-hover:scale-110',
+                            m.iconGradient
+                          )}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                        </span>
+                        <span className={cn('font-mono text-[10px] tabular-nums shrink-0', m.tagColor)}>
+                          {m.tag}
+                        </span>
+                        <span className="w-8 shrink-0 text-[13px] font-semibold text-foreground">
+                          {m.title}
+                        </span>
+                        <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground transition-colors group-hover:text-foreground/80">
+                          {m.question}
+                        </span>
+                        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/25 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-primary" />
+                      </Link>
+                    );
+                  })}
+                </div>
 
-                <div className="mt-4 pt-3 border-t border-border flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-muted-foreground/60">
-                  <span>SRC: src/data/windows.ts</span>
-                  <span className="text-border">|</span>
-                  <span>PEAK {meta.peak.from}–{meta.peak.to} 岁 · {meta.peak.count}</span>
+                <div className="mt-3 pt-2.5 border-t border-border flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-muted-foreground/60">
+                  <span>{TOTAL_DATA_POINTS.toLocaleString('en-US')} DATA POINTS</span>
                   <span className="text-border">|</span>
                   <Link href="/me" className="text-primary/80 hover:text-primary transition-colors">
-                    定位我的年龄 →
+                    先看看我这个年纪该做什么 →
                   </Link>
                 </div>
               </div>
@@ -209,87 +295,107 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== 关键发现 ===== */}
-      <section className="border-b border-border bg-card">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-border">
-            <Kpi value={meta.total} label="个人生窗口" hint="WINDOWS" />
-            <Kpi value={meta.before45} label="45 岁前开启" hint="AGE < 45" />
-            <Kpi value={meta.after45} label="45 岁后剩余" hint="AGE ≥ 45" />
-            <Kpi value={meta.peak.count} label="单区间峰值密度" hint={`${meta.peak.from}–${meta.peak.to} 岁`} />
-          </div>
-          <div className="border-t border-border px-6 sm:px-8 py-4">
-            <p className="text-sm text-foreground/80 leading-relaxed">
-              <span className="font-semibold text-foreground">
-                45 岁之前有 {meta.before45} 扇门，45 岁之后只剩 {meta.after45} 扇。
-              </span>
-              <span className="text-muted-foreground">
-                {' '}人生 {Math.round((meta.before45 / meta.total) * 100)}% 的机会窗口，集中在前 45 年——
-                而大多数人要到 35 岁才开始认真看牌面。
-              </span>
-            </p>
-          </div>
+      {/* ===== 七个模块导览 ===== */}
+      <section className="max-w-6xl mx-auto px-6 sm:px-8 py-16 sm:py-20">
+        <SectionHead
+          index="MODULES · 01–07"
+          title="七个模块，回答七个问题"
+          desc="从你出生时被写下的名字，到命运的综合牌面——按顺序走一遍，就是一个完整的自我盘点。"
+        />
+
+        {/* 01–06：模块卡 */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {MODULE_IDENTITIES.slice(0, 6).map((m, i) => (
+            <Reveal key={m.href} delay={i * 70}>
+              <ModuleCard m={m} />
+            </Reveal>
+          ))}
         </div>
+
+        {/* 07 命运：压轴全宽——它本来就是前六项的汇总 */}
+        <Reveal delay={420} className="mt-4">
+          <ModuleCard m={MODULE_IDENTITIES[6]} wide />
+        </Reveal>
+
+        {/* 个性化主线：从这开始 */}
+        <Reveal delay={480} className="mt-4">
+          <Link
+            href={TIMELINE_IDENTITY.href}
+            className="group relative block overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/[0.07] via-primary/[0.03] to-transparent p-6 sm:p-7 transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
+          >
+            <span className="pointer-events-none absolute -right-2 -top-4 select-none font-mono text-[7rem] font-bold leading-none text-primary/[0.05]">
+              ★
+            </span>
+            <div className="relative flex items-center gap-5 sm:gap-6">
+              <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform duration-300 group-hover:scale-105">
+                <Hourglass className="h-6 w-6 sm:h-7 sm:w-7" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <h3 className="text-base sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                    不知道从哪看起？先看你这个年纪
+                  </h3>
+                  <span className="rounded-full bg-primary/10 border border-primary/25 px-2 py-0.5 text-[10px] font-semibold text-primary shrink-0">
+                    从这开始
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  拖一下年龄滑块——473 个人生窗口里，哪些正为你开着、哪些已经关上、哪些马上要关。
+                </p>
+              </div>
+              <ArrowRight className="h-6 w-6 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+            </div>
+          </Link>
+        </Reveal>
       </section>
 
-      {/* ===== 模块数据总览 ===== */}
-      <section className="max-w-6xl mx-auto px-6 sm:px-8 py-16 sm:py-20">
-        <SectionHead index="MODULES · 01–07" title="模块与数据" desc="按人生决策链排序：身份 → 赛道 → 认知 → 时机 → 推演 → 风险 → 报告" />
+      {/* ===== 关键发现：窗口都集中在哪 ===== */}
+      <section className="border-t border-border bg-card">
+        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-16">
+          <SectionHead index="FIG. 01" title="机会窗口，集中在前 45 年" />
 
-        {/* 个性化主线入口 */}
-        <Link
-          href="/me"
-          className="group relative block overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/[0.07] via-primary/[0.03] to-transparent p-6 sm:p-7 mb-4 transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 animate-fade-in-up"
-        >
-          <span className="pointer-events-none absolute -right-2 -top-4 select-none font-mono text-[7rem] font-bold leading-none text-primary/[0.05]">
-            ★
-          </span>
-          <div className="relative flex items-center gap-5 sm:gap-6">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform duration-300 group-hover:scale-105">
-              <Hourglass className="h-7 w-7" />
-              <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow">
-                NEW
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <h3 className="text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                  你的人生时间轴
-                </h3>
-                <span className="rounded-full bg-red-500/10 border border-red-500/25 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
-                  从这开始
-                </span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* 左：KPI + 结论 */}
+            <div className="lg:col-span-5">
+              <div className="grid grid-cols-2 divide-x divide-y divide-border rounded-xl border border-border overflow-hidden">
+                <Kpi value={meta.total} label="个人生窗口" hint="WINDOWS" />
+                <Kpi value={meta.before45} label="45 岁前开启" hint="AGE < 45" />
+                <Kpi value={meta.after45} label="45 岁后剩余" hint="AGE ≥ 45" />
+                <Kpi value={meta.peak.count} label="单区间峰值密度" hint={`${meta.peak.from}–${meta.peak.to} 岁`} />
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                拖一下年龄滑块——473 个人生窗口里，哪些正为你开着、哪些已经关上、哪些马上要关。
+              <p className="mt-5 text-sm text-foreground/80 leading-relaxed">
+                <span className="font-semibold text-foreground">
+                  45 岁之前有 {meta.before45} 扇门，45 岁之后只剩 {meta.after45} 扇。
+                </span>
+                <span className="text-muted-foreground">
+                  {' '}人生 {Math.round((meta.before45 / meta.total) * 100)}% 的机会窗口，集中在前 45 年——
+                  而大多数人要到 35 岁才开始认真看牌面。
+                </span>
               </p>
+              <Link
+                href="/me"
+                className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:gap-2.5 transition-all"
+              >
+                定位我的年龄
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
-            <ArrowRight className="h-6 w-6 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all duration-300 shrink-0" />
-          </div>
-        </Link>
 
-        {/* 数据行总览 */}
-        <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden animate-fade-in-up stagger-2">
-          {modules.map((m) => (
-            <Link
-              key={m.href}
-              href={m.href}
-              className="group flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 transition-colors hover:bg-primary/[0.04]"
-            >
-              <span className="w-6 shrink-0 font-mono text-[10px] text-muted-foreground/40 tabular-nums">{m.tag}</span>
-              <span className="w-12 shrink-0 text-[15px] font-semibold text-foreground transition-colors group-hover:text-primary">{m.title}</span>
-              <span className="hidden sm:block flex-1 min-w-0 truncate text-[13px] text-muted-foreground">{m.desc}</span>
-              <span className="flex-1 sm:hidden min-w-0 truncate text-[12px] text-muted-foreground">{m.desc}</span>
-              <span className="shrink-0 text-right font-mono tabular-nums leading-none">
-                <b className="text-sm font-bold text-foreground/85 group-hover:text-primary transition-colors">{m.metric}</b>
-                <span className="ml-1.5 text-[9px] text-muted-foreground/50 tracking-wider">{m.unit}</span>
-              </span>
-              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/25 transition-all duration-300 group-hover:text-primary group-hover:translate-x-0.5" />
-            </Link>
-          ))}
-          <div className="flex items-center justify-between px-4 sm:px-5 py-2.5 font-mono text-[10px] text-muted-foreground/40">
-            <span>TOTAL DATA POINTS</span>
-            <span className="tabular-nums">{TOTAL_DATA_POINTS.toLocaleString('en-US')}</span>
+            {/* 右：密度图 */}
+            <div className="lg:col-span-7">
+              <div className="rounded-xl border border-border bg-background/40 p-4 sm:p-5">
+                <div className="flex items-baseline justify-between border-b border-border pb-2.5 mb-3">
+                  <h3 className="text-sm font-semibold text-foreground">人生窗口密度分布</h3>
+                  <span className="font-mono text-[10px] text-muted-foreground/50">
+                    N={meta.total} · 5 岁/桶
+                  </span>
+                </div>
+                <WindowDensityChart />
+                <div className="mt-3 pt-2.5 border-t border-border font-mono text-[10px] text-muted-foreground/60">
+                  PEAK {meta.peak.from}–{meta.peak.to} 岁 · {meta.peak.count} 个窗口
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
