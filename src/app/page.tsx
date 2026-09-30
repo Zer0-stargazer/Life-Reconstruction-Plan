@@ -303,22 +303,8 @@ export default function HomePage() {
           desc="从你出生时被写下的名字，到命运的综合牌面——按顺序走一遍，就是一个完整的自我盘点。"
         />
 
-        {/* 01–06：模块卡 */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {MODULE_IDENTITIES.slice(0, 6).map((m, i) => (
-            <Reveal key={m.href} delay={i * 70}>
-              <ModuleCard m={m} />
-            </Reveal>
-          ))}
-        </div>
-
-        {/* 07 命运：压轴全宽——它本来就是前六项的汇总 */}
-        <Reveal delay={420} className="mt-4">
-          <ModuleCard m={MODULE_IDENTITIES[6]} wide />
-        </Reveal>
-
-        {/* 个性化主线：从这开始 */}
-        <Reveal delay={480} className="mt-4">
+        {/* 个性化主线：排在七个模块之前——不知道从哪看起就从这开始 */}
+        <Reveal className="mb-4">
           <Link
             href={TIMELINE_IDENTITY.href}
             className="group relative block overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/[0.07] via-primary/[0.03] to-transparent p-6 sm:p-7 transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
@@ -347,6 +333,21 @@ export default function HomePage() {
             </div>
           </Link>
         </Reveal>
+
+        {/* 01–06：模块卡 */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {MODULE_IDENTITIES.slice(0, 6).map((m, i) => (
+            <Reveal key={m.href} delay={i * 70}>
+              <ModuleCard m={m} />
+            </Reveal>
+          ))}
+        </div>
+
+        {/* 07 命运：压轴全宽——它本来就是前六项的汇总 */}
+        <Reveal delay={420} className="mt-4">
+          <ModuleCard m={MODULE_IDENTITIES[6]} wide />
+        </Reveal>
+
       </section>
 
       {/* ===== 关键发现：窗口都集中在哪 ===== */}

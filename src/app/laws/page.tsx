@@ -5,6 +5,7 @@ import { LAW_DIMENSIONS, type LawDimension, type LawItem, type LawTag } from '@/
 import { cn } from '@/lib/utils';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { ModuleGate } from '@/components/auth/module-gate';
+import { Reveal } from '@/components/shared/reveal';
 import {
   TrendingUp, AlertTriangle, Shield, Bot,
   ChevronLeft, ChevronRight, X, Maximize2,
@@ -418,7 +419,7 @@ function LawCard({ item, onClick }: { item: LawItem; dimension: LawDimension; on
     <div
       onClick={onClick}
       className={cn(
-        'rounded-xl border bg-card p-4 transition-all duration-200 cursor-pointer group/card',
+        'h-full rounded-xl border bg-card p-4 transition-all duration-200 cursor-pointer group/card',
         'hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]',
         tagConf.borderColor
       )}
@@ -489,6 +490,66 @@ function LawCard({ item, onClick }: { item: LawItem; dimension: LawDimension; on
         </span>
       </div>
     </div>
+  );
+}
+
+/* ============ 聚焦卡（一个维度里最该先盯住的三条） ============ */
+
+const TAG_FOCUS_ACCENT: Record<string, string> = {
+  critical: 'from-red-500/70 to-orange-400/50',
+  danger: 'from-amber-500/70 to-yellow-400/50',
+};
+
+function FocusLawCard({ item, onClick }: { item: LawItem; onClick: () => void }) {
+  const tagConf = TAG_CONFIG[item.tag];
+  const recoveryConf = RECOVERY_LABELS[item.recovery] || { label: item.recovery, color: 'text-muted-foreground' };
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'group relative w-full overflow-hidden rounded-xl border bg-card p-4 text-left transition-all duration-200',
+        'hover:-translate-y-1 hover:shadow-lg active:scale-[0.99]',
+        tagConf.borderColor
+      )}
+    >
+      <span className={cn('absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r opacity-70', TAG_FOCUS_ACCENT[item.tag] ?? 'from-primary/70 to-primary/30')} />
+
+      <div className="mb-2.5 flex items-center gap-2">
+        <span className={cn(
+          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
+          tagConf.bgColor, tagConf.color
+        )}>
+          {tagConf.icon}
+          {tagConf.label}
+        </span>
+        <span className="font-mono text-[10px] text-muted-foreground/50">挽回 {item.breakthrough}%</span>
+      </div>
+
+      <h3 className="text-[15px] font-semibold text-foreground leading-snug">{item.name}</h3>
+      <p className="mt-1 text-[11px] text-muted-foreground/70 leading-relaxed line-clamp-2">{item.description}</p>
+
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-muted/60">
+        <div
+          className={cn(
+            'h-full rounded-full transition-all duration-700',
+            item.breakthrough >= 60 ? 'bg-emerald-500' : item.breakthrough >= 30 ? 'bg-amber-500' : 'bg-red-500'
+          )}
+          style={{ width: `${item.breakthrough}%` }}
+        />
+      </div>
+
+      <div className="mt-2.5 flex items-center justify-between">
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Shield className="h-3 w-3 text-muted-foreground/60" />
+          恢复 <span className={recoveryConf.color}>{recoveryConf.label}</span>
+        </span>
+        <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
+          看应对
+          <ChevronRight className="h-3 w-3" />
+        </span>
+      </div>
+    </button>
   );
 }
 
@@ -769,8 +830,12 @@ function LawDetailPanel({
 export default function LawsPage() {
   const [activeDimensionId, setActiveDimensionId] = useState<string>(LAW_DIMENSIONS[0].id);
   const [tagFilter, setTagFilter] = useState<LawTag | 'all'>('all');
-  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [listShowAll, setListShowAll] = useState(false);
+
+  /** 长列表默认只露出这么多条，其余折叠 */
+  const LIST_PREVIEW = 12;
 
   const activeDimension = useMemo(
     () => LAW_DIMENSIONS.find(d => d.id === activeDimensionId) || LAW_DIMENSIONS[0],
@@ -794,7 +859,35 @@ export default function LawsPage() {
     return items;
   }, [activeDimension, tagFilter, searchQuery]);
 
-  const selectedItem = selectedItemIndex !== null ? filteredItems[selectedItemIndex] : null;
+  /** 聚焦层：致命 > 危险，同级里挽回概率越低越紧迫。筛选/搜索时不显示。 */
+  const focusItems = useMemo(() => {
+    if (tagFilter !== 'all' || searchQuery.trim()) return [];
+    const rank: Record<string, number> = { critical: 0, danger: 1, opportunity: 2, neutral: 3 };
+    return activeDimension.items
+      .filter(i => i.tag === 'critical' || i.tag === 'danger')
+      .slice()
+      .sort((a, b) => (rank[a.tag] - rank[b.tag]) || (a.breakthrough - b.breakthrough))
+      .slice(0, 3);
+  }, [activeDimension, tagFilter, searchQuery]);
+
+  const focusIdSet = useMemo(() => new Set(focusItems.map(i => i.id)), [focusItems]);
+
+  const restItems = useMemo(
+    () => filteredItems.filter(i => !focusIdSet.has(i.id)),
+    [filteredItems, focusIdSet]
+  );
+  const visibleRest = listShowAll ? restItems : restItems.slice(0, LIST_PREVIEW);
+
+  const selectedItemIndex = selectedItemId
+    ? filteredItems.findIndex(i => i.id === selectedItemId)
+    : -1;
+  const selectedItem = selectedItemIndex >= 0 ? filteredItems[selectedItemIndex] : null;
+
+  const stepItem = useCallback((delta: number) => {
+    if (selectedItemIndex < 0) return;
+    const next = filteredItems[selectedItemIndex + delta];
+    if (next) setSelectedItemId(next.id);
+  }, [selectedItemIndex, filteredItems]);
 
   // Compute stats for the active dimension
   const dimensionStats = useMemo(() => {
@@ -811,7 +904,8 @@ export default function LawsPage() {
     setActiveDimensionId(dimId);
     setTagFilter('all');
     setSearchQuery('');
-    setSelectedItemIndex(null);
+    setSelectedItemId(null);
+    setListShowAll(false);
   };
 
   return (
@@ -900,6 +994,7 @@ export default function LawsPage() {
         </div>
 
         {/* Dimension stats */}
+        <Reveal>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <div className="text-lg font-bold font-mono text-foreground tabular-nums">{dimensionStats.total}</div>
@@ -922,6 +1017,7 @@ export default function LawsPage() {
             <div className="text-[10px] text-muted-foreground">平均挽回</div>
           </div>
         </div>
+        </Reveal>
 
         {/* Filter + Search bar */}
         <div className="flex flex-col sm:flex-row gap-3">
@@ -937,7 +1033,7 @@ export default function LawsPage() {
             ]).map(opt => (
               <button
                 key={opt.value}
-                onClick={() => setTagFilter(opt.value)}
+                onClick={() => { setTagFilter(opt.value); setListShowAll(false); }}
                 className={cn(
                   'rounded-md px-2.5 py-1 text-[11px] font-medium transition-all',
                   tagFilter === opt.value
@@ -955,7 +1051,7 @@ export default function LawsPage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setListShowAll(false); }}
               placeholder="搜索规律名称、描述或案例..."
               className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-8 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
@@ -965,22 +1061,71 @@ export default function LawsPage() {
 
         {/* Items grid */}
         {filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredItems.map((item, index) => (
-              <LawCard
-                key={item.id}
-                item={item}
-                dimension={activeDimension}
-                onClick={() => setSelectedItemIndex(index)}
-              />
-            ))}
+          <div className="space-y-6">
+            {/* 聚焦：一个维度里最该先盯住的三条 */}
+            {focusItems.length > 0 && (
+              <Reveal>
+                <div className="rounded-xl border border-border bg-muted/20 p-4">
+                  <div className="mb-3 flex items-baseline justify-between gap-3">
+                    <h3 className="text-xs font-semibold text-foreground">这个维度里，先盯住这三条</h3>
+                    <span className="font-mono text-[10px] text-muted-foreground/50">
+                      致命优先 · 挽回概率越低越靠前
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {focusItems.map((item) => (
+                      <FocusLawCard
+                        key={item.id}
+                        item={item}
+                        onClick={() => setSelectedItemId(item.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </Reveal>
+            )}
+
+            {/* 其余条目 */}
+            {restItems.length > 0 && (
+              <div>
+                <div className="mb-3 flex items-baseline justify-between gap-3">
+                  <h3 className="text-xs font-semibold text-foreground">
+                    {focusItems.length > 0 ? '其余条目' : '全部条目'}
+                  </h3>
+                  <span className="font-mono text-[10px] text-muted-foreground/50">
+                    {visibleRest.length} / {restItems.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {visibleRest.map((item, i) => (
+                    <Reveal key={item.id} delay={Math.min(i, 11) * 40} className="h-full">
+                      <LawCard
+                        item={item}
+                        dimension={activeDimension}
+                        onClick={() => setSelectedItemId(item.id)}
+                      />
+                    </Reveal>
+                  ))}
+                </div>
+                {restItems.length > LIST_PREVIEW && (
+                  <button
+                    onClick={() => setListShowAll(v => !v)}
+                    className="mt-4 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                  >
+                    {listShowAll
+                      ? '收起'
+                      : <>展开其余 <span className="font-mono tabular-nums">{restItems.length - LIST_PREVIEW}</span> 条</>}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Eye className="h-10 w-10 text-muted-foreground/20 mb-3" />
             <p className="text-sm text-muted-foreground">没有匹配的规律条目</p>
             <button
-              onClick={() => { setTagFilter('all'); setSearchQuery(''); }}
+              onClick={() => { setTagFilter('all'); setSearchQuery(''); setListShowAll(false); }}
               className="text-xs text-primary hover:underline mt-2"
             >
               清除筛选
@@ -994,10 +1139,10 @@ export default function LawsPage() {
         <LawDetailPanel
           item={selectedItem}
           dimension={activeDimension}
-          onClose={() => setSelectedItemIndex(null)}
-          onPrev={() => setSelectedItemIndex(Math.max(0, (selectedItemIndex ?? 0) - 1))}
-          onNext={() => setSelectedItemIndex(Math.min(filteredItems.length - 1, (selectedItemIndex ?? 0) + 1))}
-          currentIndex={selectedItemIndex ?? 0}
+          onClose={() => setSelectedItemId(null)}
+          onPrev={() => stepItem(-1)}
+          onNext={() => stepItem(1)}
+          currentIndex={selectedItemIndex}
           totalCount={filteredItems.length}
         />
       )}

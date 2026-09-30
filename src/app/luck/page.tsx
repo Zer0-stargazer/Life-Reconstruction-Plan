@@ -5,6 +5,7 @@ import { luckNodes, LUCK_CATEGORY_CONFIG, type LuckCategory, type LuckNode } fro
 import { cn } from '@/lib/utils';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { ModuleGate } from '@/components/auth/module-gate';
+import { Reveal } from '@/components/shared/reveal';
 import {
   Droplet, TrendingUp, Skull, Sparkles, Search,
   AlertTriangle, Shield, Bot, Wand2,
@@ -871,11 +872,13 @@ export default function LuckPage() {
                 </div>
 
                 {/* Cards grid */}
+                <Reveal>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {visibleItems.map(node => (
                     <LuckCard key={node.id} node={node} onClick={() => handleOpenNode(node)} />
                   ))}
                 </div>
+                </Reveal>
 
                 {items.length > CAT_PREVIEW && (
                   <button

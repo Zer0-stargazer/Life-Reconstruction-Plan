@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { lifeWindows, type LifeWindow, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LOCK_FORCE_LABELS } from '@/data/windows';
 import { cn } from '@/lib/utils';
 import { PanelHead, HudCorners } from '@/components/shared/fig-kit';
+import { Reveal } from '@/components/shared/reveal';
 import {
   Flame, Hourglass, CheckCircle2, CalendarClock, ChevronDown, ChevronRight,
   ArrowRight, Lock, AlertTriangle, Info,
@@ -594,6 +595,7 @@ export default function MePage() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
+          <Reveal delay={0}>
           <FocusColumn
             title="马上要关"
             hint="5 年内关闭，先处理这些"
@@ -607,6 +609,8 @@ export default function MePage() {
               listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
           />
+          </Reveal>
+          <Reveal delay={90}>
           <FocusColumn
             title="正在开启"
             hint="按锁死力排序，错过代价最大的在前"
@@ -620,6 +624,8 @@ export default function MePage() {
               listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
           />
+          </Reveal>
+          <Reveal delay={180}>
           <FocusColumn
             title="快到了"
             hint="提前知道，才谈得上准备"
@@ -633,6 +639,7 @@ export default function MePage() {
               listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
           />
+          </Reveal>
         </div>
       </section>
 

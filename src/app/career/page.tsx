@@ -7,9 +7,10 @@ import {
   Briefcase, TrendingUp, TrendingDown, Minus, Bot, Filter, X, BarChart3,
   ArrowUpRight, ArrowDownRight, MinusCircle, Sparkles,
   GraduationCap, BookOpen, Video,
-  ChevronDown, ChevronUp, MessageSquare, Star,
+  ChevronDown, ChevronUp, MessageSquare, Star, AlertTriangle,
 } from 'lucide-react';
 import { AIAnalysisPanel } from '@/components/ai/ai-analysis-panel';
+import { Reveal } from '@/components/shared/reveal';
 
 // ============================================================
 // 常量
@@ -88,6 +89,50 @@ function getSortValue(career: Career, key: SortKey): number {
   }
 }
 
+/** 快看组：一眼能看到的两极——最好的和最危险的 */
+function QuickLookGroup({
+  tone,
+  title,
+  hint,
+  icon: Icon,
+  items,
+  onPick,
+}: {
+  tone: 'good' | 'bad';
+  title: string;
+  hint: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: Career[];
+  onPick: (c: Career) => void;
+}) {
+  const shell = tone === 'good'
+    ? 'border-emerald-200/60 dark:border-emerald-800/40 bg-emerald-50/40 dark:bg-emerald-950/10'
+    : 'border-red-200/60 dark:border-red-800/40 bg-red-50/40 dark:bg-red-950/10';
+  const iconColor = tone === 'good' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
+
+  return (
+    <div className={cn('rounded-xl border p-4', shell)}>
+      <div className="mb-2.5 flex items-center gap-2">
+        <Icon className={cn('h-3.5 w-3.5', iconColor)} />
+        <span className="text-xs font-semibold text-foreground">{title}</span>
+        <span className="truncate text-[10px] text-muted-foreground/70">{hint}</span>
+      </div>
+      <div className="space-y-1.5">
+        {items.map(c => (
+          <button
+            key={c.id}
+            onClick={() => onPick(c)}
+            className="flex w-full items-center gap-2 rounded-lg border border-border/60 bg-card/70 px-3 py-2 text-left transition-all hover:border-primary/30 hover:bg-card active:scale-[0.99]"
+          >
+            <span className="truncate text-sm font-medium text-foreground">{c.name}</span>
+            <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">{c.salary}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ============================================================
 // 主组件
 // ============================================================
@@ -131,8 +176,24 @@ export default function CareerPage() {
     return result;
   }, [selectedCategory, activeSorts]);
 
-  // 全量渲染会卡：先渲染 60 条，点击"加载更多"再追加
-  const PAGE_SIZE = 60;
+  /** 快看组：黄金赛道（趋势上升 + AI 低风险）与高危赛道（趋势下降 + AI 高风险） */
+  const goldenCareers = useMemo(
+    () => filtered
+      .filter(c => c.trend === 'up' && c.aiRisk === 'low')
+      .sort((a, b) => parseSalaryLower(b.salary) - parseSalaryLower(a.salary))
+      .slice(0, 3),
+    [filtered]
+  );
+  const riskyCareers = useMemo(
+    () => filtered
+      .filter(c => c.trend === 'down' && c.aiRisk === 'high')
+      .sort((a, b) => parseSalaryLower(b.salary) - parseSalaryLower(a.salary))
+      .slice(0, 3),
+    [filtered]
+  );
+
+  // 全量渲染会卡：先渲染一小页，点击"加载更多"再追加
+  const PAGE_SIZE = 24;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [selectedCategory, activeSorts]);
   const visibleCareers = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
@@ -281,6 +342,34 @@ export default function CareerPage() {
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-6 sm:px-8 py-8">
+        {/* 快看：757 条里先看两极 */}
+        {(goldenCareers.length > 0 || riskyCareers.length > 0) && (
+          <Reveal className="mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {goldenCareers.length > 0 && (
+                <QuickLookGroup
+                  tone="good"
+                  title="黄金赛道"
+                  hint="趋势上升 · AI 低风险 · 薪资最高"
+                  icon={Sparkles}
+                  items={goldenCareers}
+                  onPick={(c) => setSelectedCareer(c.id)}
+                />
+              )}
+              {riskyCareers.length > 0 && (
+                <QuickLookGroup
+                  tone="bad"
+                  title="高危赛道"
+                  hint="趋势下降 · AI 高风险"
+                  icon={AlertTriangle}
+                  items={riskyCareers}
+                  onPick={(c) => setSelectedCareer(c.id)}
+                />
+              )}
+            </div>
+          </Reveal>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Career Grid */}
           <div className={cn('lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 content-start')}>
@@ -289,11 +378,11 @@ export default function CareerPage() {
               <span>SHOWING {visibleCareers.length} / {filtered.length}</span>
               {filtered.length !== careers.length && <span>FILTER: {selectedCategory === 'all' ? 'ALL' : selectedCategory.toUpperCase()}</span>}
             </div>
-            {visibleCareers.map(career => {
+            {visibleCareers.map((career, ci) => {
               const TrendIcon = trendIcon[career.trend];
               const isExpanded = showResources === career.id;
               return (
-                <div key={career.id}>
+                <Reveal key={career.id} delay={Math.min(ci, 11) * 35}>
                   <div
                     role="button"
                     tabIndex={0}
@@ -399,7 +488,7 @@ export default function CareerPage() {
                       )}
                     </div>
                   )}
-                </div>
+                </Reveal>
               );
             })}
             {/* 加载更多 */}
@@ -618,18 +707,24 @@ export default function CareerPage() {
       <div className="border-t border-border bg-muted/10">
         <div className="max-w-5xl mx-auto px-6 sm:px-8 py-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Reveal delay={0}>
             <div className="rounded-lg border border-border bg-card p-4">
               <p className="text-xs font-semibold text-foreground mb-1.5">赛道 &gt; 努力</p>
               <p className="text-[11px] text-muted-foreground leading-relaxed">在上升赛道里，普通人也能借势起飞。在下降赛道里，天才也会被趋势拖垮。选赛道是第一个关键决策。</p>
             </div>
+            </Reveal>
+            <Reveal delay={80}>
             <div className="rounded-lg border border-border bg-card p-4">
               <p className="text-xs font-semibold text-foreground mb-1.5">AI是你的对手还是队友？</p>
               <p className="text-[11px] text-muted-foreground leading-relaxed">AI不是来抢你工作的——它是来改变工作方式的。了解风险，提前布局，让AI成为你的加速器而非替代者。</p>
             </div>
+            </Reveal>
+            <Reveal delay={160}>
             <div className="rounded-lg border border-border bg-card p-4">
               <p className="text-xs font-semibold text-foreground mb-1.5">自学是最大的杠杆</p>
               <p className="text-[11px] text-muted-foreground leading-relaxed">自学推荐指数高的职业，意味着你不需要昂贵的学位就能入门。善用免费资源，把时间变成技能。</p>
             </div>
+            </Reveal>
           </div>
         </div>
       </div>

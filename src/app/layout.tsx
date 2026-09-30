@@ -3,6 +3,7 @@ import "./globals.css";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { ThemeProvider } from"@/components/layout/theme-provider";
 import { ModuleVisitTracker } from "@/components/layout/module-visit-tracker";
+import { ModuleNextNav } from "@/components/shared/module-next-nav";
 import { AuthProvider } from "@/contexts/auth-context";
 
 export const metadata: Metadata = {
@@ -44,6 +45,7 @@ export default function RootLayout({
             <AppSidebar />
             <main className="flex-1 md:ml-56">
               {children}
+              <ModuleNextNav />
             </main>
           </div>
         </AuthProvider>

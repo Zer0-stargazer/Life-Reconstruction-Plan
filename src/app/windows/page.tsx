@@ -5,6 +5,7 @@ import { lifeWindows, WINDOW_STATUS_CONFIG, WINDOW_GROUP_LABELS, REMEDY_LEVEL_CO
 import { cn } from '@/lib/utils';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
+import { Reveal } from '@/components/shared/reveal';
 import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send, Loader2 } from 'lucide-react';
 
 const statusOptions: { value: WindowStatus | 'all'; label: string; dotColor: string }[] = [
@@ -464,7 +465,7 @@ export default function WindowsPage() {
           const visibleItems = showAll ? items : items.slice(0, GROUP_PREVIEW);
 
           return (
-            <div key={groupName} id={`group-${groupName}`} className="mb-6 animate-fade-in-up scroll-mt-20">
+            <div key={groupName} id={`group-${groupName}`} className="mb-6 scroll-mt-20">
               {/* Group Header */}
               <button
                 onClick={() => toggleGroup(groupName)}
@@ -489,6 +490,7 @@ export default function WindowsPage() {
               {/* Cards */}
               {isExpanded && (
                 <>
+                <Reveal>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {visibleItems.map((w, idx) => {
                     const config = WINDOW_STATUS_CONFIG[w.status];
@@ -644,6 +646,7 @@ export default function WindowsPage() {
                     );
                   })}
                 </div>
+                </Reveal>
 
                 {items.length > GROUP_PREVIEW && (
                   <button
