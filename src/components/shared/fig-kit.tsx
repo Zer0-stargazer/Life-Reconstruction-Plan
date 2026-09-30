@@ -62,3 +62,81 @@ export function HudCorners() {
     </>
   );
 }
+
+/* ============ 装饰件 ============
+ * 这一组只做视觉，不承载信息，必须 pointer-events-none + aria-hidden。
+ * 全站底色是"克制的琥珀金"，装饰一律低透明度，别跟内容抢注意力。
+ */
+
+/**
+ * 刻度尺：一条细线 + 下方等距短刻度。
+ * 用来替代纯 border-t——同样是分隔，但带上了"人生刻度"的语义。
+ */
+export function TickRule({ label, className }: { label?: string; className?: string }) {
+  return (
+    <div className={cn('flex items-center gap-3', className)}>
+      {label && (
+        <span className="shrink-0 font-mono text-[9px] tracking-[0.2em] text-muted-foreground/40">
+          {label}
+        </span>
+      )}
+      <span aria-hidden className="relative h-2 flex-1 border-b border-border/70">
+        <span
+          className="absolute inset-x-0 bottom-0 h-[3px] text-muted-foreground/25"
+          style={{
+            backgroundImage: 'repeating-linear-gradient(to right, currentColor 0 1px, transparent 1px 10px)',
+          }}
+        />
+      </span>
+    </div>
+  );
+}
+
+/**
+ * 斜纹警示条：3px 高的 45° 斜纹。
+ * 只用在"即将关闭 / 高危"这类需要一点紧张感的地方——全站出现次数要少，
+ * 多了就不是警示而是噪音。
+ */
+export function HazardStripe({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={cn('h-[3px] w-full opacity-45', className)}
+      style={{
+        backgroundImage: 'repeating-linear-gradient(45deg, currentColor 0 2px, transparent 2px 7px)',
+      }}
+    />
+  );
+}
+
+/**
+ * 同心弧：右上角的三道同心圆弧（圆心在框外，只露出四分之一）。
+ * 呼应"人生轨迹 / 雷达扫描"，放在页头或面板右上角填空。
+ */
+export function ArcGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      aria-hidden
+      fill="none"
+      className={cn('pointer-events-none', className)}
+    >
+      {[
+        { r: 30, o: 0.3, dash: undefined },
+        { r: 21, o: 0.22, dash: '3 3' },
+        { r: 12, o: 0.14, dash: undefined },
+      ].map((c) => (
+        <circle
+          key={c.r}
+          cx="62"
+          cy="2"
+          r={c.r}
+          stroke="currentColor"
+          strokeWidth="0.8"
+          strokeDasharray={c.dash}
+          opacity={c.o}
+        />
+      ))}
+    </svg>
+  );
+}

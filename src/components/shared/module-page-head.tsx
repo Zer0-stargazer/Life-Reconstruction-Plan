@@ -1,4 +1,5 @@
 import { MODULE_IDENTITIES } from '@/lib/module-identity';
+import { ArcGlyph } from '@/components/shared/fig-kit';
 import { cn } from '@/lib/utils';
 
 /**
@@ -60,6 +61,11 @@ export function ModulePageHead({
           backgroundSize: '48px 48px',
         }}
       />
+
+      {/* 右上角同心弧装饰：纯视觉，不承载信息 */}
+      <ArcGlyph className="absolute -right-4 -top-4 h-40 w-40 text-primary sm:h-56 sm:w-56" />
+      {/* 左下角斜向光晕，和右上弧形成对角平衡 */}
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-primary/[0.05] blur-3xl" />
 
       <div className={cn('relative mx-auto px-6 sm:px-8 py-8', WIDTHS[width])}>
         <div className="flex flex-wrap items-start justify-between gap-6">

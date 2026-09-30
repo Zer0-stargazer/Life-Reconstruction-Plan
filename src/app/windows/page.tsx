@@ -3,9 +3,12 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { lifeWindows, WINDOW_STATUS_CONFIG, WINDOW_GROUP_LABELS, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LOCK_FORCE_LABELS, type LifeWindow, type WindowStatus } from '@/data/windows';
 import { cn } from '@/lib/utils';
+import { byWindowSeverity } from '@/lib/default-order';
+import { TickRule } from '@/components/shared/fig-kit';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { Reveal } from '@/components/shared/reveal';
+import { SectionJumper } from '@/components/shared/section-jumper';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send, Loader2 } from 'lucide-react';
 
@@ -136,6 +139,8 @@ export default function WindowsPage() {
     if (!groups[group]) groups[group] = [];
     groups[group].push(w);
   }
+  // 组内默认按"错过代价"排（锁死力 → 补救代价），别再吐数据录入顺序
+  for (const key of Object.keys(groups)) groups[key].sort(byWindowSeverity);
 
   const stats = useMemo(() => ({
     current: lifeWindows.filter(w => w?.status === 'current').length,
@@ -421,16 +426,21 @@ export default function WindowsPage() {
 
       </ModulePageHead>
 
-      {/* Filter */}
-      <div className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-8 py-3 flex items-center gap-2">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1" />
+      {/*
+        筛选 + 分组跳转。
+        top-12：移动端有一条 fixed 的 h-12 顶栏（见 app-sidebar），
+        原来写 top-0 会被它整个盖住——手机上等于没有吸顶筛选。
+        小屏横向滚动，别把按钮挤出屏幕外。
+      */}
+      <div className="sticky top-12 md:top-0 z-20 border-b border-border bg-background/90 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 pt-2.5 pb-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1 shrink-0" />
           {statusOptions.map(opt => (
             <button
               key={opt.value}
               onClick={() => setFilter(opt.value)}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+                'shrink-0 inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-all',
                 filter === opt.value
                   ? 'bg-primary/10 text-primary shadow-sm'
                   : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
@@ -440,6 +450,16 @@ export default function WindowsPage() {
               {opt.label}
             </button>
           ))}
+        </div>
+
+        {/* 分段跳转：小屏才知道自己在哪一段 */}
+        <div className="max-w-5xl mx-auto">
+          <SectionJumper
+            sections={groupOrder
+              .filter(g => groups[g] && groups[g].length > 0)
+              .map(g => ({ id: `group-${g}`, label: g, count: groups[g].length }))}
+            offset={140}
+          />
         </div>
       </div>
 
@@ -453,7 +473,7 @@ export default function WindowsPage() {
           const visibleItems = showAll ? items : items.slice(0, GROUP_PREVIEW);
 
           return (
-            <div key={groupName} id={`group-${groupName}`} className="mb-6 scroll-mt-20">
+            <div key={groupName} id={`group-${groupName}`} className="mb-6 scroll-mt-36 md:scroll-mt-20">
               {/* Group Header */}
               <button
                 onClick={() => toggleGroup(groupName)}
@@ -469,7 +489,7 @@ export default function WindowsPage() {
                     {items.filter(w => isAgeRelevant(w, parsedAge!)).length}个与你相关
                   </span>
                 )}
-                <div className="flex-1 h-px bg-border" />
+                <TickRule className="flex-1" />
                 <div className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors">
                   {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                 </div>

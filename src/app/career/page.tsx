@@ -172,6 +172,14 @@ export default function CareerPage() {
         }
         return 0;
       });
+    } else {
+      // 默认口径（全站统一：前面几条必须是最要紧的）：
+      // 趋势上升 → AI 风险低 → 年薪高。选了排序 chip 就以用户选择为准。
+      result = [...result].sort((a, b) =>
+        getSortValue(a, 'trend') - getSortValue(b, 'trend') ||
+        getSortValue(b, 'aiRisk') - getSortValue(a, 'aiRisk') ||
+        parseSalaryLower(b.salary) - parseSalaryLower(a.salary)
+      );
     }
 
     return result;
@@ -273,15 +281,17 @@ export default function CareerPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-3">
-          <div className="flex items-center gap-2 flex-wrap mb-2">
-            <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1" />
+      {/* Filters
+          top-12：移动端有一条 fixed 的 h-12 顶栏，写 top-0 会被它盖住（见 app-sidebar） */}
+      <div className="sticky top-12 md:top-0 z-10 border-b border-border bg-background/90 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-8 py-3">
+          {/* 分类多，小屏一行放不下：横向滚动而不是挤成一团 */}
+          <div className="flex items-center gap-2 mb-2 overflow-x-auto scrollbar-hide sm:flex-wrap sm:overflow-visible">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1 shrink-0" />
             <button
               onClick={() => setSelectedCategory('all')}
               className={cn(
-                'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+                'shrink-0 rounded-md px-3 py-2 sm:py-1.5 text-xs font-medium transition-all',
                 selectedCategory === 'all' ? 'bg-primary/10 text-primary shadow-sm' : 'text-muted-foreground hover:bg-accent/60'
               )}
             >
@@ -292,7 +302,7 @@ export default function CareerPage() {
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={cn(
-                  'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+                  'shrink-0 rounded-md px-3 py-2 sm:py-1.5 text-xs font-medium transition-all',
                   selectedCategory === cat ? 'bg-primary/10 text-primary shadow-sm' : 'text-muted-foreground hover:bg-accent/60'
                 )}
               >
@@ -300,14 +310,17 @@ export default function CareerPage() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] text-muted-foreground/50">排序（可多选）</span>
+          {/* 排序 chip：手机上 py-0.5 的点击区按不住，加大到 32px 高 */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide sm:overflow-visible">
+            <span className="shrink-0 text-[9px] text-muted-foreground/50">
+              {activeSorts.length === 0 ? '默认：趋势上升 → AI 低风险 → 年薪高' : '排序（可多选）'}
+            </span>
             {sortOptions.map(opt => (
               <button
                 key={opt.value}
                 onClick={() => toggleSort(opt.value)}
                 className={cn(
-                  'rounded-sm px-2 py-0.5 text-[10px] font-medium transition-all flex items-center gap-1',
+                  'shrink-0 rounded-sm px-2.5 py-1.5 sm:py-0.5 text-[10px] font-medium transition-all flex items-center gap-1',
                   activeSorts.includes(opt.value) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/60'
                 )}
               >
@@ -319,7 +332,7 @@ export default function CareerPage() {
                 )}
               </button>
             ))}
-            {activeSorts.length > 1 && (
+            {activeSorts.length > 0 && (
               <button
                 onClick={() => setActiveSorts([])}
                 className="rounded-sm px-1.5 py-0.5 text-[9px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"

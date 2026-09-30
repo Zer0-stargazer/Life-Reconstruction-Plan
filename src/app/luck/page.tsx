@@ -3,9 +3,12 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { luckNodes, LUCK_CATEGORY_CONFIG, type LuckCategory, type LuckNode } from '@/data/luck-nodes';
 import { cn } from '@/lib/utils';
+import { byLuckSeverity } from '@/lib/default-order';
+import { TickRule } from '@/components/shared/fig-kit';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { ModuleGate } from '@/components/auth/module-gate';
 import { Reveal } from '@/components/shared/reveal';
+import { SectionJumper } from '@/components/shared/section-jumper';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import {
   Droplet, TrendingUp, Skull, Sparkles, Search,
@@ -748,7 +751,8 @@ export default function LuckPage() {
     const groups: { category: LuckCategory; items: LuckNode[] }[] = [];
     const order: LuckCategory[] = ['red', 'purple', 'blue', 'cyan'];
     for (const cat of order) {
-      const items = filtered.filter(n => n.category === cat);
+      // 组内默认按"期望影响"排（强度×概率），别再吐数据录入顺序
+      const items = filtered.filter(n => n.category === cat).sort(byLuckSeverity);
       if (items.length > 0) {
         groups.push({ category: cat, items });
       }
@@ -838,8 +842,24 @@ export default function LuckPage() {
 
       </ModulePageHead>
 
+      {/*
+        分段跳转：小屏专用。
+        250 个节点在小屏是四段长长的单列，滚到中间就不知道自己在"人际吸血"还是"命运暗门"了。
+        top-12 = 移动端 fixed 顶栏（h-12）下方，写 top-0 会被盖住。
+      */}
+      <div className="md:hidden sticky top-12 z-20 border-b border-border bg-background/90 backdrop-blur-sm">
+        <SectionJumper
+          sections={groupedByCategory.map(({ category, items }) => ({
+            id: `cat-${category}`,
+            label: LUCK_CATEGORY_CONFIG[category].label,
+            count: items.length,
+          }))}
+          offset={112}
+        />
+      </div>
+
       {/* Card Grid */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {filtered.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-30" />
@@ -851,7 +871,7 @@ export default function LuckPage() {
             const showAll = catShowAll.has(category);
             const visibleItems = showAll ? items : items.slice(0, CAT_PREVIEW);
             return (
-              <div key={category} className="mb-10">
+              <div key={category} id={`cat-${category}`} className="mb-10 scroll-mt-28 md:scroll-mt-4">
                 {/* Category section header */}
                 <div className="flex items-center gap-3 mb-5">
                   <span className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium', config.bgColor, config.color)}>
@@ -860,7 +880,7 @@ export default function LuckPage() {
                   </span>
                   <span className="text-[10px] font-mono text-muted-foreground/40 tabular-nums">{items.length}项</span>
                   <span className="text-[10px] text-muted-foreground/30 hidden sm:inline">· {config.subLabel}</span>
-                  <div className="flex-1 h-px bg-border" />
+                  <TickRule className="flex-1" />
                 </div>
 
                 {/* Cards grid */}

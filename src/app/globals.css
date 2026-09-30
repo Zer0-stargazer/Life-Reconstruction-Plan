@@ -284,6 +284,17 @@
   background: oklch(0.5 0.03 70 / 60%);
 }
 
+/* 横向 chip 条：横向滚动靠手势，不需要滚动条占一条视觉高度。
+   注意：这个类全项目都在用（/laws 的维度条等），之前压根没定义，
+   一直静默失效、滚动条照常显示。改这里会同时影响所有用到它的地方。 */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Range slider custom styling */
 input[type="range"] {
   -webkit-appearance: none;

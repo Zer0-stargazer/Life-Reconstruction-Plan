@@ -14,18 +14,23 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { lifeWindows, type LifeWindow, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LOCK_FORCE_LABELS } from '@/data/windows';
 import { cn } from '@/lib/utils';
-import { PanelHead, HudCorners } from '@/components/shared/fig-kit';
+import { PanelHead, HudCorners, HazardStripe } from '@/components/shared/fig-kit';
 import { Reveal } from '@/components/shared/reveal';
+import { WindowMarkBar, WindowMarkChip } from '@/components/shared/window-mark-bar';
+import { useWindowMarks, type WindowMarkMap } from '@/hooks/use-window-marks';
 import { TIMELINE_IDENTITY } from '@/lib/module-identity';
 import {
   Flame, Hourglass, CheckCircle2, CalendarClock, ChevronDown, ChevronRight,
-  ArrowRight, Lock, AlertTriangle, Info,
+  ArrowRight, Lock, AlertTriangle, Info, ListChecks,
 } from 'lucide-react';
 
 /* ============ 工具 ============ */
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MAX_AGE = 100;
+/** 每档清单默认显示条数，其余折在"展开其余 N 个"里 */
+const URGENT_PREVIEW = 8;
+const OPEN_PREVIEW = 8;
 /** 全局年龄主键：/user 设置、/me 滑块、/windows 年龄、首页图表指针共用这一个值 */
 const AGE_STORAGE_KEY = 'default-age';
 /** 旧键（/me 曾单独存一份），首次读取时迁移到主键 */
@@ -72,6 +77,20 @@ function classify(age: number): ClassifiedWindow[] {
   });
 }
 
+/**
+ * 把一个清单按"有没有被标记"分成两半。
+ *
+ * 时间轴在多数年龄下都有几十条，用户真正的动作是"逐条表态"：
+ * 表态过的（已在做 / 已完成 / 与我无关）沉到后面单独折叠，
+ * 主清单只留还没处理的，数字会随梳理一条条变小。
+ */
+function partition(list: ClassifiedWindow[], marks: WindowMarkMap) {
+  const active: ClassifiedWindow[] = [];
+  const marked: ClassifiedWindow[] = [];
+  for (const w of list) (marks[w.id] ? marked : active).push(w);
+  return { active, marked };
+}
+
 /* ============ 小组件 ============ */
 
 /* ============ 聚焦列 ============ */
@@ -105,6 +124,8 @@ function FocusColumn({
   const t = FOCUS_TONE[tone];
   return (
     <div className={cn('flex flex-col rounded-xl border bg-card overflow-hidden', t.border)}>
+      {/* 全站只有"马上要关"这一列配斜纹——多一处就不是警示而是噪音 */}
+      {tone === 'red' && items.length > 0 && <HazardStripe className="text-red-500" />}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
         <span className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-md', t.chip)}>
           {icon}
@@ -140,6 +161,44 @@ function FocusColumn({
   );
 }
 
+/**
+ * 已表态的一组：折叠成一行抽屉。
+ * 默认收起——它们已经退出主清单了，不该再占视线；但必须能一键找回，
+ * 否则"与我无关"就成了删除，用户不敢点。
+ */
+function MarkedFold({
+  items,
+  open,
+  onToggle,
+}: {
+  items: ClassifiedWindow[];
+  open: boolean;
+  onToggle: () => void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-6">
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 rounded-lg border border-dashed border-border bg-muted/20 px-3.5 py-2.5 text-left text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+      >
+        <ListChecks className="h-3.5 w-3.5 shrink-0" />
+        <span className="min-w-0">
+          已表态的 <span className="tabular-nums font-semibold">{items.length}</span> 个
+          <span className="ml-1.5 text-[11px] opacity-70">已在做 / 已完成 / 与我无关</span>
+        </span>
+        <ChevronDown className={cn('ml-auto h-3.5 w-3.5 shrink-0 transition-transform', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div className="mt-2.5 space-y-2.5 animate-fade-in">
+          {items.map((w) => <WindowCard key={w.id} w={w} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StateBadge({ w }: { w: ClassifiedWindow }) {
   if (w.state === 'urgent') {
     return (
@@ -162,12 +221,15 @@ function StateBadge({ w }: { w: ClassifiedWindow }) {
 
 function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOpen?: boolean }) {
   const [expanded, setExpanded] = useState(defaultOpen);
+  const { marks } = useWindowMarks();
+  const marked = marks[w.id];
   const remedy = REMEDY_LEVEL_CONFIG[w.remedyLevel];
   const miss = MISS_TYPE_CONFIG[w.missType];
   const lock = LOCK_FORCE_LABELS[w.lockForceScore] ?? null;
 
-  const stateStyle =
-    w.state === 'urgent'
+  const stateStyle = marked
+    ? 'border-l-muted-foreground/15'
+    : w.state === 'urgent'
       ? 'border-l-red-500'
       : w.state === 'open'
         ? 'border-l-emerald-500'
@@ -177,9 +239,12 @@ function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOp
 
   return (
     <div
+      id={`me-win-${w.id}`}
       className={cn(
-        'rounded-lg border border-border bg-card border-l-4 overflow-hidden transition-shadow hover:shadow-sm',
-        stateStyle
+        'rounded-lg border border-border bg-card border-l-4 overflow-hidden transition-all hover:shadow-sm',
+        stateStyle,
+        // 标记过 = 已经处理过这件事，视觉上退后，但不藏起来（随时可撤销）
+        marked && 'opacity-55 hover:opacity-100'
       )}
     >
       <button
@@ -196,6 +261,7 @@ function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOp
               {w.range.end < 200 ? `-${w.range.end}` : '+'}岁
             </span>
             <h4 className="text-sm font-semibold text-foreground">{w.title}</h4>
+            <WindowMarkChip id={w.id} />
           </div>
           {!expanded && (
             <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">{w.description}</p>
@@ -253,6 +319,14 @@ function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOp
           </Link>
         </div>
       )}
+
+      {/* 表态条：常驻在卡片底部，不藏在展开区里——这个页面的主操作就是逐条表态 */}
+      <div className="flex items-center gap-2 border-t border-border/50 bg-muted/10 px-4 py-1.5">
+        <WindowMarkBar id={w.id} />
+        <span className="ml-auto font-mono text-[9px] text-muted-foreground/35 tabular-nums">
+          {marked ? 'MARKED' : '#MARK'}
+        </span>
+      </div>
     </div>
   );
 }
@@ -346,12 +420,14 @@ const FOCUS_BEFORE = 8;
 const FOCUS_AFTER = 15;
 
 function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[] }) {
+  const { marks } = useWindowMarks();
   const from = Math.max(0, age - FOCUS_BEFORE);
   const to = age + FOCUS_AFTER;
   const span = to - from;
 
+  // 标了"与我无关"的连色带都不画——这条轨道图的价值就是让你一眼看见还剩什么
   const inView = windows
-    .filter((w) => w.range.start <= to && w.range.end >= from && w.state !== 'missed')
+    .filter((w) => w.range.start <= to && w.range.end >= from && w.state !== 'missed' && marks[w.id] !== 'skip')
     .sort((a, b) => a.range.start - b.range.start || a.range.end - b.range.end);
 
   // 贪心分轨
@@ -407,7 +483,8 @@ function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[
                 onClick={() => document.getElementById(`me-win-${w.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                 className={cn(
                   'absolute h-2.5 rounded-full cursor-pointer transition-colors group',
-                  barColor(w)
+                  barColor(w),
+                  marks[w.id] && 'opacity-40'
                 )}
                 style={{ left: `${left}%`, width: `${Math.max(width, 1.2)}%`, top: 28 + t * 18 }}
               />
@@ -434,7 +511,16 @@ export default function MePage() {
   const [tab, setTab] = useState<TabKey>('open');
   const [missedShowAll, setMissedShowAll] = useState(false);
   const [openShowAll, setOpenShowAll] = useState(false);
+  /**
+   * "即将关闭"这一档默认也只给前 8 个。
+   * 28 岁这档有 48 个——原来一口气全铺出来，等于把最该看的东西埋进 48 张卡里，
+   * 跟"眼睛不知道看什么"是同一个病。急不等于该全显示。
+   */
+  const [urgentShowAll, setUrgentShowAll] = useState(false);
+  /** 已表态的那一组默认折叠（它们已经在主清单里沉底了，不该再占视线） */
+  const [showMarked, setShowMarked] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const { marks, clearAll, markedCount } = useWindowMarks();
 
   // 读全局年龄（兼容旧 me-age 键：首次读取时迁移）
   useEffect(() => {
@@ -456,27 +542,56 @@ export default function MePage() {
 
   const all = useMemo(() => (age === null ? [] : classify(age)), [age]);
 
-  const openList = useMemo(
-    () => all.filter((w) => w.state === 'open' || w.state === 'urgent')
-      .sort((a, b) => (a.yearsLeft ?? 999) - (b.yearsLeft ?? 999)),
-    [all]
-  );
-  const urgentList = useMemo(() => openList.filter((w) => w.state === 'urgent'), [openList]);
-  const openCalm = useMemo(() => openList.filter((w) => w.state !== 'urgent'), [openList]);
-  const missedPermanent = useMemo(
-    () => all.filter((w) => w.state === 'missed' && w.missType === 'permanent')
-      .sort((a, b) => a.range.end - b.range.end),
-    [all]
-  );
-  const missedOther = useMemo(
-    () => all.filter((w) => w.state === 'missed' && w.missType !== 'permanent')
-      .sort((a, b) => b.range.end - a.range.end),
-    [all]
-  );
-  const futureList = useMemo(
-    () => all.filter((w) => w.state === 'future').sort((a, b) => a.range.start - b.range.start).slice(0, 8),
-    [all]
-  );
+  /**
+   * 每个清单都按"有没有表态过"分成两半：
+   *   .active —— 还没处理的，主视图只显示这些
+   *   .marked —— 已在做 / 已完成 / 与我无关，折叠到清单末尾
+   * 顶部仪表读数仍用客观总数，tab 上的数字是"还剩多少没处理"。
+   */
+  const lists = useMemo(() => {
+    const openAll = all
+      .filter((w) => w.state === 'open' || w.state === 'urgent')
+      .sort((a, b) => (a.yearsLeft ?? 999) - (b.yearsLeft ?? 999));
+    const missedAll = all.filter((w) => w.state === 'missed');
+    const futureAll = all
+      .filter((w) => w.state === 'future')
+      .sort((a, b) => a.range.start - b.range.start);
+
+    return {
+      open: partition(openAll, marks),
+      urgent: partition(openAll.filter((w) => w.state === 'urgent'), marks),
+      calm: partition(openAll.filter((w) => w.state !== 'urgent'), marks),
+      missedPermanent: partition(
+        missedAll.filter((w) => w.missType === 'permanent').sort((a, b) => a.range.end - b.range.end),
+        marks
+      ),
+      missedOther: partition(
+        missedAll.filter((w) => w.missType !== 'permanent').sort((a, b) => b.range.end - a.range.end),
+        marks
+      ),
+      missed: partition(missedAll, marks),
+      future: partition(futureAll, marks),
+    };
+  }, [all, marks]);
+
+  // 主清单 = 还没表态的
+  const openList = lists.open.active;
+  const openMarked = lists.open.marked;
+  const urgentList = lists.urgent.active;
+  const openCalm = lists.calm.active;
+  const calmMarked = lists.calm.marked;
+  const missedPermanent = lists.missedPermanent.active;
+  const missedOther = lists.missedOther.active;
+  const missedMarked = lists.missed.marked;
+  const futureListAll = lists.future.active;
+  const futureList = futureListAll.slice(0, 8);
+  const futureMarked = lists.future.marked;
+
+  // 客观总数（仪表读数用）
+  const openTotal = openList.length + openMarked.length;
+  const urgentTotal = urgentList.length + lists.urgent.marked.length;
+  const missedTotal = missedPermanent.length + missedOther.length + missedMarked.length;
+  const futureTotal = futureListAll.length + futureMarked.length;
 
   /**
    * 聚焦层：每档只取最该看的 3 个。
@@ -484,18 +599,29 @@ export default function MePage() {
    * 原来一进页面就是几十张卡平铺（"正在开启"经常 30+），
    * 眼睛根本没有落点。这里按"错过代价最大"排序取前三——
    * 想看全的在下面 tab 里。
+   *
+   * 优先给还没表态的；那一档全表态完了就退回显示已标记的，别出现空列。
    */
-  const focusUrgent = useMemo(() => urgentList.slice(0, 3), [urgentList]);
-  const focusOpen = useMemo(
-    () => openCalm.slice().sort((a, b) => (b.lockForceScore ?? 0) - (a.lockForceScore ?? 0)).slice(0, 3),
-    [openCalm]
+  const focusUrgent = useMemo(
+    () => (urgentList.length ? urgentList : lists.urgent.marked).slice(0, 3),
+    [urgentList, lists.urgent.marked]
   );
-  const focusFuture = useMemo(() => futureList.slice(0, 3), [futureList]);
+  const focusOpen = useMemo(
+    () => (openCalm.length ? openCalm : calmMarked)
+      .slice()
+      .sort((a, b) => (b.lockForceScore ?? 0) - (a.lockForceScore ?? 0))
+      .slice(0, 3),
+    [openCalm, calmMarked]
+  );
+  const focusFuture = useMemo(
+    () => (futureListAll.length ? futureListAll : futureMarked).slice(0, 3),
+    [futureListAll, futureMarked]
+  );
 
   const tabs: { key: TabKey; label: string; count: number; icon: React.ReactNode }[] = [
     { key: 'open', label: '正在开启', count: openList.length, icon: <Flame className="h-3.5 w-3.5" /> },
-    { key: 'missed', label: '已经错过', count: all.filter((w) => w.state === 'missed').length, icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
-    { key: 'future', label: '尚未到来', count: all.filter((w) => w.state === 'future').length, icon: <CalendarClock className="h-3.5 w-3.5" /> },
+    { key: 'missed', label: '已经错过', count: missedPermanent.length + missedOther.length, icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+    { key: 'future', label: '尚未到来', count: futureListAll.length, icon: <CalendarClock className="h-3.5 w-3.5" /> },
   ];
 
   if (age === null) {
@@ -525,17 +651,17 @@ export default function MePage() {
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-serif font-bold text-foreground tracking-tight leading-[1.1] mb-4 animate-fade-in-up stagger-1">
-            {openList.length > 0 ? (
+            {openTotal > 0 ? (
               <><span className="text-primary tabular-nums">{age}</span> 岁 ·
               <br className="sm:hidden" />
-              <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openList.length}</span> 扇门正在开启</>
+              <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openTotal}</span> 扇门正在开启</>
             ) : (
               <>拖动下面的滑块，看看你的人生时间轴</>
             )}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl animate-fade-in-up stagger-2">
-            {urgentList.length > 0 ? (
-              <>其中 <span className="font-semibold text-red-600 dark:text-red-400 tabular-nums">{urgentList.length}</span> 扇将在 5 年内关上——
+            {urgentTotal > 0 ? (
+              <>其中 <span className="font-semibold text-red-600 dark:text-red-400 tabular-nums">{urgentTotal}</span> 扇将在 5 年内关上——
               人生窗口不是隐喻，是发展心理学里真实存在的时机。</>
             ) : (
               <>473 个人生窗口里，正在开启的、已经关上的、还没来的——都在下面。</>
@@ -544,10 +670,13 @@ export default function MePage() {
 
           {/* 仪表读数行（年龄在下方控制台里调，这里不重复显示） */}
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[11px] text-muted-foreground/60 animate-fade-in-up stagger-3">
-            <span>OPEN <b className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openList.length}</b></span>
-            <span>URGENT <b className="text-red-500 tabular-nums">{urgentList.length}</b></span>
-            <span>MISSED <b className="text-muted-foreground tabular-nums">{all.filter((w) => w.state === 'missed').length}</b></span>
-            <span>FUTURE <b className="text-foreground/80 tabular-nums">{all.filter((w) => w.state === 'future').length}</b></span>
+            <span>OPEN <b className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openTotal}</b></span>
+            <span>URGENT <b className="text-red-500 tabular-nums">{urgentTotal}</b></span>
+            <span>MISSED <b className="text-muted-foreground tabular-nums">{missedTotal}</b></span>
+            <span>FUTURE <b className="text-foreground/80 tabular-nums">{futureTotal}</b></span>
+            {markedCount > 0 && (
+              <span className="text-primary/80">已表态 <b className="tabular-nums">{markedCount}</b></span>
+            )}
             <span className="hidden sm:inline">SRC windows.ts · N=473</span>
           </div>
 
@@ -636,7 +765,7 @@ export default function MePage() {
             icon={<CalendarClock className="h-3.5 w-3.5" />}
             tone="amber"
             items={focusFuture}
-            total={all.filter((w) => w.state === 'future').length}
+            total={futureListAll.length}
             emptyText="后面没有还没到来的窗口了。"
             onSeeAll={() => {
               setTab('future');
@@ -673,7 +802,7 @@ export default function MePage() {
           {tabs.map((t) => (
             <button
               key={t.key}
-              onClick={() => { setTab(t.key); setOpenShowAll(false); setMissedShowAll(false); }}
+              onClick={() => { setTab(t.key); setOpenShowAll(false); setMissedShowAll(false); setUrgentShowAll(false); setShowMarked(false); }}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all',
                 tab === t.key
@@ -688,6 +817,16 @@ export default function MePage() {
               </span>
             </button>
           ))}
+          {markedCount > 0 && (
+            <button
+              onClick={clearAll}
+              title="清除全部表态，清单恢复原样"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/[0.06] px-3 py-1.5 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              <ListChecks className="h-3.5 w-3.5" />
+              已表态 <span className="tabular-nums">{markedCount}</span> 个 · 全部清除
+            </button>
+          )}
         </div>
 
         {/* 正在开启：紧急的置顶全显，其余默认只看最近 8 个 */}
@@ -695,7 +834,9 @@ export default function MePage() {
           <div className="space-y-4 animate-fade-in">
             {openList.length === 0 && (
               <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                这个年龄段没有正在开启的窗口——往上看看「尚未到来」的。
+                {openMarked.length > 0
+                  ? '这一档都表态完了——往下能看到已表态的那些。'
+                  : '这个年龄段没有正在开启的窗口——往上看看「尚未到来」的。'}
               </div>
             )}
             {urgentList.length > 0 && (
@@ -708,8 +849,18 @@ export default function MePage() {
                   </h3>
                 </div>
                 <div className="space-y-2.5">
-                  {urgentList.map((w) => <WindowCard key={w.id} w={w} />)}
+                  {(urgentShowAll ? urgentList : urgentList.slice(0, URGENT_PREVIEW)).map((w) => (
+                    <WindowCard key={w.id} w={w} />
+                  ))}
                 </div>
+                {urgentList.length > URGENT_PREVIEW && (
+                  <button
+                    onClick={() => setUrgentShowAll(!urgentShowAll)}
+                    className="mt-3 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                  >
+                    {urgentShowAll ? '收起' : `展开其余 ${urgentList.length - URGENT_PREVIEW} 个即将关闭的窗口`}
+                  </button>
+                )}
               </div>
             )}
             {openCalm.length > 0 && (
@@ -722,16 +873,16 @@ export default function MePage() {
                   </h3>
                 </div>
                 <div className="space-y-2.5">
-                  {(openShowAll ? openCalm : openCalm.slice(0, 8)).map((w) => (
+                  {(openShowAll ? openCalm : openCalm.slice(0, OPEN_PREVIEW)).map((w) => (
                     <WindowCard key={w.id} w={w} />
                   ))}
                 </div>
-                {openCalm.length > 8 && (
+                {openCalm.length > OPEN_PREVIEW && (
                   <button
                     onClick={() => setOpenShowAll(!openShowAll)}
                     className="mt-3 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
                   >
-                    {openShowAll ? '收起' : `展开其余 ${openCalm.length - 8} 个`}
+                    {openShowAll ? '收起' : `展开其余 ${openCalm.length - OPEN_PREVIEW} 个`}
                   </button>
                 )}
               </div>
@@ -810,6 +961,13 @@ export default function MePage() {
             </Link>
           </div>
         )}
+
+        {/* 已表态的这一组：沉底 + 默认折叠。标记只是让它退出主清单，不是删掉 */}
+        <MarkedFold
+          items={tab === 'open' ? openMarked : tab === 'missed' ? missedMarked : futureMarked}
+          open={showMarked}
+          onToggle={() => setShowMarked(!showMarked)}
+        />
       </section>
 
       {/* 底部：一句收束 */}
