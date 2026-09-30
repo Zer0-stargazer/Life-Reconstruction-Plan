@@ -353,3 +353,51 @@
 | `TickRule` 刻度尺 | `/windows` `/luck` 的分组标题填充线 | 替代纯 `border-t`，"人生刻度" |
 | `HazardStripe` 斜纹警示条 | `/me` 聚焦列的「马上要关」 | 全站只这一处，多一处就是噪音 |
 | `ArcGlyph` 同心弧 | 所有模块页页头右上角 | 三道四分之一弧 + 对角光晕，呼应"人生轨迹" |
+
+---
+
+## 十一、2026-10-01 深度复检（最后一轮大改进）
+
+> 子代理限流，本轮改为人工全量扫描（grep 统计 + 逐文件精读 + 浏览器实测）。
+> 覆盖：视觉一致性 / 后端安全 / 人机交互 / 状态管理 / 数据完整性 / 文档真实性。
+
+### 11.1 本轮修复（已提交）
+
+**P0 安全**
+
+| 问题 | 位置 | 修复 |
+|---|---|---|
+| 开发者后台免密绕过 | `api/admin/route.ts` `verify` | `DEV_PASSWORD` 未配置时 `password === DEV_PASSWORD` 退化为 `undefined === undefined` = true，任何人传 userId 即可升级为 developer。改为未配置返回 503、密码校验先判类型与非空 |
+| 登录/注册可暴力破解 | `api/auth/route.ts` | 密码最短仅 4 位且无任何限流 → 在线爆破。按 IP 限流 10 次/5 分钟 |
+| 开发者密码可暴力破解 | `api/admin/route.ts` `verify` | 唯一不需要 token 的入口，无限流。按 IP 限流 8 次/5 分钟 |
+
+**P1 体验**
+
+| 问题 | 位置 | 修复 |
+|---|---|---|
+| 刷新即丢全部输入 | `/simulation` `/destiny` `/name` | 三页共 30 个 useState、0 个持久化。新增 `hooks/use-persisted-state.ts`（行为同 useState、自动读写 localStorage），维度/答案/表单/姓氏全接 |
+| 8px 文字移动端不可读 | `/career` `/simulation` 5 处 | `text-[8px]` → `text-[10px]`。全站 248 处 <12px 文字里这 5 处最小 |
+| 弹层按 Esc 无反应 | `/destiny` `/simulation` `/windows` AI 面板 + AI 分析面板 | 全站 10 处弹层只有 3 处处理 Esc。新增 `hooks/use-escape-key.ts`，4 处补上（关闭前先 abort 流式请求） |
+
+### 11.2 本轮确认无问题（澄清，避免下轮重复排查）
+
+- **会话层是安全的**：`lib/session.ts` 用 HMAC-SHA256 + timingSafeEqual，生产环境未配 `SESSION_SECRET` 会拒绝签发而非放行。
+- **邀请码兑换是安全的**：`api/invite/route.ts` 有会话校验、乐观锁防并发超发、失败限流、升级失败回滚名额。之前修的，本轮复核仍成立。
+- **数据完整性**：careers 757 条无重复 id、13 个分类与 `CAREER_CATEGORIES` 完全对齐（合计 757）；windows 473 条 age 全部是 `N-N` 可被 `parseAgeRange` 解析；luck 250 条无重复 id、分类合法。
+- **无 secrets 泄露**：service role key 只在服务端 API 路由用，没有 import 进任何客户端组件；`.env`/`.env.local` 未入 git（只入了 `.env.example`）。
+- **无定时器泄漏**：抽查的 setTimeout/setInterval 都有 clear 或是一次性。
+
+### 11.3 已知但不改（需要决策或性价比低）
+
+| 项 | 为什么不动 |
+|---|---|
+| Supabase 三件套未配置 | 登录/邀请码/admin 500 的根因。**需要用户提供**，代码无 bug |
+| service role key 承担所有服务端查询 | 绕过了 RLS，安全完全靠应用层鉴权。是设计选择，但意味着任何一个忘加鉴权的路由都是洞。建议长期改 RLS |
+| 59 处硬编码颜色没写 dark: 变体 | 绝大多数是 `bg-*-500` 饱和色，亮暗两种模式都可读；不是缺陷。个别文字色可后续打磨 |
+| `CAREER_CATEGORY_CONFIG`（含 emoji 图标）是死代码 | export 了但全项目没人 import。留着无害，删了也行 |
+| 248 处 <12px 文字 | `text-[10px]`(177) / `text-[9px]`(66) 是 HUD 注记的设计语言，刻意为之；只把最小的 8px 提了 |
+
+### 11.4 仍未解决（沿用之前的结论）
+
+- AI 面板 6 份重复实现未抽公共件
+- 未登录可访问全部模块（权限模型待用户拍板）

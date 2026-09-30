@@ -9,6 +9,7 @@ import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { Reveal } from '@/components/shared/reveal';
 import { SectionJumper } from '@/components/shared/section-jumper';
+import { useEscapeKey } from '@/hooks/use-escape-key';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send, Loader2 } from 'lucide-react';
 
@@ -103,6 +104,13 @@ export default function WindowsPage() {
   const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const aiEndRef = useRef<HTMLDivElement>(null);
+
+  // 按 Esc 关 AI 规划面板（先中止流式请求再关），键盘用户不用去找那个 ×
+  const closeAiPlanning = useCallback(() => {
+    if (abortRef.current) abortRef.current.abort();
+    setAiPlanning(false);
+  }, []);
+  useEscapeKey(closeAiPlanning, aiPlanning);
 
   const parsedAge = useMemo(() => {
     const n = parseInt(userAge);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
+import { getClientIp, rateLimit } from '@/lib/rate-limit';
 
 // Developer password (stored as env var in production)
 const DEV_PASSWORD = process.env.DEV_PASSWORD;
@@ -98,7 +99,19 @@ export async function POST(request: NextRequest) {
     // Verify dev password & auto-upgrade logged-in user to developer
     if (action === 'verify') {
       const { password, userId } = body;
-      if (password === DEV_PASSWORD) {
+      // 关键边界：DEV_PASSWORD 未配置时绝不能通过校验。
+      // 否则 password 与 DEV_PASSWORD 同为 undefined，`undefined === undefined` 为真，
+      // 任何人 POST {action:'verify', userId} 就能免密把自己升级成 developer。
+      if (!DEV_PASSWORD) {
+        return NextResponse.json({ error: '开发者后台未启用（未配置 DEV_PASSWORD）' }, { status: 503 });
+      }
+      // 防爆破：verify 是唯一不需要 token 的入口，必须限流，否则可离线/在线暴力猜密码
+      const ip = getClientIp(request);
+      const rl = rateLimit(`admin-verify:${ip}`, 8, 5 * 60_000);
+      if (!rl.ok) {
+        return NextResponse.json({ error: `尝试过于频繁，请 ${rl.retryAfter} 秒后再试` }, { status: 429 });
+      }
+      if (typeof password === 'string' && password.length > 0 && password === DEV_PASSWORD) {
         // If a userId is provided, auto-upgrade that user to developer
         if (userId) {
           const client = getSupabaseClient();

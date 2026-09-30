@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { useEscapeKey } from '@/hooks/use-escape-key';
 import { X, Send, Sparkles, Loader2 } from 'lucide-react';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 
@@ -35,6 +36,9 @@ export function AIAnalysisPanel({
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const initialAnalysisSent = useRef(false);
+
+  // 键盘用户按 Esc 也能关掉面板（原来只有点背景/点 × 才行）
+  useEscapeKey(onClose, open);
 
   // Auto-scroll to bottom
   useEffect(() => {

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { usePersistedState } from '@/hooks/use-persisted-state';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { Sparkles, RotateCcw, Copy, Check, Star, Zap, X } from 'lucide-react';
 
@@ -114,9 +115,10 @@ function generateName(gender: string, style: string, fixedSurname?: string): Gen
 }
 
 export default function NamePage() {
-  const [gender, setGender] = useState<'male' | 'female'>('male');
-  const [style, setStyle] = useState('classic');
-  const [surnameInput, setSurnameInput] = useState('');
+  // 表单输入持久化：刷新后保留（原来是纯 useState，刷新即丢）
+  const [gender, setGender] = usePersistedState<'male' | 'female'>('name.gender.v1', 'male');
+  const [style, setStyle] = usePersistedState('name.style.v1', 'classic');
+  const [surnameInput, setSurnameInput] = usePersistedState('name.surname.v1', '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [displayedResults, setDisplayedResults] = useState<GeneratedName[]>([]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);

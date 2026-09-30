@@ -326,7 +326,7 @@ export default function CareerPage() {
               >
                 {opt.label}
                 {activeSorts.includes(opt.value) && (
-                  <span className="text-[8px] text-primary/60">
+                  <span className="text-[10px] text-primary/60">
                     {activeSorts.indexOf(opt.value) + 1}
                   </span>
                 )}
@@ -634,9 +634,9 @@ export default function CareerPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 mb-0.5">
-                                <span className="text-[8px] text-muted-foreground/40 uppercase font-medium">{tutorialTypeLabel[t.type]}</span>
-                                <span className="text-[8px] text-muted-foreground/30">·</span>
-                                <span className="text-[8px] text-muted-foreground/40">{t.platform}</span>
+                                <span className="text-[10px] text-muted-foreground/40 uppercase font-medium">{tutorialTypeLabel[t.type]}</span>
+                                <span className="text-[10px] text-muted-foreground/30">·</span>
+                                <span className="text-[10px] text-muted-foreground/40">{t.platform}</span>
                               </div>
                               <span className="text-xs font-medium text-foreground">{t.title}</span>
                               {t.note && (

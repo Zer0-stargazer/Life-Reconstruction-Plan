@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
+import { usePersistedState } from '@/hooks/use-persisted-state';
+import { useEscapeKey } from '@/hooks/use-escape-key';
 import { ModuleGate } from '@/components/auth/module-gate';
 import { RotateCcw, Play, Sparkles, TrendingUp,
   AlertTriangle, Lightbulb, ChevronRight,
@@ -366,8 +368,9 @@ type Step = 'assessment' | 'result';
 export default function SimulationPage() {
   const { defaultAge } = useAdvancedSettings();
   const [step, setStep] = useState<Step>('assessment');
-  const [dimensions, setDimensions] = useState<SimDimension[]>(createDefaultDimensions());
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  // 用户填的维度与答案持久化：刷新后不再从头来过（原来是纯 useState，刷新即丢）
+  const [dimensions, setDimensions] = usePersistedState<SimDimension[]>('sim.dimensions.v1', createDefaultDimensions);
+  const [answers, setAnswers] = usePersistedState<Record<string, string>>('sim.answers.v1', {});
   const [simulated, setSimulated] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(0);
 
@@ -379,6 +382,13 @@ export default function SimulationPage() {
   const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const aiEndRef = useRef<HTMLDivElement>(null);
+
+  // 按 Esc 关 AI 面板（先中止流式请求再关），键盘用户不用去找那个 ×
+  const closeAi = useCallback(() => {
+    if (abortRef.current) abortRef.current.abort();
+    setAiOpen(false);
+  }, []);
+  useEscapeKey(closeAi, aiOpen);
 
   // 模拟器五维（出身/天赋/努力/选择/运气）用内置权重，与 /user 偏好权重（健康/财富等）是两个不同概念
   const score = calculateScore(dimensions);
@@ -432,19 +442,19 @@ export default function SimulationPage() {
     const dims = calculateFromAnswers();
     setDimensions(dims);
     setStep('result');
-  }, [calculateFromAnswers]);
+  }, [calculateFromAnswers, setDimensions]);
 
   // 手动微调滑块
   const handleSliderChange = useCallback((key: string, value: number) => {
     setDimensions(prev => prev.map(d => d.key === key ? { ...d, value } : d));
-  }, []);
+  }, [setDimensions]);
 
   // 重置
   const handleReset = useCallback(() => {
     setDimensions(createDefaultDimensions());
     setSimulated(false);
     setAnswers({});
-  }, []);
+  }, [setDimensions, setAnswers]);
 
   // 重新评估
   const handleReassess = useCallback(() => {
@@ -696,7 +706,7 @@ ${contextStr}
                                   ? 'border-primary bg-primary text-primary-foreground'
                                   : 'border-border'
                               )}>
-                                {selected === opt.label && <span className="text-[8px]">✓</span>}
+                                {selected === opt.label && <span className="text-[10px]">✓</span>}
                               </span>
                               <span className="flex-1">{opt.label}</span>
                               <span className={cn(

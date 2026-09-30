@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
+import { usePersistedState } from '@/hooks/use-persisted-state';
+import { useEscapeKey } from '@/hooks/use-escape-key';
 import { ModuleGate } from '@/components/auth/module-gate';
 import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, Target, Zap, Clock,
   ArrowRight, Sparkles, User, PenLine, Heart, Briefcase, MessageSquare,
@@ -281,7 +283,8 @@ function AnimatedScoreBar({ label, score, color, icon, delay }: { label: string;
 
 export default function DestinyPage() {
   const { defaultAge, weightMap } = useAdvancedSettings();
-  const [input, setInput] = useState<DestinyInput>({
+  // 表单输入持久化：刷新后不再重填（原来是纯 useState，刷新即丢）
+  const [input, setInput] = usePersistedState<DestinyInput>('destiny.input.v1', () => ({
     birthYear: String(new Date().getFullYear() - defaultAge),
     familyBackground: 'middle',
     educationLevel: 'good',
@@ -291,7 +294,7 @@ export default function DestinyPage() {
     keyExperiences: '',
     currentChallenge: '',
     otherInfo: '',
-  });
+  }));
   const [report, setReport] = useState<DestinyReport | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
@@ -304,6 +307,13 @@ export default function DestinyPage() {
   const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const aiEndRef = useRef<HTMLDivElement>(null);
+
+  // 按 Esc 关 AI 面板（先中止流式请求再关），键盘用户不用去找那个 ×
+  const closeAi = useCallback(() => {
+    if (abortRef.current) abortRef.current.abort();
+    setAiOpen(false);
+  }, []);
+  useEscapeKey(closeAi, aiOpen);
 
   const handleGenerate = () => {
     // 出生年份钳制到合理区间（1950 ~ 去年），避免生成负年龄报告

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
 import { signSession } from "@/lib/session";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
 
 const SALT_ROUNDS = 10;
@@ -8,6 +9,17 @@ const SALT_ROUNDS = 10;
 // POST /api/auth - register or login
 export async function POST(request: NextRequest) {
   try {
+    // 防爆破：密码最短只要 4 位，不限流就能被在线暴力破解。
+    // 按 IP 限流，登录和注册共用同一个桶。
+    const ip = getClientIp(request);
+    const rl = rateLimit(`auth:${ip}`, 10, 5 * 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: `尝试过于频繁，请 ${rl.retryAfter} 秒后再试` },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { action, nickname, password } = body;
 
