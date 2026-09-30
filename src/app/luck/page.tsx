@@ -705,6 +705,19 @@ export default function LuckPage() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  /** 每组默认只露 12 条：4 个分类 250 条全铺出来等于没有重点 */
+  const [catShowAll, setCatShowAll] = useState<Set<LuckCategory>>(new Set());
+  const CAT_PREVIEW = 12;
+
+  const toggleCatShowAll = (cat: LuckCategory) => {
+    setCatShowAll(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
   // Filter and search logic
   let filtered = filter === 'all'
     ? luckNodes.filter(Boolean)
@@ -842,6 +855,8 @@ export default function LuckPage() {
         ) : (
           groupedByCategory.map(({ category, items }) => {
             const config = LUCK_CATEGORY_CONFIG[category];
+            const showAll = catShowAll.has(category);
+            const visibleItems = showAll ? items : items.slice(0, CAT_PREVIEW);
             return (
               <div key={category} className="mb-10">
                 {/* Category section header */}
@@ -857,10 +872,19 @@ export default function LuckPage() {
 
                 {/* Cards grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {items.map(node => (
+                  {visibleItems.map(node => (
                     <LuckCard key={node.id} node={node} onClick={() => handleOpenNode(node)} />
                   ))}
                 </div>
+
+                {items.length > CAT_PREVIEW && (
+                  <button
+                    onClick={() => toggleCatShowAll(category)}
+                    className="mt-4 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                  >
+                    {showAll ? '收起' : `展开其余 ${items.length - CAT_PREVIEW} 个`}
+                  </button>
+                )}
               </div>
             );
           })
