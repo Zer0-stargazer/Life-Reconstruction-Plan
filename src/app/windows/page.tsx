@@ -83,6 +83,11 @@ export default function WindowsPage() {
   const [filter, setFilter] = useState<WindowStatus | 'all'>('all');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['青年起步', '壮年奋斗', '中年深耕']));
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  /** 组内"展开全部"：默认每组只露 12 条，避免一展开就是几十张卡 */
+  const [groupShowAll, setGroupShowAll] = useState<Set<string>>(new Set());
+
+  /** 每组默认预览条数 */
+  const GROUP_PREVIEW = 12;
   const [userAge, setUserAge] = useState<string>(String(defaultAge));
   const [ageTouched, setAgeTouched] = useState(false);
   const [showAgeInput, setShowAgeInput] = useState(false);
@@ -172,6 +177,15 @@ export default function WindowsPage() {
 
   const toggleGroup = (group: string) => {
     setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(group)) next.delete(group);
+      else next.add(group);
+      return next;
+    });
+  };
+
+  const toggleGroupShowAll = (group: string) => {
+    setGroupShowAll(prev => {
       const next = new Set(prev);
       if (next.has(group)) next.delete(group);
       else next.add(group);
@@ -446,6 +460,8 @@ export default function WindowsPage() {
           const items = groups[groupName];
           if (!items || items.length === 0) return null;
           const isExpanded = expandedGroups.has(groupName);
+          const showAll = groupShowAll.has(groupName);
+          const visibleItems = showAll ? items : items.slice(0, GROUP_PREVIEW);
 
           return (
             <div key={groupName} id={`group-${groupName}`} className="mb-6 animate-fade-in-up scroll-mt-20">
@@ -472,8 +488,9 @@ export default function WindowsPage() {
 
               {/* Cards */}
               {isExpanded && (
+                <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {items.map((w, idx) => {
+                  {visibleItems.map((w, idx) => {
                     const config = WINDOW_STATUS_CONFIG[w.status];
                     const isCardExpanded = expandedCards.has(w.id);
                     const isRelevant = parsedAge !== null && isAgeRelevant(w, parsedAge);
@@ -627,6 +644,16 @@ export default function WindowsPage() {
                     );
                   })}
                 </div>
+
+                {items.length > GROUP_PREVIEW && (
+                  <button
+                    onClick={() => toggleGroupShowAll(groupName)}
+                    className="mt-3 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                  >
+                    {showAll ? '收起' : `展开其余 ${items.length - GROUP_PREVIEW} 个`}
+                  </button>
+                )}
+                </>
               )}
             </div>
           );

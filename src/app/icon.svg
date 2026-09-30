@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="rise" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#b45309"/>
+      <stop offset="1" stop-color="#fbbf24"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#18181b"/>
+  <!-- 若不做任何改变，轨迹就是这样继续平下去 -->
+  <path d="M12 44 H54" stroke="#52525b" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="3.5 4.5"/>
+  <!-- 在关键窗口处改写之后 -->
+  <path d="M12 44 H28 L42 18 H54" stroke="url(#rise)" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 那个窗口本身 -->
+  <circle cx="28" cy="44" r="5.5" fill="#fbbf24"/>
+  <circle cx="28" cy="44" r="2.2" fill="#18181b"/>
+</svg>

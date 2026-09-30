@@ -72,6 +72,72 @@ function classify(age: number): ClassifiedWindow[] {
 
 /* ============ 小组件 ============ */
 
+/* ============ 聚焦列 ============ */
+
+const FOCUS_TONE = {
+  red: { chip: 'bg-red-500/10 text-red-600 dark:text-red-400', border: 'border-red-500/25' },
+  green: { chip: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/25' },
+  amber: { chip: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', border: 'border-amber-500/25' },
+} as const;
+
+/** 一档聚焦列：标题 + 最多 3 张卡 + 查看全部 */
+function FocusColumn({
+  title,
+  hint,
+  icon,
+  tone,
+  items,
+  total,
+  emptyText,
+  onSeeAll,
+}: {
+  title: string;
+  hint: string;
+  icon: React.ReactNode;
+  tone: keyof typeof FOCUS_TONE;
+  items: ClassifiedWindow[];
+  total: number;
+  emptyText: string;
+  onSeeAll: () => void;
+}) {
+  const t = FOCUS_TONE[tone];
+  return (
+    <div className={cn('flex flex-col rounded-xl border bg-card overflow-hidden', t.border)}>
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+        <span className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-md', t.chip)}>
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-[13px] font-semibold text-foreground leading-tight">{title}</h3>
+          <p className="text-[10px] text-muted-foreground leading-tight">{hint}</p>
+        </div>
+        <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60 tabular-nums">
+          {total}
+        </span>
+      </div>
+
+      <div className="flex-1 p-3 space-y-2.5">
+        {items.length === 0 ? (
+          <p className="py-6 text-center text-[11px] leading-relaxed text-muted-foreground">
+            {emptyText}
+          </p>
+        ) : (
+          items.map((w) => <WindowCard key={w.id} w={w} />)
+        )}
+      </div>
+
+      {total > items.length && (
+        <button
+          onClick={onSeeAll}
+          className="w-full border-t border-border py-2.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-accent/40 hover:text-primary"
+        >
+          查看全部 {total} 个 →
+        </button>
+      )}
+    </div>
+  );
+}
+
 function StateBadge({ w }: { w: ClassifiedWindow }) {
   if (w.state === 'urgent') {
     return (
@@ -410,6 +476,20 @@ export default function MePage() {
     [all]
   );
 
+  /**
+   * 聚焦层：每档只取最该看的 3 个。
+   *
+   * 原来一进页面就是几十张卡平铺（"正在开启"经常 30+），
+   * 眼睛根本没有落点。这里按"错过代价最大"排序取前三——
+   * 想看全的在下面 tab 里。
+   */
+  const focusUrgent = useMemo(() => urgentList.slice(0, 3), [urgentList]);
+  const focusOpen = useMemo(
+    () => openCalm.slice().sort((a, b) => (b.lockForceScore ?? 0) - (a.lockForceScore ?? 0)).slice(0, 3),
+    [openCalm]
+  );
+  const focusFuture = useMemo(() => futureList.slice(0, 3), [futureList]);
+
   const tabs: { key: TabKey; label: string; count: number; icon: React.ReactNode }[] = [
     { key: 'open', label: '正在开启', count: openList.length, icon: <Flame className="h-3.5 w-3.5" /> },
     { key: 'missed', label: '已经错过', count: all.filter((w) => w.state === 'missed').length, icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
@@ -501,6 +581,61 @@ export default function MePage() {
       </section>
 
       {/* 概览直方图 + 聚焦轨道 */}
+      {/* ===== 现在最该看的三类：聚焦，不把几十张卡平铺 ===== */}
+      <section className="max-w-5xl mx-auto px-6 sm:px-8 py-8 sm:py-10">
+        <div className="flex items-baseline justify-between border-b border-border pb-3 mb-5">
+          <div className="flex items-baseline gap-2.5">
+            <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">FOCUS</span>
+            <h2 className="text-sm font-semibold text-foreground">现在最该看的三类</h2>
+          </div>
+          <span className="font-mono text-[10px] text-muted-foreground/50">
+            错过代价最大的排在最前
+          </span>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <FocusColumn
+            title="马上要关"
+            hint="5 年内关闭，先处理这些"
+            icon={<Flame className="h-3.5 w-3.5" />}
+            tone="red"
+            items={focusUrgent}
+            total={urgentList.length}
+            emptyText="这个年纪没有即将关闭的窗口——往下看看「正在开启」。"
+            onSeeAll={() => {
+              setTab('open');
+              listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+          />
+          <FocusColumn
+            title="正在开启"
+            hint="按锁死力排序，错过代价最大的在前"
+            icon={<Hourglass className="h-3.5 w-3.5" />}
+            tone="green"
+            items={focusOpen}
+            total={openCalm.length}
+            emptyText="这个年龄段没有正在开启的窗口。"
+            onSeeAll={() => {
+              setTab('open');
+              listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+          />
+          <FocusColumn
+            title="快到了"
+            hint="提前知道，才谈得上准备"
+            icon={<CalendarClock className="h-3.5 w-3.5" />}
+            tone="amber"
+            items={focusFuture}
+            total={all.filter((w) => w.state === 'future').length}
+            emptyText="后面没有还没到来的窗口了。"
+            onSeeAll={() => {
+              setTab('future');
+              listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+          />
+        </div>
+      </section>
+
       <section className="max-w-5xl mx-auto px-6 sm:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-xl border border-border bg-card p-5 animate-fade-in-up">
