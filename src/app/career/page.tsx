@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { AIAnalysisPanel } from '@/components/ai/ai-analysis-panel';
 import { Reveal } from '@/components/shared/reveal';
+import { ModulePageHead } from '@/components/shared/module-page-head';
 
 // ============================================================
 // 常量
@@ -221,42 +222,32 @@ export default function CareerPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card grain-texture">
-        <div className="relative max-w-5xl mx-auto px-6 sm:px-8 py-8">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent pointer-events-none" />
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
-              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 02</span>
-              <span className="h-px flex-1 bg-border" />
-              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">N={careers.length}</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">职业遍历</h1>
-            <p className="text-sm text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up stagger-2">
-              选对赛道比努力更重要。浏览各行各业的薪资、趋势和AI替代风险，找到你的最优职业策略。
-            </p>
-
-            {/* Stats */}
-            <div className="flex items-center gap-6 mt-6 flex-wrap animate-fade-in-up stagger-3">
-              <div className="flex items-center gap-2">
-                <Bot className="h-4 w-4 text-red-500" />
-                <span className="text-lg font-semibold font-mono tabular-nums">{aiHighRisk}</span>
-                <span className="text-xs text-muted-foreground">个AI高风险</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-500" />
-                <span className="text-lg font-semibold font-mono tabular-nums">{trendingUp}</span>
-                <span className="text-xs text-muted-foreground">个趋势上升</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Bot className="h-4 w-4 text-green-500" />
-                <span className="text-lg font-semibold font-mono tabular-nums">{aiLowRisk}</span>
-                <span className="text-xs text-muted-foreground">个AI低风险</span>
-              </div>
-            </div>
+      {/* Header —— 编号/图标/提问统一从 module-identity 取 */}
+      <ModulePageHead
+        href="/career"
+        title="职业遍历"
+        note={`N=${careers.length}`}
+        desc="选对赛道比努力更重要。浏览各行各业的薪资、趋势和AI替代风险，找到你的最优职业策略。"
+      >
+        {/* Stats */}
+        <div className="flex items-center gap-6 mt-6 flex-wrap animate-fade-in-up stagger-3">
+          <div className="flex items-center gap-2">
+            <Bot className="h-4 w-4 text-red-500" />
+            <span className="text-lg font-semibold font-mono tabular-nums">{aiHighRisk}</span>
+            <span className="text-xs text-muted-foreground">个AI高风险</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-green-500" />
+            <span className="text-lg font-semibold font-mono tabular-nums">{trendingUp}</span>
+            <span className="text-xs text-muted-foreground">个趋势上升</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Bot className="h-4 w-4 text-green-500" />
+            <span className="text-lg font-semibold font-mono tabular-nums">{aiLowRisk}</span>
+            <span className="text-xs text-muted-foreground">个AI低风险</span>
           </div>
         </div>
-      </div>
+      </ModulePageHead>
 
       {/* Salary Distribution */}
       <div className="border-b border-border bg-muted/10">

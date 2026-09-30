@@ -16,6 +16,7 @@ import { lifeWindows, type LifeWindow, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LO
 import { cn } from '@/lib/utils';
 import { PanelHead, HudCorners } from '@/components/shared/fig-kit';
 import { Reveal } from '@/components/shared/reveal';
+import { TIMELINE_IDENTITY } from '@/lib/module-identity';
 import {
   Flame, Hourglass, CheckCircle2, CalendarClock, ChevronDown, ChevronRight,
   ArrowRight, Lock, AlertTriangle, Info,
@@ -515,7 +516,10 @@ export default function MePage() {
         <div className="relative max-w-5xl mx-auto px-6 sm:px-8 py-12 sm:py-16">
           {/* HUD 行 */}
           <div className="flex items-center gap-3 mb-8 animate-fade-in-up">
-            <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 08</span>
+            {/* ★ 不是 01–07，从 module-identity 取，别手写编号 */}
+            <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">
+              {TIMELINE_IDENTITY.tag} {TIMELINE_IDENTITY.note}
+            </span>
             <span className="h-px flex-1 bg-border" />
             <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">YOUR TIMELINE · N=473</span>
           </div>

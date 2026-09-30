@@ -133,6 +133,10 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
 /** 时间轴：个性化主线入口，不属于七大模块，编号为 ★ */
 export const TIMELINE_IDENTITY = {
   href: '/me',
+  /** 编号注记（不是 01–07，是 ★，所以单独放这里，避免页面里手写） */
+  tag: '★',
+  /** 页头右上注记 */
+  note: 'TIMELINE',
   title: '你的人生时间轴',
   question: '在我这个年纪，有哪些事正等着我？',
   icon: CalendarRange,

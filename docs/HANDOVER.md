@@ -102,10 +102,26 @@ shadcn/ui 组件在 `src/components/ui/`, 不要从外部引入新 UI 库。如�
 自动跟上的：首页 Hero 模块索引、首页导览卡、侧栏顺序、页尾「上一步/下一步」路径。
 需要手动处理的：`components/auth/module-gate.tsx` / `auth-context.tsx` 的权限清单、`docs/` 里的数据量表格。
 
-### 页面头部的现状（未统一）
+### 页面头部（2026-10-01 已统一）
 
-7 个模块页的页头目前是各写各的（`MODULE · 03` 这类编号硬编码在页面里），
-**还没抽成 `ModulePageHead`**。改的时候注意别把 `MODULE · 0X` 写错——以 `module-identity.ts` 为准。
+七个模块页统一用 `<ModulePageHead>`（`src/components/shared/module-page-head.tsx`）：
+
+```tsx
+<ModulePageHead
+  href="/laws"                 // ← 用它查 module-identity：编号/图标/配色/question
+  title="人生规律引擎"          // H1，传各页自己的产品文案
+  desc="..."                   // 描述，可传 JSX（如随步骤变化的文案）
+  note="LAW ENGINE · N=288"    // 右上注记，缺省用 metric unit
+  aside={<button/>}            // 右侧插槽（小屏整行换到下方）
+  width="5xl"                  // 3xl / 5xl / 6xl
+>
+  {/* 页头下方：统计条、分布图、步骤指示器 */}
+</ModulePageHead>
+```
+
+编号、图标、渐变配色、「能回答什么问题」全部自动取，**不要在页面里手写 `MODULE · 0X`**。
+（`grep -rn "MODULE · 0" src/` 应当为空——曾发现 `/me` 写的是 `MODULE · 08`，
+而全站只有 01–07，时间轴是 ★。）
 
 ## 数据修改指南
 

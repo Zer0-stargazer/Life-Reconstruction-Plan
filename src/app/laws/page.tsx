@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { ModuleGate } from '@/components/auth/module-gate';
 import { Reveal } from '@/components/shared/reveal';
+import { ModulePageHead } from '@/components/shared/module-page-head';
 import {
   TrendingUp, AlertTriangle, Shield, Bot,
   ChevronLeft, ChevronRight, X, Maximize2,
@@ -911,48 +912,33 @@ export default function LawsPage() {
   return (
     <ModuleGate modulePath="/laws">
     <div className="min-h-screen bg-background">
-      {/* Top Banner */}
-      <div className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background grain-texture" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-        }} />
-        <div className="relative px-6 py-8 md:px-10 md:py-10">
-          <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
-            <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 03</span>
-            <span className="h-px flex-1 bg-border" />
-            <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">LAW ENGINE · N=288</span>
+      {/* Top Banner —— 编号/图标/提问统一从 module-identity 取 */}
+      <ModulePageHead
+        href="/laws"
+        title="人生规律引擎"
+        note="LAW ENGINE · N=288"
+        desc="混沌系统中的确定性规律——8个维度揭示人生暗箱里的齿轮如何转动。看清规律，才能在不确定性中找到行动的锚点。"
+      >
+        {/* Global stats */}
+        <div className="flex items-center gap-4 mt-4 animate-fade-in-up stagger-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-2xl font-bold font-mono text-foreground tabular-nums">{LAW_DIMENSIONS.reduce((s, d) => s + d.items.length, 0)}</span>
+            <span className="text-xs text-muted-foreground">条规律</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight animate-fade-in-up stagger-1">
-            人生规律引擎
-          </h1>
-          <p className="text-sm text-muted-foreground mt-3 max-w-2xl leading-relaxed animate-fade-in-up stagger-2">
-            混沌系统中的确定性规律——8个维度揭示人生暗箱里的齿轮如何转动。
-            看清规律，才能在不确定性中找到行动的锚点。
-          </p>
-
-          {/* Global stats */}
-          <div className="flex items-center gap-4 mt-4 animate-fade-in-up stagger-2">
-            <div className="flex items-center gap-1.5">
-              <span className="text-2xl font-bold font-mono text-foreground tabular-nums">{LAW_DIMENSIONS.reduce((s, d) => s + d.items.length, 0)}</span>
-              <span className="text-xs text-muted-foreground">条规律</span>
-            </div>
-            <div className="h-4 w-px bg-border" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-2xl font-bold font-mono text-foreground tabular-nums">{LAW_DIMENSIONS.length}</span>
-              <span className="text-xs text-muted-foreground">大维度</span>
-            </div>
-            <div className="h-4 w-px bg-border" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-2xl font-bold font-mono text-red-500 tabular-nums">{LAW_DIMENSIONS.reduce((s, d) => s + d.items.filter(i => i.tag === 'critical').length, 0)}</span>
-              <span className="text-xs text-muted-foreground">致命条目</span>
-            </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-2xl font-bold font-mono text-foreground tabular-nums">{LAW_DIMENSIONS.length}</span>
+            <span className="text-xs text-muted-foreground">大维度</span>
           </div>
-
-          <LawsDistribution dims={LAW_DIMENSIONS} />
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-2xl font-bold font-mono text-red-500 tabular-nums">{LAW_DIMENSIONS.reduce((s, d) => s + d.items.filter(i => i.tag === 'critical').length, 0)}</span>
+            <span className="text-xs text-muted-foreground">致命条目</span>
+          </div>
         </div>
-      </div>
+
+        <LawsDistribution dims={LAW_DIMENSIONS} />
+      </ModulePageHead>
 
       <div className="px-4 md:px-8 py-6 space-y-6">
         {/* Dimension tabs */}

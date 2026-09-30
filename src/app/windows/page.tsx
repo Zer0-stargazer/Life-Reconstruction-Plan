@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { Reveal } from '@/components/shared/reveal';
+import { ModulePageHead } from '@/components/shared/module-page-head';
 import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send, Loader2 } from 'lucide-react';
 
 const statusOptions: { value: WindowStatus | 'all'; label: string; dotColor: string }[] = [
@@ -315,123 +316,110 @@ export default function WindowsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="relative overflow-hidden border-b border-border bg-card grain-texture">
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-        }} />
-        <div className="relative max-w-5xl mx-auto px-8 py-10 sm:py-12">
-          <div className="flex items-center gap-3 mb-8 animate-fade-in-up">
-            <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 04</span>
-            <span className="h-px flex-1 bg-border" />
-            <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">WINDOWS · N=473</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">人生关键窗口</h1>
-              <p className="text-sm text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up stagger-2">
-                每个人生阶段都有打开又关闭的窗口。有些错过了就永远关上了，有些只有精英才能看见。
-                看清窗口，才知道什么时候该全力以赴。
-              </p>
-            </div>
-            {/* AI深度规划按钮 */}
-            <button
-              onClick={() => { setAiPlanning(true); if (aiMessages.length === 0) startAIPlanning(); }}
-              className="shrink-0 ml-4 flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2.5 text-xs font-medium text-primary hover:bg-primary/15 transition-all active:scale-[0.97] animate-fade-in-up stagger-3"
-            >
-              <Bot className="h-4 w-4" />
-              长期主义深度规划
-            </button>
-          </div>
+      {/* Header —— 编号/图标/提问统一从 module-identity 取 */}
+      <ModulePageHead
+        href="/windows"
+        title="人生关键窗口"
+        note="WINDOWS · N=473"
+        desc="每个人生阶段都有打开又关闭的窗口。有些错过了就永远关上了，有些只有精英才能看见。看清窗口，才知道什么时候该全力以赴。"
+        aside={
+          <button
+            onClick={() => { setAiPlanning(true); if (aiMessages.length === 0) startAIPlanning(); }}
+            className="shrink-0 flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2.5 text-xs font-medium text-primary hover:bg-primary/15 transition-all active:scale-[0.97]"
+          >
+            <Bot className="h-4 w-4" />
+            长期主义深度规划
+          </button>
+        }
+      >
 
-          {/* Stats + Age Input */}
-          <div className="flex items-center gap-6 mt-6 animate-fade-in-up stagger-3 flex-wrap">
-            {(Object.entries(stats) as [WindowStatus, number][]).map(([key, count]) => {
-              const config = WINDOW_STATUS_CONFIG[key];
-              return (
-                <div key={key} className="flex items-center gap-2">
-                  <span className={cn('h-2 w-2 rounded-full', key === 'current' ? 'bg-green-500' : key === 'past' ? 'bg-muted-foreground/30' : key === 'future' ? 'bg-amber-500' : 'bg-primary')} />
-                  <span className={cn('text-lg font-semibold font-mono tabular-nums', config.color)}>{count}</span>
-                  <span className="text-xs text-muted-foreground">{config.label}</span>
-                </div>
-              );
-            })}
+        {/* Stats + Age Input */}
+        <div className="flex items-center gap-6 mt-6 animate-fade-in-up stagger-3 flex-wrap">
+          {(Object.entries(stats) as [WindowStatus, number][]).map(([key, count]) => {
+            const config = WINDOW_STATUS_CONFIG[key];
+            return (
+              <div key={key} className="flex items-center gap-2">
+                <span className={cn('h-2 w-2 rounded-full', key === 'current' ? 'bg-green-500' : key === 'past' ? 'bg-muted-foreground/30' : key === 'future' ? 'bg-amber-500' : 'bg-primary')} />
+                <span className={cn('text-lg font-semibold font-mono tabular-nums', config.color)}>{count}</span>
+                <span className="text-xs text-muted-foreground">{config.label}</span>
+              </div>
+            );
+          })}
 
-            <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border" />
 
-            {/* 自定义年龄 */}
-            <div className="flex items-center gap-2">
-              <User className="h-3.5 w-3.5 text-muted-foreground" />
-              {showAgeInput ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    max={120}
-                    value={userAge}
-                    onChange={e => { setUserAge(e.target.value); setAgeTouched(true); }}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && parsedAge !== null && relevantWindows.length > 0) {
-                        const firstW = relevantWindows[0];
-                        if (firstW) {
-                          const g = getGroupFromWindow(firstW, stages);
-                          const el = document.getElementById(`group-${g}`);
-                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
+          {/* 自定义年龄 */}
+          <div className="flex items-center gap-2">
+            <User className="h-3.5 w-3.5 text-muted-foreground" />
+            {showAgeInput ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={120}
+                  value={userAge}
+                  onChange={e => { setUserAge(e.target.value); setAgeTouched(true); }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && parsedAge !== null && relevantWindows.length > 0) {
+                      const firstW = relevantWindows[0];
+                      if (firstW) {
+                        const g = getGroupFromWindow(firstW, stages);
+                        const el = document.getElementById(`group-${g}`);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       }
-                    }}
-                    placeholder="输入年龄"
-                    className="w-20 rounded-md border border-border bg-background px-2 py-1 text-xs font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                    autoFocus
-                  />
-                  <span className="text-xs text-muted-foreground">岁</span>
-                  {parsedAge !== null && (
-                    <>
-                      <button
-                        onClick={() => {
-                          if (relevantWindows.length > 0) {
-                            const firstW = relevantWindows[0];
-                            if (firstW) {
-                              const g = getGroupFromWindow(firstW, stages);
-                              const el = document.getElementById(`group-${g}`);
-                              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }
+                    }
+                  }}
+                  placeholder="输入年龄"
+                  className="w-20 rounded-md border border-border bg-background px-2 py-1 text-xs font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  autoFocus
+                />
+                <span className="text-xs text-muted-foreground">岁</span>
+                {parsedAge !== null && (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (relevantWindows.length > 0) {
+                          const firstW = relevantWindows[0];
+                          if (firstW) {
+                            const g = getGroupFromWindow(firstW, stages);
+                            const el = document.getElementById(`group-${g}`);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                           }
-                        }}
-                        className="flex items-center gap-1 rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/15 transition-colors"
-                      >
-                        <Sparkles className="h-2.5 w-2.5" />
-                        {relevantWindows.length}个相关窗口
-                      </button>
-                    </>
-                  )}
-                  <button onClick={() => { setShowAgeInput(false); setAgeTouched(false); setUserAge(String(defaultAge)); }} className="text-muted-foreground hover:text-foreground">
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowAgeInput(true)}
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                >
-                  年龄已设为 <span className="font-mono text-foreground/70">{defaultAge}</span> 岁 · 点击修改
+                        }
+                      }}
+                      className="flex items-center gap-1 rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/15 transition-colors"
+                    >
+                      <Sparkles className="h-2.5 w-2.5" />
+                      {relevantWindows.length}个相关窗口
+                    </button>
+                  </>
+                )}
+                <button onClick={() => { setShowAgeInput(false); setAgeTouched(false); setUserAge(String(defaultAge)); }} className="text-muted-foreground hover:text-foreground">
+                  <X className="h-3 w-3" />
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAgeInput(true)}
+                className="text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                年龄已设为 <span className="font-mono text-foreground/70">{defaultAge}</span> 岁 · 点击修改
+              </button>
+            )}
           </div>
-
-          {/* Alert for current windows */}
-          {stats.current > 0 && (
-            <div className="mt-4 flex items-center gap-2 rounded-md bg-green-50 border border-green-200 dark:bg-green-950/20 dark:border-green-800/30 px-3 py-2 animate-fade-in-up stagger-4">
-              <AlertTriangle className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" />
-              <span className="text-xs text-green-700 dark:text-green-400">
-                你当前有 <span className="font-semibold">{stats.current}</span> 个人生窗口正在开启，请重点关注
-              </span>
-            </div>
-          )}
         </div>
-      </div>
+
+        {/* Alert for current windows */}
+        {stats.current > 0 && (
+          <div className="mt-4 flex items-center gap-2 rounded-md bg-green-50 border border-green-200 dark:bg-green-950/20 dark:border-green-800/30 px-3 py-2 animate-fade-in-up stagger-4">
+            <AlertTriangle className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" />
+            <span className="text-xs text-green-700 dark:text-green-400">
+              你当前有 <span className="font-semibold">{stats.current}</span> 个人生窗口正在开启，请重点关注
+            </span>
+          </div>
+        )}
+
+      </ModulePageHead>
 
       {/* Filter */}
       <div className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur-sm">

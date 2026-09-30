@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { ModulePageHead } from '@/components/shared/module-page-head';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { ModuleGate } from '@/components/auth/module-gate';
@@ -454,23 +455,14 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
   return (
     <ModuleGate modulePath="/destiny">
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card grain-texture">
-        <div className="relative max-w-3xl mx-auto px-6 sm:px-8 py-8">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent pointer-events-none" />
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
-              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 07</span>
-              <span className="h-px flex-1 bg-border" />
-              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">REPORT</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">命运：命势运报告</h1>
-            <p className="text-sm text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up stagger-2">
-              命是你拿到的牌，运是你出牌的时机，努力是你出牌的方式。输入基本信息和你自己的故事，看看你的命运基本面。
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Header —— 编号/图标/提问统一从 module-identity 取 */}
+      <ModulePageHead
+        href="/destiny"
+        title="命运：命势运报告"
+        note="REPORT"
+        desc="命是你拿到的牌，运是你出牌的时机，努力是你出牌的方式。输入基本信息和你自己的故事，看看你的命运基本面。"
+        width="3xl"
+      />
 
       <div className="max-w-3xl mx-auto px-6 sm:px-8 py-8">
         {/* Input Form */}

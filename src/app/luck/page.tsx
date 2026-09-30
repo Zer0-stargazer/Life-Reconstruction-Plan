@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { ModuleGate } from '@/components/auth/module-gate';
 import { Reveal } from '@/components/shared/reveal';
+import { ModulePageHead } from '@/components/shared/module-page-head';
 import {
   Droplet, TrendingUp, Skull, Sparkles, Search,
   AlertTriangle, Shield, Bot, Wand2,
@@ -791,60 +792,51 @@ export default function LuckPage() {
   return (
     <ModuleGate modulePath="/luck">
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="flex items-start justify-between gap-6 flex-wrap">
-            <div className="flex-1 min-w-[280px]">
-              <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
-              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 06</span>
-              <span className="h-px flex-1 bg-border" />
-              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">N=250</span>
-            </div>
-              <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">神卡与天坑</h1>
-              <p className="text-sm text-muted-foreground max-w-md leading-relaxed animate-fade-in-up stagger-2">
-                随机给角色匹配两种卡改变命运走向。有些在暗中吸血，有些能撬动人生——认清它们，才能在对的位置出牌。
-              </p>
-            </div>
-
-            {/* Search */}
-            <div className="relative w-full sm:w-72 animate-fade-in-up stagger-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
-              <input
-                ref={searchRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="搜索节点、危害或对冲协议..."
-                className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-              />
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground/40 border border-border rounded px-1.5 py-0.5 hidden sm:inline">⌘K</kbd>
-            </div>
+      {/* Header —— 编号/图标/提问统一从 module-identity 取 */}
+      <ModulePageHead
+        href="/luck"
+        title="神卡与天坑"
+        note="N=250"
+        desc="随机给角色匹配两种卡改变命运走向。有些在暗中吸血，有些能撬动人生——认清它们，才能在对的位置出牌。"
+        width="6xl"
+        aside={
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
+            <input
+              ref={searchRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索节点、危害或对冲协议..."
+              className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            />
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground/40 border border-border rounded px-1.5 py-0.5 hidden sm:inline">⌘K</kbd>
           </div>
-
-          {/* Category filter tabs */}
-          <div className="flex items-center gap-1 mt-6 flex-wrap animate-fade-in-up stagger-3">
-            {categoryOptions.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => setFilter(opt.value)}
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition-all',
-                  filter === opt.value
-                    ? 'bg-primary/10 text-primary shadow-sm'
-                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
-                )}
-              >
-                {opt.icon}
-                {opt.label}
-                {opt.value !== 'all' && (
-                  <span className="ml-0.5 text-[10px] font-mono tabular-nums opacity-60">{counts[opt.value as LuckCategory]}</span>
-                )}
-              </button>
-            ))}
-          </div>
+        }
+      >
+        {/* Category filter tabs */}
+        <div className="flex items-center gap-1 mt-6 flex-wrap animate-fade-in-up stagger-3">
+          {categoryOptions.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setFilter(opt.value)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-medium transition-all',
+                filter === opt.value
+                  ? 'bg-primary/10 text-primary shadow-sm'
+                  : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
+              )}
+            >
+              {opt.icon}
+              {opt.label}
+              {opt.value !== 'all' && (
+                <span className="ml-0.5 text-[10px] font-mono tabular-nums opacity-60">{counts[opt.value as LuckCategory]}</span>
+              )}
+            </button>
+          ))}
         </div>
-      </div>
+
+      </ModulePageHead>
 
       {/* Card Grid */}
       <div className="max-w-6xl mx-auto px-6 py-8">

@@ -268,6 +268,19 @@
 | 问题 | 说明 |
 |---|---|
 | 时间轴「与我无关 / 已在做」标记 | `LifeWindow` 已有 `planningStatus`/`completionStatus` 字段，但数据基本未填，能力没做出来 |
-| 页面头部未统一 | 7 个页头仍是各写各的（`MODULE · 03` 等硬编码），可抽 `ModulePageHead` 收敛 |
 | 默认排序口径 | 各页默认排序不一致（有的按年龄、有的按原始数据顺序） |
 | 移动端触控 | 卡片密集页在小屏仍是 1 列长滚，没有分段感知 |
+
+### 10.6 页面头部已统一（2026-10-01 补做）
+
+新增 `src/components/shared/module-page-head.tsx`，七个模块页页头全部改用它：
+
+- 编号 `MODULE · 0X`、图标、渐变配色、「能回答什么问题」全部从 `module-identity.ts` 取，
+  **页面里再没有一处硬编码编号**（`grep -rn "MODULE · 0" src/` 已清零）
+- 页面仍自定义大标题与描述——「人生规律引擎」这类产品文案不该被「规律」两个字替换掉
+- 支持 `aside`（右侧插槽：`/windows` 的 AI 规划按钮、`/luck` 的搜索框）与
+  `children`（下方内容：统计条、`/laws` 的分布图、`/simulation` 的步骤指示器）、`width`（3xl/5xl/6xl）
+- 统一加了 48px 细网格底纹（原 `/windows` 独有的装饰，现在全站页头都有）
+
+顺带修掉一处编号腐烂：`/me` 页头原本硬编码 `MODULE · 08`（全站只有 01–07），
+现改为从 `TIMELINE_IDENTITY.tag`（★）取值。

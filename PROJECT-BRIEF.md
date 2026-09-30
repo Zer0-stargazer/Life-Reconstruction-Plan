@@ -107,6 +107,7 @@ pnpm dev
 │   │   ├── layout/app-sidebar.tsx   # 导航（按 module-identity 顺序）
 │   │   ├── shared/
 │   │   │   ├── module-next-nav.tsx  # ★ 页尾模块路径（挂 layout，全站生效）
+│   │   │   ├── module-page-head.tsx # ★ 七个模块页的统一页头
 │   │   │   ├── reveal.tsx           # ★ 滚动进场（IntersectionObserver）
 │   │   │   └── fig-kit.tsx          # 图表装饰件
 │   │   ├── auth/                    # ModuleGate / RoleBadge
@@ -255,8 +256,8 @@ SUPABASE_SERVICE_ROLE_KEY=
   - ✅ 长列表治理：每组默认 12 条 + 聚焦层（`/laws` `/career` `/windows` `/luck` `/me`）
   - ✅ 滚动进场 `Reveal` 铺到全站主要页面
   - ✅ 站点图标 + PWA manifest
-  - ⏳ 仍未做：页面头部未统一（7 个页头各写各的 `MODULE · 0X`，可抽 `ModulePageHead`）；
-    装饰性几何元素/贴图仍只有 `grain-texture` 噪点
+  - ✅ 页头统一（`ModulePageHead`：编号/图标/「能回答什么问题」自动取，页面里不再手写 `MODULE · 0X`）
+  - ⏳ 仍未做：装饰性几何元素/贴图仍只有 `grain-texture` 噪点 + 页头细网格
 
 ### 待启动 ⏳
 - **阶段 1.3 爆点互动**：今日一签、命运体检（10 题出报告）、反常识卡

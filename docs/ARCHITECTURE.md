@@ -30,15 +30,22 @@
 src/lib/module-identity.ts          ← 唯一真源
   MODULE_IDENTITIES[7]  { tag, href, title, question, desc, metric, unit,
                           icon, iconGradient, ring, tagColor }
-  TIMELINE_IDENTITY     { href:'/me', title, question, icon, iconGradient }
+  TIMELINE_IDENTITY     { href:'/me', tag:'★', note:'TIMELINE', title, question, ... }
         │
         ├─► 首页 Hero 的「MAP · 01–07」索引 + 7 张导览卡
         ├─► app-sidebar.tsx 侧栏顺序
-        └─► components/shared/module-next-nav.tsx 页尾「上一步 / 下一步」
+        ├─► components/shared/module-next-nav.tsx 页尾「上一步 / 下一步」
+        └─► components/shared/module-page-head.tsx 七个模块页的页头
+              （编号/图标/配色/question 自动取；页面仍自定义 H1、描述、
+               右侧 aside 插槽、下方 children）
 
 src/components/shared/reveal.tsx     ← 滚动进场包裹件（IntersectionObserver）
         └─► 首页 / /me / /laws / /career / /windows / /luck
 ```
+
+**页面里没有任何一处硬编码 `MODULE · 0X`**（`grep -rn "MODULE · 0" src/` 为空）。
+曾发现 `/me` 页头写的是 `MODULE · 08`——全站只有 01–07，时间轴是 ★，
+这就是编号散落各处必然腐烂的实证。
 
 **关键设计**：`question` 字段（「能回答什么问题」）而不是数据量作为视觉主角——
 用户不关心"你有 288 条规律"，只关心"哪些齿轮在我没注意的地方一直转动"。

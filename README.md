@@ -96,6 +96,7 @@ src/
 │   ├── ai/ai-analysis-panel.tsx # AI 分析侧滑面板（SSE 流式渲染）
 │   ├── shared/
 │   │   ├── module-next-nav.tsx  # ★ 页尾「上一步/下一步」模块路径（挂 root layout，全站生效）
+│   │   ├── module-page-head.tsx # ★ 七个模块页的统一页头（编号/图标/提问自动取）
 │   │   ├── reveal.tsx           # ★ 滚动进场包裹件（IntersectionObserver）
 │   │   └── fig-kit.tsx          # PanelHead / HudCorners 等图表装饰件
 │   └── ui/                   # shadcn/ui 组件库（只保留实际用到的 8 个）

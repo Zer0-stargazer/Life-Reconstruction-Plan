@@ -70,6 +70,7 @@ src/
 │   ├── layout/module-visit-tracker.tsx # 模块访问追踪
 │   ├── shared/module-next-nav.tsx      # ★ 页尾「上一步/下一步」模块路径（挂 root layout）
 │   ├── shared/reveal.tsx               # ★ 滚动进场包裹件（IntersectionObserver）
+│   ├── shared/module-page-head.tsx     # ★ 七个模块页的统一页头
 │   ├── shared/fig-kit.tsx              # PanelHead / HudCorners 图表装饰件
 │   ├── auth/module-gate.tsx            # 模块门控 + 角色徽章
 │   └── ui/                    # shadcn/ui 组件库
@@ -138,11 +139,12 @@ src/
 - 名字模块当前本地随机生成，可接入AI流式
 - 命运报告当前规则计算，可接入AI深度分析
 - 命运模拟器可增加蒙特卡洛模拟
-- 页面头部未统一（7 个页头各写各的 `MODULE · 0X`，可抽 `ModulePageHead`）
 - 时间轴「与我无关 / 已在做」标记能力（`LifeWindow` 已有 `planningStatus`/`completionStatus` 字段，数据未填）
 - 各页默认排序口径不统一
 - ~~自定义 API Key 未接入 analyze~~（2026-09-26 已接入；2026-09-29 发现键名分叉导致实际失效，
-  2026-09-28 已修；claude/gemini/minimax 协议适配未经真实 Key 实测）
+  已于 8945efe 真正修复；claude/gemini/minimax 协议适配未经真实 Key 实测）
 - ~~首页统计数字与真实数据不符~~（已改为真实值 288/473/250/757 = 1,768，且 `N=` 改为动态取值）
+- ~~页面头部未统一~~（2026-10-01 已抽 `ModulePageHead`，编号/图标/question 全部从
+  module-identity 取，页面里不再手写 `MODULE · 0X`）
 
 > 全部已知问题（含安全项）见 docs/KNOWN-ISSUES.md（2026-09-25 全量排查）。

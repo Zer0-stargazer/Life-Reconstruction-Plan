@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { ModulePageHead } from '@/components/shared/module-page-head';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { ModuleGate } from '@/components/auth/module-gate';
@@ -591,59 +592,54 @@ ${contextStr}
   return (
     <ModuleGate modulePath="/simulation">
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card grain-texture">
-        <div className="relative max-w-5xl mx-auto px-6 sm:px-8 py-8">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.02] to-transparent pointer-events-none" />
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
-              <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">MODULE · 05</span>
-              <span className="h-px flex-1 bg-border" />
-              <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">5-DIM</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-foreground tracking-tight leading-tight mb-3 animate-fade-in-up stagger-1">命运模拟器</h1>
-            <p className="text-sm text-muted-foreground max-w-xl leading-relaxed animate-fade-in-up stagger-2">
-              {step === 'assessment'
-                ? '先回答量化问卷，客观评估你的五个维度。无法评判自己？选项替你量化。'
-                : '问卷结果已出。微调滑块推演你的人生画像，或让AI给出深度分析与行动方案。'
-              }
-              {defaultAge > 0 && (
-                <span className="ml-2 text-xs text-muted-foreground/50 font-mono">
-                  (当前年龄 {defaultAge} 岁)
-                </span>
-              )}
-            </p>
-
-            {/* 步骤指示器 */}
-            <div className="flex items-center gap-3 mt-5 animate-fade-in-up stagger-3">
-              {[
-                { key: 'assessment', label: '量化评估', icon: ClipboardCheck },
-                { key: 'result', label: '结果与推演', icon: BarChart3 },
-              ].map((s, i) => {
-                const isActive = s.key === step;
-                const isDone = s.key === 'assessment' && step !== 'assessment';
-                return (
-                  <div key={s.key} className="flex items-center gap-2">
-                    <div className={cn(
-                      'flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold transition-all',
-                      isActive ? 'bg-primary text-primary-foreground' :
-                      isDone ? 'bg-primary/20 text-primary' :
-                      'bg-muted/40 text-muted-foreground/50'
-                    )}>
-                      {isDone ? '✓' : i + 1}
-                    </div>
-                    <span className={cn(
-                      'text-[10px] font-medium transition-colors',
-                      isActive ? 'text-foreground' : 'text-muted-foreground/50'
-                    )}>{s.label}</span>
-                    {i < 2 && <div className="w-6 h-px bg-border" />}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+      {/* Header —— 编号/图标/提问统一从 module-identity 取 */}
+      <ModulePageHead
+        href="/simulation"
+        title="命运模拟器"
+        note="5-DIM"
+        desc={
+          <>
+            {step === 'assessment'
+              ? '先回答量化问卷，客观评估你的五个维度。无法评判自己？选项替你量化。'
+              : '问卷结果已出。微调滑块推演你的人生画像，或让AI给出深度分析与行动方案。'
+            }
+            {defaultAge > 0 && (
+              <span className="ml-2 text-xs text-muted-foreground/50 font-mono">
+                (当前年龄 {defaultAge} 岁)
+              </span>
+            )}
+          </>
+        }
+      >
+        {/* 步骤指示器 */}
+        <div className="flex items-center gap-3 mt-5 animate-fade-in-up stagger-3">
+          {[
+            { key: 'assessment', label: '量化评估', icon: ClipboardCheck },
+            { key: 'result', label: '结果与推演', icon: BarChart3 },
+          ].map((s, i) => {
+            const isActive = s.key === step;
+            const isDone = s.key === 'assessment' && step !== 'assessment';
+            return (
+              <div key={s.key} className="flex items-center gap-2">
+                <div className={cn(
+                  'flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold transition-all',
+                  isActive ? 'bg-primary text-primary-foreground' :
+                  isDone ? 'bg-primary/20 text-primary' :
+                  'bg-muted/40 text-muted-foreground/50'
+                )}>
+                  {isDone ? '✓' : i + 1}
+                </div>
+                <span className={cn(
+                  'text-[10px] font-medium transition-colors',
+                  isActive ? 'text-foreground' : 'text-muted-foreground/50'
+                )}>{s.label}</span>
+                {i < 2 && <div className="w-6 h-px bg-border" />}
+              </div>
+            );
+          })}
         </div>
-      </div>
+
+      </ModulePageHead>
 
       <div className="max-w-5xl mx-auto px-6 sm:px-8 py-8">
         {/* ==================== 步骤1: 量化问卷 ==================== */}
