@@ -580,6 +580,7 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
                       onChange={(e) => setInput(prev => ({ ...prev, [field.key]: e.target.value }))}
                       placeholder={field.placeholder}
                       rows={field.lines}
+                      maxLength={500}
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none leading-relaxed"
                     />
                   </div>
@@ -895,6 +896,7 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
                 <input
                   type="text"
                   value={aiQuestion}
+                  maxLength={500}
                   onChange={e => setAiQuestion(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAISend(); } }}
                   placeholder="追问：我的性格适合什么方向？/ 如何解决当前困惑？"

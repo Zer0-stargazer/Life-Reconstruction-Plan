@@ -1052,6 +1052,7 @@ ${contextStr}
                 <input
                   type="text"
                   value={aiQuestion}
+                  maxLength={500}
                   onChange={e => setAiQuestion(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAISend(); } }}
                   placeholder="追问：我的努力维度怎么提升？/ 短板如何弥补？"

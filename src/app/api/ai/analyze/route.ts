@@ -102,6 +102,12 @@ const MODULE_PROMPTS: Record<string, string> = {
 /** 流式分析耗时较长，给 Serverless 平台留出足够执行时间 */
 export const maxDuration = 60;
 
+// ---- 入参上限（防御性截断）：用户自由文本直拼提示词，不限长度会被刷 token 成本 ----
+const MAX_ITEM_LENGTH = 6000;
+const MAX_QUESTION_LENGTH = 2000;
+const MAX_HISTORY_MESSAGES = 12;
+const MAX_HISTORY_MESSAGE_LENGTH = 4000;
+
 export async function POST(request: NextRequest) {
   try {
     // 单 IP 限流：分析接口是流式长请求，防止被脚本刷爆额度
@@ -158,25 +164,29 @@ export async function POST(request: NextRequest) {
       { role: "system", content: SYSTEM_PROMPT },
     ];
 
-    // Add history if provided
+    // Add history if provided（只保留最近若干条，单条截断，role 白名单）
     if (history && history.length > 0) {
-      for (const msg of history) {
-        messages.push({ role: msg.role, content: msg.content });
+      for (const msg of history.slice(-MAX_HISTORY_MESSAGES)) {
+        if (msg.role !== "user" && msg.role !== "assistant") continue;
+        messages.push({ role: msg.role, content: String(msg.content ?? "").slice(0, MAX_HISTORY_MESSAGE_LENGTH) });
       }
     }
 
     // Build user message
-    if (history && history.length > 0 && question) {
+    const safeQuestion = typeof question === "string" ? question.slice(0, MAX_QUESTION_LENGTH) : "";
+    const safeItem = String(item ?? "").slice(0, MAX_ITEM_LENGTH);
+
+    if (history && history.length > 0 && safeQuestion) {
       // Follow-up question
       messages.push({
         role: "user",
-        content: question,
+        content: safeQuestion,
       });
     } else {
       // Initial analysis request
-      let userContent = `模块：${module}\n\n当前选项：${item}`;
-      if (question) {
-        userContent += `\n\n用户问题：${question}`;
+      let userContent = `模块：${module}\n\n当前选项：${safeItem}`;
+      if (safeQuestion) {
+        userContent += `\n\n用户问题：${safeQuestion}`;
       }
       userContent += `\n\n请按照分析框架给出具体分析`;
 

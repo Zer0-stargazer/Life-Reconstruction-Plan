@@ -248,6 +248,7 @@ export function AIAnalysisPanel({
               ref={inputRef}
               type="text"
               value={input}
+              maxLength={500}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={isStreaming ? '等待回复中...' : '追问或提问...'}
