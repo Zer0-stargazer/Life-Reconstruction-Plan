@@ -795,7 +795,7 @@ export default function MePage() {
           )}
         </div>
 
-        {/* 正在开启：紧急的置顶全显，其余默认只看最近 8 个 */}
+        {/* 正在开启：先给当前状态，再给 5 年内关闭的子集；聚焦层负责优先级 */}
         {tab === 'open' && (
           <div className="space-y-4 animate-fade-in">
             {openList.length === 0 && (
@@ -803,30 +803,6 @@ export default function MePage() {
                 {openMarked.length > 0
                   ? '这一档都表态完了——往下能看到已表态的那些。'
                   : '这个年龄段没有正在开启的窗口——往上看看「尚未到来」的。'}
-              </div>
-            )}
-            {urgentList.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Flame className="h-4 w-4 text-red-500" />
-                  <h3 className="text-sm font-semibold text-foreground">
-                    即将关闭的 <span className="tabular-nums">{urgentList.length}</span> 个
-                    <span className="text-xs text-muted-foreground font-normal ml-2">5 年内关上，优先处理</span>
-                  </h3>
-                </div>
-                <div className="space-y-2.5">
-                  {(urgentShowAll ? urgentList : urgentList.slice(0, URGENT_PREVIEW)).map((w) => (
-                    <WindowCard key={w.id} w={w} />
-                  ))}
-                </div>
-                {urgentList.length > URGENT_PREVIEW && (
-                  <button
-                    onClick={() => setUrgentShowAll(!urgentShowAll)}
-                    className="mt-3 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
-                  >
-                    {urgentShowAll ? '收起' : `展开其余 ${urgentList.length - URGENT_PREVIEW} 个即将关闭的窗口`}
-                  </button>
-                )}
               </div>
             )}
             {openCalm.length > 0 && (
@@ -849,6 +825,30 @@ export default function MePage() {
                     className="mt-3 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
                   >
                     {openShowAll ? '收起' : `展开其余 ${openCalm.length - OPEN_PREVIEW} 个`}
+                  </button>
+                )}
+              </div>
+            )}
+            {urgentList.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Flame className="h-4 w-4 text-red-500" />
+                  <h3 className="text-sm font-semibold text-foreground">
+                    即将关闭的 <span className="tabular-nums">{urgentList.length}</span> 个
+                    <span className="text-xs text-muted-foreground font-normal ml-2">5 年内关上，优先处理</span>
+                  </h3>
+                </div>
+                <div className="space-y-2.5">
+                  {(urgentShowAll ? urgentList : urgentList.slice(0, URGENT_PREVIEW)).map((w) => (
+                    <WindowCard key={w.id} w={w} />
+                  ))}
+                </div>
+                {urgentList.length > URGENT_PREVIEW && (
+                  <button
+                    onClick={() => setUrgentShowAll(!urgentShowAll)}
+                    className="mt-3 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                  >
+                    {urgentShowAll ? '收起' : `展开其余 ${urgentList.length - URGENT_PREVIEW} 个即将关闭的窗口`}
                   </button>
                 )}
               </div>
