@@ -25,11 +25,41 @@ export interface AiSourceConfig {
   protocol?: string;
 }
 
+/**
+ * 判断主机名是否属于云元数据 / 链路本地等高危内网地址（SSRF 防护）。
+ *
+ * 边界说明：项目明确支持用户自建接入（本地模型 http://localhost:11434、
+ * 局域网网关），因此 loopback 与私有网段（127/8、10/8、192.168/16、172.16/12）
+ * 是有意放行的；这里只拦最危险的目标——云厂商元数据端点（169.254.169.254 等
+ * 链路本地地址）、0.0.0.0 和元数据专用域名。
+ * 残余风险：公网域名解析到内网 IP（DNS rebinding）无法在 URL 层面拦截。
+ */
+function isDangerousHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/\.$/, '');
+  if (host === 'metadata.google.internal' || host.endsWith('.internal')) return true;
+
+  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4) {
+    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
+    if (a === 0) return true;                      // 0.0.0.0/8
+    if (a === 169 && b === 254) return true;       // 链路本地 / 云元数据
+    return false;
+  }
+  // IPv6 字面量：链路本地 fe80::/10
+  if (host.includes(':')) return host.startsWith('fe8') || host.startsWith('fe9') || host.startsWith('fea') || host.startsWith('feb');
+  return false;
+}
+
 function isSafeBaseUrl(url: string): boolean {
   const v = url.trim();
   if (!v || v.length > 500) return false;
   // 只允许 http/https，挡掉 javascript:、file: 等
-  return /^https?:\/\/[^\s]+$/i.test(v);
+  if (!/^https?:\/\/[^\s]+$/i.test(v)) return false;
+  try {
+    return !isDangerousHost(new URL(v).hostname);
+  } catch {
+    return false;
+  }
 }
 
 function normalizeBaseUrl(url: string): string {
@@ -43,6 +73,11 @@ export type ResolvedAiSource =
   | { kind: "claude"; baseUrl: string; apiKey: string; model?: string; provider: string; protocol?: string }
   | { kind: "gemini"; baseUrl: string; apiKey: string; model?: string; provider: string; protocol?: string }
   | { kind: "invalid"; reason: string };
+
+/** 自定义源地址校验（analyze / test-key 路由共用）：http(s) + 拦截高危内网地址 */
+export function isValidCustomBaseUrl(url: string): boolean {
+  return isSafeBaseUrl(url);
+}
 
 /**
  * 把用户配置解析为服务端可执行的调用方式。

@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { invokeChat } from "@/lib/ai-stream";
+import { isValidCustomBaseUrl } from "@/lib/ai-providers";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 /** 测试连接最多等 30s，给平台留一点余量 */
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: "缺少 API Key" }, { status: 400 });
       }
       const rawBase = (reqBaseUrl || "").trim();
-      if (!rawBase || rawBase.length > 500 || !/^https?:\/\/[^\s]+$/i.test(rawBase)) {
+      if (!rawBase || !isValidCustomBaseUrl(rawBase)) {
         return NextResponse.json(
           { success: false, error: "接口地址无效（需以 http:// 或 https:// 开头）" },
           { status: 400 }
@@ -82,8 +83,9 @@ export async function POST(request: NextRequest) {
           messages: [{ role: "user", content: "你好，用一句话回复确认你在工作" }],
         });
       } else if (proto === "gemini") {
-        url = `${base}/models/${encodeURIComponent(m)}:generateContent?key=${apiKey}`;
-        headers = { "Content-Type": "application/json" };
+        url = `${base}/models/${encodeURIComponent(m)}:generateContent`;
+        // Key 走请求头而不是 URL 查询串，避免被代理/日志记录
+        headers = { "Content-Type": "application/json", "x-goog-api-key": apiKey };
         body = JSON.stringify({
           contents: [{ parts: [{ text: "你好，用一句话回复确认你在工作" }] }],
           generationConfig: { maxOutputTokens: 50 },
