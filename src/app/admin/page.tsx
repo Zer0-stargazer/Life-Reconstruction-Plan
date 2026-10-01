@@ -47,6 +47,15 @@ type Tab = 'stats' | 'users' | 'invites';
 
 // ---- Component ----
 
+/** admin GET 请求失败（含状态码），用于区分 401（token 失效）和其他错误 */
+class AdminApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 export default function AdminPage() {
   const { user: authUser, updateUserRole } = useAuth();
   const [devToken, setDevToken] = useState<string | null>(null);
@@ -55,6 +64,8 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState('');
   const [activeTab, setActiveTab] = useState<Tab>('stats');
   const [loading, setLoading] = useState(false);
+  /** 数据加载失败时的可见错误（token 失效以外的场景） */
+  const [dataError, setDataError] = useState<string | null>(null);
 
   // Data
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -92,11 +103,20 @@ export default function AdminPage() {
         ...options?.headers,
       },
     });
-    return res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      // 之前不检查 res.ok：token 过期时页面渲染成"0 用户"的假空表
+      throw new AdminApiError(
+        (data as { error?: string }).error || `请求失败: ${res.status}`,
+        res.status
+      );
+    }
+    return data;
   }, [devToken]);
 
   const fetchAllData = useCallback(async () => {
     setLoading(true);
+    setDataError(null);
     try {
       const [statsRes, usersRes, invitesRes] = await Promise.all([
         api('stats'),
@@ -106,7 +126,16 @@ export default function AdminPage() {
       if (statsRes.success) setStats(statsRes.data);
       if (usersRes.success) setUsers(usersRes.data || []);
       if (invitesRes.success) setInvites(invitesRes.data || []);
-    } catch { /* ignore */ }
+    } catch (err) {
+      if (err instanceof AdminApiError && err.status === 401) {
+        // token 失效：回验证界面并说明原因，而不是静默显示空数据
+        setDevToken(null);
+        try { localStorage.removeItem('dev-token'); } catch { /* ignore */ }
+        setLoginError('开发者身份已失效，请重新验证');
+      } else {
+        setDataError(err instanceof Error ? err.message : '数据加载失败');
+      }
+    }
     setLoading(false);
   }, [api]);
 
@@ -365,6 +394,12 @@ export default function AdminPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-6">
+        {dataError && (
+          <div className="mb-6 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+            <XCircle className="w-4 h-4 shrink-0" />
+            <span>数据加载失败：{dataError}（可点右上角刷新重试）</span>
+          </div>
+        )}
         {/* Tabs */}
         <div className="flex gap-1 mb-6 p-1 bg-muted/50 rounded-lg w-fit">
           {tabs.map(tab => {
