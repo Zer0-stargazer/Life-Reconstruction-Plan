@@ -861,7 +861,6 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
                       <AiMarkdown content={aiContent} />
                       <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink -mb-0.5" />
                     </div>
-                    <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink ml-0.5 -mb-0.5" />
                   </div>
                 </div>
               )}
