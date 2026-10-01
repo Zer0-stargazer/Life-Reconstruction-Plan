@@ -418,6 +418,7 @@ function OverviewBars({ age, windows }: { age: number; windows: ClassifiedWindow
 
 const FOCUS_BEFORE = 8;
 const FOCUS_AFTER = 15;
+const FOCUS_MAX_TRACKS = 9;
 
 function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[] }) {
   const { marks } = useWindowMarks();
@@ -428,7 +429,18 @@ function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[
   // 标了"与我无关"的连色带都不画——这条轨道图的价值就是让你一眼看见还剩什么
   const inView = windows
     .filter((w) => w.range.start <= to && w.range.end >= from && w.state !== 'missed' && marks[w.id] !== 'skip')
-    .sort((a, b) => a.range.start - b.range.start || a.range.end - b.range.end);
+    .sort((a, b) => {
+      const priority: Record<ClassifiedWindow['state'], number> = {
+        urgent: 0,
+        open: 1,
+        future: 2,
+        missed: 3,
+      };
+      return priority[a.state] - priority[b.state]
+        || a.range.start - b.range.start
+        || (b.lockForceScore ?? 0) - (a.lockForceScore ?? 0)
+        || a.range.end - b.range.end;
+    });
 
   // 贪心分轨
   const tracks: ClassifiedWindow[][] = [];
@@ -456,9 +468,16 @@ function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[
         ? 'bg-emerald-500/80 hover:bg-emerald-400'
         : 'bg-amber-400/60 hover:bg-amber-300';
 
+  const visibleTracks = tracks.slice(0, FOCUS_MAX_TRACKS);
+  const hiddenTrackCount = Math.max(0, tracks.length - FOCUS_MAX_TRACKS);
+  const hiddenItemCount = tracks
+    .slice(FOCUS_MAX_TRACKS)
+    .reduce((sum, track) => sum + track.length, 0);
+  const trackStep = 13;
+
   return (
     <div>
-      <div className="relative" style={{ height: tracks.length * 18 + 28 }}>
+      <div className="relative" style={{ height: visibleTracks.length * trackStep + 28 }}>
         {/* 年龄网格 */}
         {Array.from({ length: span + 1 }, (_, i) => from + i)
           .filter((a) => a % 5 === 0)
@@ -472,7 +491,7 @@ function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[
         <div className="absolute top-6 bottom-0 w-0.5 bg-red-500/70 z-10" style={{ left: `${((age - from) / span) * 100}%` }} />
 
         {/* 色带 */}
-        {tracks.map((track, t) =>
+        {visibleTracks.map((track, t) =>
           track.map((w) => {
             const left = ((Math.max(w.range.start, from) - from) / span) * 100;
             const width = ((Math.min(w.range.end, to) - Math.max(w.range.start, from)) / span) * 100;
@@ -482,16 +501,22 @@ function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[
                 title={`${w.title}（${w.age}岁）`}
                 onClick={() => document.getElementById(`me-win-${w.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                 className={cn(
-                  'absolute h-2.5 rounded-full cursor-pointer transition-colors group',
+                'absolute h-2 rounded-full cursor-pointer transition-colors group',
                   barColor(w),
                   marks[w.id] && 'opacity-40'
                 )}
-                style={{ left: `${left}%`, width: `${Math.max(width, 1.2)}%`, top: 28 + t * 18 }}
+                style={{ left: `${left}%`, width: `${Math.max(width, 1.2)}%`, top: 28 + t * trackStep }}
               />
             );
           })
         )}
       </div>
+      {hiddenTrackCount > 0 && (
+        <div className="mt-2 flex items-center justify-between rounded-md bg-muted/40 px-2 py-1.5 font-mono text-[10px] text-muted-foreground">
+          <span>DENSE · 另有 {hiddenItemCount} 个窗口被收纳</span>
+          <span>密集时段已压缩显示</span>
+        </div>
+      )}
       <div className="flex items-center gap-4 text-[10px] text-muted-foreground mt-1">
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500/80 inline-block" /> 正在开启</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" /> 即将关闭</span>

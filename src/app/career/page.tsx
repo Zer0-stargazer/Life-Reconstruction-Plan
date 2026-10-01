@@ -396,7 +396,7 @@ export default function CareerPage() {
                     }}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedCareer(selectedCareer === career.id ? null : career.id); setShowResources(null); } }}
                     className={cn(
-                      'w-full text-left rounded-lg border bg-card p-4 transition-all duration-200 hover:shadow-md active:scale-[0.99] card-hover cursor-pointer',
+                      'w-full text-left rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] card-hover cursor-pointer',
                       selectedCareer === career.id ? 'border-primary/30 ring-1 ring-primary/10' : 'border-border'
                     )}
                   >
@@ -406,22 +406,22 @@ export default function CareerPage() {
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2">{career.description}</p>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="rounded-sm bg-muted px-2 py-0.5 text-[11px] font-mono text-foreground tabular-nums">
+                      <span className="rounded-md border border-border/50 bg-muted/40 px-2 py-0.5 text-[11px] font-mono text-foreground tabular-nums">
                         {career.salary}
                       </span>
-                      <span className={cn('rounded-sm px-2 py-0.5 text-[10px] font-medium', aiRiskColor[career.aiRisk])}>
+                      <span className={cn('rounded-md px-2 py-0.5 text-[10px] font-medium', aiRiskColor[career.aiRisk])}>
                         AI{aiRiskLabel[career.aiRisk]}
                       </span>
-                      <span className={cn('rounded-sm px-1.5 py-0.5 text-[9px] font-medium flex items-center gap-0.5', selfStudyColor(career.selfStudyScore))}>
+                      <span className={cn('rounded-md px-1.5 py-0.5 text-[9px] font-medium flex items-center gap-0.5', selfStudyColor(career.selfStudyScore))}>
                         <Star className="h-2.5 w-2.5" />
                         自学{career.selfStudyScore}
                       </span>
-                      <span className="rounded-sm bg-muted/50 px-2 py-0.5 text-[9px] text-muted-foreground">
+                      <span className="rounded-md bg-muted/40 px-2 py-0.5 text-[9px] text-muted-foreground">
                         {career.category}
                       </span>
                       <span
                         onClick={(e) => { e.stopPropagation(); setAiPanel({ open: true, career }); }}
-                        className="ml-auto rounded-sm bg-primary/5 px-2 py-0.5 text-[9px] text-primary/60 hover:text-primary hover:bg-primary/10 transition-colors flex items-center gap-1 cursor-pointer"
+                        className="ml-auto rounded-md border border-primary/15 bg-primary/5 px-2 py-0.5 text-[9px] text-primary/60 hover:text-primary hover:bg-primary/10 transition-colors flex items-center gap-1 cursor-pointer"
                       >
                         <Sparkles className="h-2.5 w-2.5" />
                         分析

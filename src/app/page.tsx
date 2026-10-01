@@ -236,7 +236,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 右：七大模块索引 —— 第一屏就说清这产品有哪七块 */}
+            {/* 右：极简模块索引，只留跳转，不在这里重复介绍 */}
             <div className="lg:col-span-7 animate-fade-in-up stagger-3">
               <div className="relative rounded-xl border border-border bg-card/70 backdrop-blur-sm p-3 sm:p-4 shadow-sm">
                 {/* 面板头 */}
@@ -245,19 +245,23 @@ export default function HomePage() {
                     <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">MAP · 01–07</span>
                     <h2 className="text-sm font-semibold text-foreground">七大模块</h2>
                   </div>
-                  <span className="font-mono text-[10px] text-muted-foreground/50">
+                  <span className="hidden md:inline font-mono text-[10px] text-muted-foreground/50">
                     身份 → 赛道 → 认知 → 时机 → 推演 → 风险 → 报告
                   </span>
                 </div>
 
-                <div className="divide-y divide-border/60">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {MODULE_IDENTITIES.map((m) => {
                     const Icon = m.icon;
                     return (
                       <Link
                         key={m.href}
                         href={m.href}
-                        className="group flex items-center gap-3 py-[7px] px-1 -mx-1 rounded-md transition-colors hover:bg-primary/[0.05]"
+                        className={cn(
+                          'group flex min-w-0 flex-col items-start gap-2 rounded-lg border border-transparent px-2.5 py-2.5',
+                          'transition-colors hover:border-border/70 hover:bg-background/60',
+                          m.ring
+                        )}
                       >
                         <span
                           className={cn(
@@ -267,16 +271,14 @@ export default function HomePage() {
                         >
                           <Icon className="h-3.5 w-3.5" />
                         </span>
-                        <span className={cn('font-mono text-[10px] tabular-nums shrink-0', m.tagColor)}>
-                          {m.tag}
+                        <span className="flex min-w-0 items-center gap-1">
+                          <span className={cn('font-mono text-[10px] tabular-nums shrink-0', m.tagColor)}>
+                            {m.tag}
+                          </span>
+                          <span className="truncate text-[12px] font-semibold text-foreground">
+                            {m.title}
+                          </span>
                         </span>
-                        <span className="w-8 shrink-0 text-[13px] font-semibold text-foreground">
-                          {m.title}
-                        </span>
-                        <span className="flex-1 min-w-0 truncate text-[12px] text-muted-foreground transition-colors group-hover:text-foreground/80">
-                          {m.question}
-                        </span>
-                        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/25 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-primary" />
                       </Link>
                     );
                   })}
@@ -401,55 +403,51 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== 核心洞察 ===== */}
+      {/* ===== 核心洞察 & FAQ（合并，避免两段都占满一屏） ===== */}
       <section className="border-t border-border bg-muted/20">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-16 sm:py-20">
+        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-10 sm:py-12">
           <SectionHead index="INSIGHT" title="核心洞察" />
-          <div className="max-w-3xl space-y-8 animate-fade-in-up stagger-2">
-            {quotes.map((q, i) => (
-              <figure key={i} className="relative pl-6 sm:pl-8">
-                <span className="absolute left-0 top-0 select-none font-serif text-4xl leading-none text-primary/30">
-                  &ldquo;
-                </span>
-                <blockquote className="font-serif text-lg sm:text-xl text-foreground/85 leading-relaxed">
-                  {q.text}
-                </blockquote>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="space-y-4 rounded-xl border border-border bg-card/60 p-4">
+              {quotes.map((q, i) => (
+                <figure key={i} className="relative pl-5">
+                  <span className="absolute left-0 top-0 select-none font-serif text-3xl leading-none text-primary/30">
+                    &ldquo;
+                  </span>
+                  <blockquote className="font-serif text-base text-foreground/85 leading-relaxed">
+                    {q.text}
+                  </blockquote>
+                </figure>
+              ))}
+            </div>
 
-      {/* ===== FAQ ===== */}
-      <section className="border-t border-border bg-muted/10">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-16">
-          <SectionHead index="FAQ" title="常见问题" />
-          <div className="max-w-2xl space-y-2.5">
-            {faqs.map((faq, i) => (
-              <div
-                key={i}
-                className={cn(
-                  'rounded-xl border bg-card overflow-hidden transition-colors duration-200',
-                  openFaq === i ? 'border-primary/25' : 'border-border hover:border-primary/20'
-                )}
-              >
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+            <div className="space-y-2">
+              {faqs.map((faq, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    'rounded-xl border bg-card overflow-hidden transition-colors duration-200',
+                    openFaq === i ? 'border-primary/25' : 'border-border hover:border-primary/20'
+                  )}
                 >
-                  <span className="text-sm font-medium text-foreground">{faq.q}</span>
-                  <ChevronDown className={cn(
-                    'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
-                    openFaq === i && 'rotate-180 text-primary'
-                  )} />
-                </button>
-                {openFaq === i && (
-                  <div className="px-5 pb-4 animate-fade-in">
-                    <p className="text-[13px] text-muted-foreground leading-relaxed">{faq.a}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full flex items-center justify-between gap-4 px-4 py-3 text-left"
+                  >
+                    <span className="text-sm font-medium text-foreground">{faq.q}</span>
+                    <ChevronDown className={cn(
+                      'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                      openFaq === i && 'rotate-180 text-primary'
+                    )} />
+                  </button>
+                  {openFaq === i && (
+                    <div className="px-4 pb-3 animate-fade-in">
+                      <p className="text-[13px] text-muted-foreground leading-relaxed">{faq.a}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

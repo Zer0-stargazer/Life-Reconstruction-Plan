@@ -520,7 +520,7 @@ export default function WindowsPage() {
                         key={w.id}
                         onClick={() => toggleCard(w.id)}
                         className={cn(
-                          'rounded-lg border p-4 transition-all duration-200 hover:shadow-md active:scale-[0.99] cursor-pointer group/card',
+                          'rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] cursor-pointer group/card',
                           config.bgColor,
                           isRelevant
                             ? 'ring-2 ring-primary/70 ring-offset-2 ring-offset-background shadow-[0_0_12px_rgba(184,134,11,0.15)]'
@@ -538,7 +538,7 @@ export default function WindowsPage() {
                           <div className="flex items-center gap-1.5">
                             {/* 补救代价标签 */}
                             <span className={cn(
-                              'rounded-sm px-1.5 py-0.5 text-[9px] font-medium',
+                              'rounded-md px-1.5 py-0.5 text-[9px] font-medium',
                               w.remedyLevel === 'irreversible' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' :
                               w.remedyLevel === 'extreme' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400' :
                               'bg-muted/60 text-muted-foreground'
@@ -547,7 +547,7 @@ export default function WindowsPage() {
                             </span>
                             {/* 状态标签 */}
                             <span className={cn(
-                              'rounded-sm px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide',
+                              'rounded-md px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide',
                               w.status === 'current' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
                               w.status === 'elite' ? 'bg-primary/10 text-primary' :
                               'bg-muted/60 text-muted-foreground'
@@ -555,7 +555,7 @@ export default function WindowsPage() {
                               {config.label}
                             </span>
                             {isRelevant && (
-                              <span className="flex items-center gap-0.5 rounded-sm bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold text-primary animate-glow-pulse">
+                              <span className="flex items-center gap-0.5 rounded-md bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold text-primary animate-glow-pulse">
                                 <Sparkles className="h-2.5 w-2.5" />
                                 与你相关
                               </span>
@@ -573,7 +573,7 @@ export default function WindowsPage() {
                             <LockForceBar score={w.lockForceScore} />
                           </div>
                           {w.tag && (
-                            <span className="rounded-sm bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                            <span className="rounded-md bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground">
                               {w.tag}
                             </span>
                           )}

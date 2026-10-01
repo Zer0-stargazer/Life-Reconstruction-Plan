@@ -359,15 +359,15 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
     <div
       onClick={onClick}
       className={cn(
-        'rounded-xl border bg-card p-4 transition-all duration-200 cursor-pointer group/card',
-        'hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]',
+        'rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 cursor-pointer group/card',
+        'hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98]',
         config.borderColor
       )}
     >
       {/* Category pill */}
       <div className="flex items-center justify-between mb-3">
         <span className={cn(
-          'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium',
+          'inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium',
           config.bgColor, config.color
         )}>
           {CATEGORY_ICONS[node.category]}
@@ -381,7 +381,7 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
 
       {/* Dual data cards */}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className={cn('rounded-lg p-2.5', node.category === 'red' || node.category === 'purple' ? 'bg-red-50 dark:bg-red-950/20' : 'bg-muted/50')}>
+        <div className={cn('rounded-md border border-border/40 p-2.5', node.category === 'red' || node.category === 'purple' ? 'bg-red-50/70 dark:bg-red-950/20' : 'bg-muted/40')}>
           <div className="flex items-center gap-1 mb-1">
             {drainValue < 0 ? (
               <ArrowDownRight className="h-3 w-3 text-red-500" />
@@ -397,7 +397,7 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
             {drainValue < 0 ? drainValue : `+${drainValue}`}%
           </span>
         </div>
-        <div className="rounded-lg p-2.5 bg-muted/50">
+        <div className="rounded-md border border-border/40 p-2.5 bg-muted/40">
           <div className="flex items-center gap-1 mb-1">
             <ArrowUpRight className="h-3 w-3 text-muted-foreground/50" />
             <span className="text-[9px] text-muted-foreground">{config.gainLabel}</span>
@@ -416,11 +416,11 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
 
       {/* Bottom attribute pills */}
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1 text-[10px]">
+        <span className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-muted/40 px-2 py-1 text-[10px]">
           <Crosshair className="h-3 w-3 text-muted-foreground/60" />
           <span className={diffConfig.color}>{diffConfig.label}</span>
         </span>
-        <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1 text-[10px]">
+        <span className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-muted/40 px-2 py-1 text-[10px]">
           <AlertTriangle className="h-3 w-3 text-muted-foreground/60" />
           <span className="text-muted-foreground truncate max-w-[100px]">{node.silentCost.length > 8 ? node.silentCost.slice(0, 8) + '...' : node.silentCost}</span>
         </span>
