@@ -419,7 +419,7 @@ function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500/80 inline-block" /> 正在开启</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" /> 即将关闭</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400/60 inline-block" /> 尚未到来</span>
-        <span className="text-muted-foreground/60">点击色带跳到对应窗口</span>
+        <span className="text-muted-foreground/60">悬停色带可查看各年份的窗口数</span>
       </div>
     </div>
   );
@@ -490,7 +490,8 @@ type TabKey = 'open' | 'missed' | 'future';
 export default function MePage() {
   const [age, setAge] = useState<number | null>(null);
   const [tab, setTab] = useState<TabKey>('open');
-  const [missedShowAll, setMissedShowAll] = useState(false);
+  const [missedPermanentShowAll, setMissedPermanentShowAll] = useState(false);
+  const [missedOtherShowAll, setMissedOtherShowAll] = useState(false);
   const [openShowAll, setOpenShowAll] = useState(false);
   /**
    * "即将关闭"这一档默认也只给前 8 个。
@@ -757,7 +758,7 @@ export default function MePage() {
           {tabs.map((t) => (
             <button
               key={t.key}
-              onClick={() => { setTab(t.key); setOpenShowAll(false); setMissedShowAll(false); setUrgentShowAll(false); setShowMarked(false); }}
+              onClick={() => { setTab(t.key); setOpenShowAll(false); setMissedPermanentShowAll(false); setMissedOtherShowAll(false); setUrgentShowAll(false); setShowMarked(false); }}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all',
                 tab === t.key
@@ -858,16 +859,16 @@ export default function MePage() {
                   </h3>
                 </div>
                 <div className="space-y-2.5">
-                  {(missedShowAll ? missedPermanent : missedPermanent.slice(0, 5)).map((w) => (
+                  {(missedPermanentShowAll ? missedPermanent : missedPermanent.slice(0, 5)).map((w) => (
                     <WindowCard key={w.id} w={w} />
                   ))}
                 </div>
                 {missedPermanent.length > 5 && (
                   <button
-                    onClick={() => setMissedShowAll(!missedShowAll)}
+                    onClick={() => setMissedPermanentShowAll(!missedPermanentShowAll)}
                     className="mt-3 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
                   >
-                    {missedShowAll ? '收起' : `展开其余 ${missedPermanent.length - 5} 个永久关闭的窗口`}
+                    {missedPermanentShowAll ? '收起' : `展开其余 ${missedPermanent.length - 5} 个永久关闭的窗口`}
                   </button>
                 )}
               </div>
@@ -881,16 +882,16 @@ export default function MePage() {
                 </h3>
               </div>
               <div className="space-y-2.5">
-                {(missedShowAll ? missedOther : missedOther.slice(0, 10)).map((w) => (
+                {(missedOtherShowAll ? missedOther : missedOther.slice(0, 10)).map((w) => (
                   <WindowCard key={w.id} w={w} />
                 ))}
               </div>
               {missedOther.length > 10 && (
                 <button
-                  onClick={() => setMissedShowAll(!missedShowAll)}
+                  onClick={() => setMissedOtherShowAll(!missedOtherShowAll)}
                   className="mt-3 w-full rounded-lg border border-dashed border-border py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
                 >
-                  {missedShowAll ? '收起' : `展开其余 ${missedOther.length - 10} 个`}
+                  {missedOtherShowAll ? '收起' : `展开其余 ${missedOther.length - 10} 个`}
                 </button>
               )}
             </div>

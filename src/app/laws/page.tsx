@@ -13,7 +13,7 @@ import { AiCopyButton, AiStopButton } from '@/components/ai/ai-panel-actions';
 import {
   TrendingUp, AlertTriangle, Shield, Bot,
   ChevronLeft, ChevronRight, X, Maximize2,
-  Eye, Crosshair, BookOpen,
+  Eye, Crosshair, BookOpen, Search,
   Send, Loader2, Sparkles, Flame, Zap,
   Activity, Users, Brain, Dna, DollarSign, Lock,
 } from 'lucide-react';
@@ -798,7 +798,8 @@ function LawDetailPanel({
           <div className="flex items-center justify-between px-6 py-3 border-t border-border bg-muted/20 shrink-0">
             <button
               onClick={onPrev}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+              disabled={currentIndex <= 0}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-muted-foreground"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
               上一条
@@ -809,7 +810,8 @@ function LawDetailPanel({
             </div>
             <button
               onClick={onNext}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+              disabled={currentIndex >= totalCount - 1}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-muted-foreground"
             >
               下一条
               <ChevronRight className="h-3.5 w-3.5" />
@@ -1036,7 +1038,7 @@ export default function LawsPage() {
               placeholder="搜索规律名称、描述或案例..."
               className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-8 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
-            <Eye className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
           </div>
         </div>
 

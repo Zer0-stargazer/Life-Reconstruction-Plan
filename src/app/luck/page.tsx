@@ -699,6 +699,10 @@ function LuckDetailPanel({
 /* ============ Main Page ============ */
 
 export default function LuckPage() {
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => {
+    setIsMac(/Mac|iP(hone|ad|od)/.test(navigator.userAgent));
+  }, []);
   const [filter, setFilter] = useState<LuckCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNode, setSelectedNode] = useState<LuckNode | null>(null);
@@ -809,7 +813,7 @@ export default function LuckPage() {
               placeholder="搜索节点、危害或对冲协议..."
               className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground/40 border border-border rounded px-1.5 py-0.5 hidden sm:inline">⌘K</kbd>
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground/40 border border-border rounded px-1.5 py-0.5 hidden sm:inline">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
           </div>
         }
       >

@@ -369,7 +369,7 @@ type Step = 'assessment' | 'result';
 // ============================================================
 
 export default function SimulationPage() {
-  const { defaultAge } = useAdvancedSettings();
+  const { defaultAge, loaded } = useAdvancedSettings();
   const [step, setStep] = useState<Step>('assessment');
   // 用户填的维度与答案持久化：刷新后不再从头来过（原来是纯 useState，刷新即丢）
   const [dimensions, setDimensions] = usePersistedState<SimDimension[]>('sim.dimensions.v1', createDefaultDimensions);
@@ -584,7 +584,7 @@ ${contextStr}
               ? '先回答量化问卷，客观评估你的五个维度。无法评判自己？选项替你量化。'
               : '问卷结果已出。微调滑块推演你的人生画像，或让AI给出深度分析与行动方案。'
             }
-            {defaultAge > 0 && (
+            {loaded && defaultAge > 0 && (
               <span className="ml-2 text-xs text-muted-foreground/50 font-mono">
                 (当前年龄 {defaultAge} 岁)
               </span>
@@ -927,7 +927,7 @@ ${contextStr}
               {/* AI Analysis Button */}
               {simulated && (
                 <button
-                  onClick={() => { setAiOpen(true); if (aiMessages.length === 0) startAIAnalysis(); }}
+                  onClick={() => { setAiOpen(true); if (!aiMessages.some(m => m.role === 'assistant')) startAIAnalysis(); }}
                   className="w-full group rounded-lg border border-primary/20 bg-primary/[0.03] p-4 flex items-center justify-between transition-all hover:bg-primary/[0.06] hover:border-primary/30"
                 >
                   <div className="flex items-center gap-3">
