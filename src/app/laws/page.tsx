@@ -9,6 +9,7 @@ import { ModuleGate } from '@/components/auth/module-gate';
 import { Reveal } from '@/components/shared/reveal';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
+import { AiCopyButton, AiStopButton } from '@/components/ai/ai-panel-actions';
 import {
   TrendingUp, AlertTriangle, Shield, Bot,
   ChevronLeft, ChevronRight, X, Maximize2,
@@ -202,6 +203,22 @@ function InlineAIChat({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
 
+  // 返回/卸载时中止仍在进行的流式请求，避免对已关闭的面板继续 setState
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const handleBack = () => {
+    abortRef.current?.abort();
+    onBack();
+  };
+
+  const lastAssistantText = (() => {
+    if (isStreaming) return streamingContent;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant') return messages[i].content;
+    }
+    return '';
+  })();
+
   useEffect(() => {
     setMessages([]);
     setStreamingContent('');
@@ -293,7 +310,7 @@ function InlineAIChat({
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30 shrink-0">
         <div className="flex items-center gap-2">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
            aria-label="返回节点列表">
             <ChevronLeft className="h-4 w-4" />
@@ -305,6 +322,7 @@ function InlineAIChat({
           </div>
         </div>
         <div className="flex items-center gap-1.5">
+          <AiCopyButton getText={() => lastAssistantText} />
           <Bot className="h-3.5 w-3.5 text-primary/50" />
           <span className="text-[9px] text-muted-foreground">AI 对话</span>
         </div>
@@ -372,6 +390,7 @@ function InlineAIChat({
             disabled={isStreaming}
             className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
           />
+          {isStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}
           <button
             onClick={handleSend}
             disabled={isStreaming || !input.trim()}
@@ -590,7 +609,7 @@ function LawDetailPanel({
             ? 'inset-4'
             : 'inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:top-[5%] sm:-translate-x-1/2 sm:w-full sm:max-w-2xl sm:h-[90vh]'
         )}>
-          <div className={cn('h-full rounded-2xl border overflow-hidden flex flex-col shadow-2xl', tagConf.borderColor)}>
+          <div role="dialog" aria-modal="true" aria-label="AI 对话" className={cn('h-full rounded-2xl border overflow-hidden flex flex-col shadow-2xl', tagConf.borderColor)}>
             <InlineAIChat
               item={item}
               dimension={dimension}

@@ -13,6 +13,7 @@ import { SectionJumper } from '@/components/shared/section-jumper';
 import { useEscapeKey } from '@/hooks/use-escape-key';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
+import { AiCopyButton, AiStopButton } from '@/components/ai/ai-panel-actions';
 import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send, Loader2 } from 'lucide-react';
 
 const statusOptions: { value: WindowStatus | 'all'; label: string; dotColor: string }[] = [
@@ -699,7 +700,7 @@ export default function WindowsPage() {
           />
 
           {/* Panel */}
-          <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-lg bg-background border-l border-border shadow-2xl animate-slide-in-right flex flex-col">
+          <div role="dialog" aria-modal="true" aria-label="AI 长期规划" className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-lg bg-background border-l border-border shadow-2xl animate-slide-in-right flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card">
               <div className="flex items-center gap-3 min-w-0">
@@ -713,12 +714,22 @@ export default function WindowsPage() {
                   <h3 className="text-sm font-semibold text-foreground truncate">长期主义深度规划</h3>
                 </div>
               </div>
-              <button
-                onClick={() => { if (abortRef.current) abortRef.current.abort(); setAiPlanning(false); }}
-                className="shrink-0 ml-2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1 shrink-0 ml-2">
+                <AiCopyButton getText={() => {
+                  if (aiStreaming) return aiContent;
+                  for (let i = aiMessages.length - 1; i >= 0; i--) {
+                    if (aiMessages[i].role === 'assistant') return aiMessages[i].content;
+                  }
+                  return '';
+                }} />
+                <button
+                  onClick={() => { if (abortRef.current) abortRef.current.abort(); setAiPlanning(false); }}
+                  className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  aria-label="关闭规划面板"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Messages */}
@@ -788,6 +799,7 @@ export default function WindowsPage() {
                   className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50"
                   disabled={aiStreaming}
                 />
+                {aiStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}
                 <button
                   onClick={handleAISend}
                   disabled={aiStreaming || !aiQuestion.trim()}

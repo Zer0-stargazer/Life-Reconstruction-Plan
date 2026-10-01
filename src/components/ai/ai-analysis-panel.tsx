@@ -6,6 +6,8 @@ import { useEscapeKey } from '@/hooks/use-escape-key';
 import { X, Send, Sparkles, Loader2 } from 'lucide-react';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { consumeAiSseStream } from '@/lib/sse-client';
+import { AiMarkdown } from '@/components/shared/ai-markdown';
+import { AiCopyButton, AiStopButton } from '@/components/ai/ai-panel-actions';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -156,7 +158,7 @@ export function AIAnalysisPanel({
       />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-lg bg-background border-l border-border shadow-2xl animate-slide-in-right flex flex-col">
+      <div role="dialog" aria-modal="true" aria-label="AI 分析面板" className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-lg bg-background border-l border-border shadow-2xl animate-slide-in-right flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card">
           <div className="flex items-center gap-3 min-w-0">
@@ -170,12 +172,21 @@ export function AIAnalysisPanel({
               <h3 className="text-sm font-semibold text-foreground truncate">{itemTitle}</h3>
             </div>
           </div>
-          <button
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            <AiCopyButton getText={() => {
+              if (isStreaming) return streamingContent;
+              for (let i = messages.length - 1; i >= 0; i--) {
+                if (messages[i].role === 'assistant') return messages[i].content;
+              }
+              return '';
+            }} />
+            <button
             onClick={handleClose}
-            className="shrink-0 ml-2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
            aria-label="关闭分析面板">
             <X className="h-4 w-4" />
           </button>
+          </div>
         </div>
 
         {/* Messages */}
@@ -196,7 +207,11 @@ export function AIAnalysisPanel({
                     : 'bg-card border border-border text-foreground'
                 )}
               >
-                <div className="whitespace-pre-wrap">{msg.content}</div>
+                {msg.role === 'assistant' ? (
+                  <AiMarkdown content={msg.content} />
+                ) : (
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                )}
               </div>
             </div>
           ))}
@@ -205,8 +220,10 @@ export function AIAnalysisPanel({
           {isStreaming && streamingContent && (
             <div className="flex justify-start">
               <div className="max-w-[90%] rounded-lg px-4 py-3 text-sm leading-relaxed bg-card border border-border text-foreground">
-                <div className="whitespace-pre-wrap">{streamingContent}</div>
-                <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink ml-0.5 -mb-0.5" />
+                <div className="flex items-end gap-1">
+                  <AiMarkdown content={streamingContent} />
+                  <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink -mb-0.5" />
+                </div>
               </div>
             </div>
           )}
@@ -237,6 +254,7 @@ export function AIAnalysisPanel({
               disabled={isStreaming}
               className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
             />
+            {isStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}
             <button
               onClick={handleSend}
               disabled={isStreaming || !input.trim()}

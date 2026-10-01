@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
+import { AiCopyButton, AiStopButton } from '@/components/ai/ai-panel-actions';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { consumeAiSseStream } from '@/lib/sse-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
@@ -779,7 +780,7 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
             className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm animate-fade-in"
             onClick={() => { if (abortRef.current) abortRef.current.abort(); setAiOpen(false); }}
           />
-          <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-lg bg-background border-l border-border shadow-2xl animate-slide-in-right flex flex-col">
+          <div role="dialog" aria-modal="true" aria-label="命运深度分析" className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-lg bg-background border-l border-border shadow-2xl animate-slide-in-right flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card">
               <div className="flex items-center gap-3 min-w-0">
@@ -791,12 +792,22 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
                   <h3 className="text-sm font-semibold text-foreground truncate">深度分析 + 解惑</h3>
                 </div>
               </div>
-              <button
-                onClick={() => { if (abortRef.current) abortRef.current.abort(); setAiOpen(false); }}
-                className="shrink-0 ml-2 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1 shrink-0 ml-2">
+                <AiCopyButton getText={() => {
+                  if (aiStreaming) return aiContent;
+                  for (let i = aiMessages.length - 1; i >= 0; i--) {
+                    if (aiMessages[i].role === 'assistant') return aiMessages[i].content;
+                  }
+                  return '';
+                }} />
+                <button
+                  onClick={() => { if (abortRef.current) abortRef.current.abort(); setAiOpen(false); }}
+                  className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  aria-label="关闭分析面板"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Messages */}
@@ -890,6 +901,7 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
                   className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50"
                   disabled={aiStreaming}
                 />
+                {aiStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}
                 <button
                   onClick={handleAISend}
                   disabled={aiStreaming || !aiQuestion.trim()}
