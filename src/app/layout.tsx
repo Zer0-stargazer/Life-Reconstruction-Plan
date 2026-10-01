@@ -43,7 +43,8 @@ export default function RootLayout({
           <div className="flex min-h-screen">
             <ModuleVisitTracker />
             <AppSidebar />
-            <main className="flex-1 md:ml-56">
+            {/* pt-12 给移动端固定顶栏让位（顶栏 h-12，md 起隐藏），否则每页前 48px 被盖住 */}
+            <main className="flex-1 pt-12 md:pt-0 md:ml-56">
               {children}
               <ModuleNextNav />
             </main>

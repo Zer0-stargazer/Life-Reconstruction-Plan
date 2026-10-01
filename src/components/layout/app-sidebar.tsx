@@ -249,9 +249,6 @@ export function AppSidebar() {
       <aside className="hidden md:flex fixed left-0 top-0 z-40 h-screen w-56 border-r border-border bg-sidebar flex-col">
         {sidebarContent}
       </aside>
-
-      {/* Mobile content offset */}
-      <div className="md:hidden h-12" />
     </>
   );
 }
