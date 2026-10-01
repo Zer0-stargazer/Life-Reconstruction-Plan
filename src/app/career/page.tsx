@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { careers, CAREER_CATEGORIES, type Career, getTutorials, getBooks, getLearningChannels, getAiAdvice } from '@/data/careers';
 import { cn } from '@/lib/utils';
 import {
@@ -144,6 +144,18 @@ export default function CareerPage() {
   const [selectedCareer, setSelectedCareer] = useState<number | null>(null);
   const [showResources, setShowResources] = useState<number | null>(null);
   const [aiPanel, setAiPanel] = useState<{ open: boolean; career: Career | null }>({ open: false, career: null });
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+
+  // 移动端（<lg 单列布局）详情面板渲染在整片卡片网格之后，
+  // 选中后不滚过去的话，用户点了卡片却看不到任何反馈
+  useEffect(() => {
+    if (!selectedCareer || typeof window === 'undefined') return;
+    if (!window.matchMedia('(max-width: 1023px)').matches) return;
+    const timer = window.setTimeout(() => {
+      detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [selectedCareer]);
 
   // 排序切换
   const toggleSort = (key: SortKey) => {
@@ -512,7 +524,7 @@ export default function CareerPage() {
           </div>
 
           {/* Detail Panel */}
-          <div className="lg:col-span-1">
+          <div ref={detailPanelRef} className="lg:col-span-1 scroll-mt-14">
             {selected ? (
               <div className="rounded-lg border border-primary/20 bg-card p-5 sticky top-20 animate-scale-in">
                 <div className="flex items-center justify-between mb-4">
