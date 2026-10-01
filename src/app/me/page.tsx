@@ -332,89 +332,6 @@ function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOp
   );
 }
 
-/* ============ 全人生直方图 ============ */
-
-function OverviewBars({ age, windows }: { age: number; windows: ClassifiedWindow[] }) {
-  const BUCKET = 5;
-  const buckets = Array.from({ length: MAX_AGE / BUCKET }, (_, i) => ({
-    from: i * BUCKET,
-    to: i * BUCKET + BUCKET,
-    open: 0,
-    missed: 0,
-  }));
-
-  for (const w of windows) {
-    for (const b of buckets) {
-      if (w.range.start < b.to && w.range.end >= b.from) {
-        if (w.state === 'missed') b.missed += 1;
-        else b.open += 1;
-      }
-    }
-  }
-
-  const maxCount = Math.max(...buckets.map((b) => b.open + b.missed), 1);
-  const peakBucket = buckets.reduce((best, b) => (b.open + b.missed > best.open + best.missed ? b : best), buckets[0]);
-
-  return (
-    <div>
-      <div className="relative h-28 flex items-end gap-[3px]">
-        {/* 水平网格线 */}
-        {[25, 50, 75].map((r) => (
-          <div
-            key={r}
-            className="absolute left-0 right-0 border-t border-dashed border-foreground/[0.07]"
-            style={{ bottom: `${r}%` }}
-          />
-        ))}
-        {buckets.map((b) => {
-          const missedH = (b.missed / maxCount) * 100;
-          const openH = (b.open / maxCount) * 100;
-          const isPast = b.to <= age;
-          return (
-            <div key={b.from} className="relative flex-1 h-full flex flex-col justify-end" style={{ order: b.from / BUCKET }}>
-              <div
-                className="w-full rounded-t-sm bg-muted-foreground/15"
-                style={{ height: `${isPast ? missedH : 0}%`, position: 'absolute', bottom: 0 }}
-                title={`${b.from}-${b.to}岁：${b.missed} 个已错过`}
-              />
-              <div
-                className={cn(
-                  'w-full rounded-t-sm transition-all duration-500',
-                  isPast ? 'bg-emerald-500/15' : 'bg-emerald-500/70'
-                )}
-                style={{ height: `${openH}%`, position: 'absolute', bottom: isPast ? `${missedH}%` : 0 }}
-                title={`${b.from}-${b.to}岁：${b.open} 个可及窗口`}
-              />
-            </div>
-          );
-        })}
-        {/* 当前年龄光标 */}
-        <div
-          className="absolute top-0 bottom-0 w-0.5 bg-red-500/80 z-10"
-          style={{ left: `${(age / MAX_AGE) * 100}%` }}
-        >
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-sm bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
-            {age}岁
-          </div>
-        </div>
-      </div>
-      <div className="flex justify-between mt-2 text-[10px] font-mono text-muted-foreground/60 tabular-nums">
-        <span>0</span><span>25</span><span>50</span><span>75</span><span>{MAX_AGE}岁</span>
-      </div>
-      <div className="flex items-center justify-between gap-4 mt-2 text-[10px] text-muted-foreground">
-        <div className="flex items-center gap-4">
-          <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-emerald-500/70 inline-block" /> 可及窗口密度</span>
-          <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-muted-foreground/15 inline-block" /> 已错过密度</span>
-          <span className="inline-flex items-center gap-1"><span className="h-2 w-2.5 bg-red-500/80 inline-block" /> 你的位置</span>
-        </div>
-        <span className="font-mono text-muted-foreground/50 shrink-0">
-          PEAK {peakBucket.from}–{peakBucket.to}岁 · {peakBucket.open + peakBucket.missed}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 /* ============ 聚焦轨道图（当前年龄附近） ============ */
 
 const FOCUS_BEFORE = 8;
@@ -511,28 +428,59 @@ function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[
   );
 }
 
-function AgeDensityCurve({ age }: { age: number }) {
-  const max = Math.max(...WINDOW_DENSITY.map((d) => d.total));
+function TimelineSlider({ age, onChange }: { age: number; onChange: (value: number) => void }) {
+  const max = Math.max(...WINDOW_DENSITY.map((bucket) => bucket.total), 1);
+  const points = WINDOW_DENSITY.map((bucket) => {
+    const x = ((bucket.from + bucket.to + 1) / 2 / MAX_AGE) * 100;
+    const y = 88 - (bucket.total / max) * 72;
+    return `${x.toFixed(2)} ${y.toFixed(2)}`;
+  });
+  const areaPath = `M 0 88 L ${points.join(' L ')} L 100 88 Z`;
+  const linePath = `M 0 88 L ${points.join(' L ')}`;
+  const currentX = (age / MAX_AGE) * 100;
+
   return (
-    <div className="mt-4">
-      <div className="flex items-end gap-[3px] h-16">
-        {WINDOW_DENSITY.map((bucket) => {
-          const active = age >= bucket.from && age <= bucket.to;
-          return (
-            <div
-              key={bucket.from}
-              title={`${bucket.from}-${bucket.to} 岁 · ${bucket.total} 个窗口`}
-              className={cn(
-                'flex-1 rounded-t-sm transition-all',
-                active ? 'bg-primary' : 'bg-primary/25'
-              )}
-              style={{ height: `${Math.max(6, (bucket.total / max) * 100)}%` }}
-            />
-          );
-        })}
+    <div className="mt-5">
+      <div className="relative h-20 overflow-hidden rounded-lg bg-muted/20">
+        <svg
+          className="absolute inset-0 h-full w-full text-primary"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="timeline-density" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="currentColor" stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+          <path d={areaPath} fill="url(#timeline-density)" />
+          <path
+            d={linePath}
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity="0.55"
+            strokeWidth="1.5"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+        <div
+          className="pointer-events-none absolute inset-y-1 z-[1] w-0.5 rounded bg-primary/80"
+          style={{ left: `calc(${currentX}% - 1px)` }}
+        />
+        <input
+          type="range"
+          min={0}
+          max={MAX_AGE}
+          value={age}
+          onChange={(e) => onChange(parseInt(e.target.value, 10))}
+          className="age-timeline-slider absolute inset-0 z-10 h-full w-full"
+          aria-labelledby="me-age-label"
+          aria-valuetext={`${age} 岁`}
+        />
       </div>
-      <div className="mt-1 flex justify-between text-[10px] font-mono text-muted-foreground/50 tabular-nums">
-        <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
+      <div className="mt-2 flex justify-between text-[10px] font-mono text-muted-foreground/50 tabular-nums">
+        <span>0</span><span>25</span><span>50</span><span>75</span><span>{MAX_AGE}</span>
       </div>
     </div>
   );
@@ -730,30 +678,17 @@ export default function MePage() {
                 <span className="text-[10px] text-muted-foreground/50 ml-2 font-mono">≈{CURRENT_YEAR - age} 年生</span>
               </div>
             </div>
-            <input
-              type="range"
-              min={0}
-              max={MAX_AGE}
-              value={age}
-              onChange={(e) => updateAge(parseInt(e.target.value, 10))}
-              className="w-full accent-primary cursor-pointer"
-              aria-labelledby="me-age-label"
-              aria-valuetext={`${age} 岁`}
-            />
-            <div className="flex justify-between text-[10px] font-mono text-muted-foreground/50 tabular-nums mt-1.5">
-              <span>0</span><span>25</span><span>50</span><span>75</span><span>{MAX_AGE}</span>
-            </div>
+            <TimelineSlider age={age} onChange={updateAge} />
             <p className="mt-3 pt-3 border-t border-border/60 font-mono text-[9px] text-muted-foreground/40">
               SYNC · 此年龄全局生效：/user 偏好、/windows 年龄筛选、首页图表指针共用同一个值
             </p>
-            <AgeDensityCurve age={age} />
           </div>
         </div>
       </section>
 
       {/* 概览直方图 + 聚焦轨道 */}
       {/* ===== 现在最该看的三类：聚焦，不把几十张卡平铺 ===== */}
-      <section className="max-w-5xl mx-auto px-6 sm:px-8 py-8 sm:py-10 order-3">
+      <section className="w-full max-w-5xl mx-auto px-6 sm:px-8 py-8 sm:py-10 order-3">
         <div className="flex items-baseline justify-between border-b border-border pb-3 mb-5">
           <div className="flex items-baseline gap-2.5">
             <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">FOCUS</span>
@@ -813,27 +748,21 @@ export default function MePage() {
         </div>
       </section>
 
-      <section className="max-w-5xl mx-auto px-6 sm:px-8 py-10 order-2">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="rounded-xl border border-border bg-card p-5 animate-fade-in-up">
-            <PanelHead fig="FIG. 02" title="全人生窗口密度" note={`N=${all.length} · 5 岁/桶`} />
-            <OverviewBars age={age} windows={all} />
-          </div>
-          <div className="rounded-xl border border-border bg-card p-5 animate-fade-in-up stagger-2">
-            <PanelHead
-              fig="FIG. 03"
-              title="你身边 ±15 年的窗口"
-              note={`AGE ${Math.max(0, age - 8)}–${age + 15} · ${
-                all.filter((w) => w.range.start <= age + 15 && w.range.end >= age - 8 && w.state !== 'missed').length
-              } 条`}
-            />
-            <FocusTracks age={age} windows={all} />
-          </div>
+      <section className="w-full max-w-5xl mx-auto px-6 sm:px-8 py-10 order-2">
+        <div className="rounded-xl border border-border bg-card p-5 animate-fade-in-up">
+          <PanelHead
+            fig="FIG. 02"
+            title="你身边 ±15 年的窗口"
+            note={`AGE ${Math.max(0, age - 8)}–${age + 15} · ${
+              all.filter((w) => w.range.start <= age + 15 && w.range.end >= age - 8 && w.state !== 'missed').length
+            } 条`}
+          />
+          <FocusTracks age={age} windows={all} />
         </div>
       </section>
 
       {/* 三档清单 */}
-      <section className="max-w-5xl mx-auto px-6 sm:px-8 pb-16" ref={listRef}>
+      <section className="w-full max-w-5xl mx-auto px-6 sm:px-8 pb-16 order-4" ref={listRef}>
         {/* Tabs */}
         <div className="flex items-center gap-2 mb-5 animate-fade-in-up">
           {tabs.map((t) => (

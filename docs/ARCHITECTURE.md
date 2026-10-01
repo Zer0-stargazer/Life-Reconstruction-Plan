@@ -108,8 +108,9 @@ ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation 
 签名密钥取 `SESSION_SECRET`，未设则回退 `DEV_PASSWORD`，生产环境两者都缺则拒绝签发。
 用户对象本身仍存 localStorage，但**只用于界面展示**——权限判定的唯一权威是服务端令牌。
 
-> 2026-10-01 已收敛：`ModuleGate` 只调用 `auth-context.canAccessModule()`；
-> 未登录访问受锁模块时显示登录引导，普通用户 3/7，充电用户 7/7。
+> **2026-10-01 晚间测试期临时调整**：`auth-context.canAccessModule()` 现在无条件返回 `true`，  
+> 所有模块开放，便于当前 UI / UX 测试。正式权限模型仍保留方案 A：
+> 未登录 = 登录引导，普通用户 3/7，充电用户 7/7。
 
 ## AI 链路
 

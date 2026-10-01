@@ -327,6 +327,28 @@ input[type="range"]::-webkit-slider-thumb:active {
   transform: scale(1.05);
 }
 
+/* /me 的年龄控制：滑块直接压在时间分布曲线上，避免“孤点 + 另一块图表”的割裂感 */
+.age-timeline-slider {
+  height: 100%;
+  border-radius: 0.5rem;
+  background: transparent;
+}
+
+.age-timeline-slider::-webkit-slider-runnable-track {
+  height: 100%;
+  background: transparent;
+}
+
+.age-timeline-slider::-moz-range-track {
+  height: 100%;
+  background: transparent;
+}
+
+/* Firefox：先清掉默认轨道，再保留可访问的原生 thumb */
+.age-timeline-slider::-moz-range-progress {
+  background: transparent;
+}
+
 /* Selection color */
 ::selection {
   background: oklch(0.62 0.17 55 / 20%);
