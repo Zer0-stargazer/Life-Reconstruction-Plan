@@ -623,9 +623,9 @@ export default function MePage() {
         }} />
         <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/[0.07] blur-3xl" />
 
-        <div className="relative max-w-5xl mx-auto px-6 sm:px-8 py-12 sm:py-16">
+        <div className="relative w-full max-w-5xl mx-auto px-6 sm:px-8 pt-5 sm:pt-6 pb-8 sm:pb-10">
           {/* HUD 行 */}
-          <div className="flex items-center gap-3 mb-8 animate-fade-in-up">
+          <div className="flex items-center gap-3 mb-5 sm:mb-6 animate-fade-in-up">
             {/* ★ 不是 01–07，从 module-identity 取，别手写编号 */}
             <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">
               {TIMELINE_IDENTITY.tag} {TIMELINE_IDENTITY.note}
