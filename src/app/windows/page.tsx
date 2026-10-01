@@ -487,7 +487,16 @@ export default function WindowsPage() {
                     return (
                       <div
                         key={w.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={isCardExpanded}
                         onClick={() => toggleCard(w.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleCard(w.id);
+                          }
+                        }}
                         className={cn(
                           'rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] cursor-pointer group/card',
                           config.bgColor,
