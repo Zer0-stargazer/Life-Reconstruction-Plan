@@ -217,6 +217,9 @@ export function AppSidebar() {
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-12 border-b border-border bg-sidebar/95 backdrop-blur-sm flex items-center px-4">
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={mobileOpen ? '关闭导航菜单' : '打开导航菜单'}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-nav"
           className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -238,10 +241,16 @@ export function AppSidebar() {
       )}
 
       {/* Mobile sidebar */}
-      <aside className={cn(
-        'md:hidden fixed top-0 left-0 z-50 h-screen w-56 border-r border-border bg-sidebar flex flex-col transition-transform duration-300 ease-out',
-        mobileOpen ? 'translate-x-0' : '-translate-x-full'
-      )}>
+      <aside
+        id="mobile-nav"
+        /* 关闭态 inert：移出视口的同时脱离 Tab 序与读屏，焦点不再"消失"到屏外 */
+        inert={!mobileOpen}
+        aria-hidden={!mobileOpen}
+        className={cn(
+          'md:hidden fixed top-0 left-0 z-50 h-screen w-56 border-r border-border bg-sidebar flex flex-col transition-transform duration-300 ease-out',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
         {sidebarContent}
       </aside>
 
