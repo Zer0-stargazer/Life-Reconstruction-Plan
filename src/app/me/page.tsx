@@ -938,10 +938,10 @@ export default function MePage() {
 
       {/* 底部：一句收束 */}
       <section className="border-t border-border bg-muted/15">
-        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-10">
-          <div className="flex items-start gap-3 max-w-2xl">
-            <Lock className="h-4 w-4 text-primary/60 mt-0.5 shrink-0" />
-            <p className="text-sm text-foreground/80 leading-relaxed font-serif">
+        <div className="w-full max-w-5xl mx-auto px-6 sm:px-8 py-3 sm:py-4">
+          <div className="flex items-start gap-2.5 max-w-3xl">
+            <Lock className="h-3.5 w-3.5 text-primary/60 mt-0.5 shrink-0" />
+            <p className="text-xs sm:text-sm text-foreground/80 leading-snug font-serif">
               窗口不等人，但看见窗口的人可以做选择。
               数据来自发展心理学与职业研究——它不能预测你的人生，但能告诉你：
               哪些事，现在不做以后会更贵。
