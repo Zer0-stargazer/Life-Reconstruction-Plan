@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useEscapeKey } from '@/hooks/use-escape-key';
 import { X, Send, Sparkles, Loader2 } from 'lucide-react';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
+import { consumeAiSseStream } from '@/lib/sse-client';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -97,51 +98,17 @@ export function AIAnalysisPanel({
         throw new Error(detail);
       }
 
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('无法读取响应流');
-
-      const decoder = new TextDecoder();
-      let accumulated = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') {
-              // Stream complete
-              setMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
-              setStreamingContent('');
-              setIsStreaming(false);
-              return;
-            }
-            let parsed: { content?: string; error?: string } | null = null;
-            try { parsed = JSON.parse(data); } catch { parsed = null; }
-            if (parsed) {
-              if (parsed.content) {
-                accumulated += parsed.content;
-                setStreamingContent(accumulated);
-              }
-              if (parsed.error) {
-                setMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${parsed.error}` }]);
-                setStreamingContent('');
-                setIsStreaming(false);
-                return;
-              }
-            }
+      await consumeAiSseStream(response, {
+        onContent: (accumulated) => setStreamingContent(accumulated),
+        onError: (message) => {
+          setMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${message}` }]);
+        },
+        onDone: (fullText) => {
+          if (fullText) {
+            setMessages(prev => [...prev, { role: 'assistant', content: fullText }]);
           }
-        }
-      }
-
-      // If we exit the loop without [DONE]
-      if (accumulated) {
-        setMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
-      }
+        },
+      });
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         // User cancelled

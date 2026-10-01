@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { byWindowSeverity } from '@/lib/default-order';
 import { TickRule } from '@/components/shared/fig-kit';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
+import { consumeAiSseStream } from '@/lib/sse-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { Reveal } from '@/components/shared/reveal';
 import { SectionJumper } from '@/components/shared/section-jumper';
@@ -259,49 +260,17 @@ export default function WindowsPage() {
 
       if (!response.ok) throw new Error(`请求失败: ${response.status}`);
 
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('无法读取响应流');
-
-      const decoder = new TextDecoder();
-      let accumulated = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') {
-              setAiMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
-              setAiContent('');
-              setAiStreaming(false);
-              return;
-            }
-            let parsed: { content?: string; error?: string } | null = null;
-            try { parsed = JSON.parse(data); } catch { parsed = null; }
-            if (parsed) {
-              if (parsed.content) {
-                accumulated += parsed.content;
-                setAiContent(accumulated);
-              }
-              if (parsed.error) {
-                setAiMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${parsed.error}` }]);
-                setAiContent('');
-                setAiStreaming(false);
-                return;
-              }
-            }
+      await consumeAiSseStream(response, {
+        onContent: (accumulated) => setAiContent(accumulated),
+        onError: (message) => {
+          setAiMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${message}` }]);
+        },
+        onDone: (fullText) => {
+          if (fullText) {
+            setAiMessages(prev => [...prev, { role: 'assistant', content: fullText }]);
           }
-        }
-      }
-
-      if (accumulated) {
-        setAiMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
-      }
+        },
+      });
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         // cancelled
