@@ -7,6 +7,7 @@ import {
   ArrowRight, Flame, ChevronDown, Hourglass
 } from 'lucide-react';
 import { WindowDensityChart } from '@/components/home/window-density-chart';
+import { HeroOrbit } from '@/components/home/hero-orbit';
 import { WINDOW_DENSITY_META } from '@/data/window-density';
 import { MODULE_IDENTITIES, TIMELINE_IDENTITY } from '@/lib/module-identity';
 import { Reveal } from '@/components/shared/reveal';
@@ -236,62 +237,9 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 右：极简模块索引，只留跳转，不在这里重复介绍 */}
+            {/* 右：视觉化轨道图，不再复述下方模块卡 */}
             <div className="lg:col-span-7 animate-fade-in-up stagger-3">
-              <div className="relative rounded-xl border border-border bg-card/70 backdrop-blur-sm p-3 sm:p-4 shadow-sm">
-                {/* 面板头 */}
-                <div className="flex items-baseline justify-between border-b border-border pb-2.5 mb-1">
-                  <div className="flex items-baseline gap-2.5">
-                    <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">MAP · 01–07</span>
-                    <h2 className="text-sm font-semibold text-foreground">七大模块</h2>
-                  </div>
-                  <span className="hidden md:inline font-mono text-[10px] text-muted-foreground/50">
-                    身份 → 赛道 → 认知 → 时机 → 推演 → 风险 → 报告
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {MODULE_IDENTITIES.map((m) => {
-                    const Icon = m.icon;
-                    return (
-                      <Link
-                        key={m.href}
-                        href={m.href}
-                        className={cn(
-                          'group flex min-w-0 flex-col items-start gap-2 rounded-lg border border-transparent px-2.5 py-2.5',
-                          'transition-colors hover:border-border/70 hover:bg-background/60',
-                          m.ring
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br text-white shadow-sm transition-transform duration-200 group-hover:scale-110',
-                            m.iconGradient
-                          )}
-                        >
-                          <Icon className="h-3.5 w-3.5" />
-                        </span>
-                        <span className="flex min-w-0 items-center gap-1">
-                          <span className={cn('font-mono text-[10px] tabular-nums shrink-0', m.tagColor)}>
-                            {m.tag}
-                          </span>
-                          <span className="truncate text-[12px] font-semibold text-foreground">
-                            {m.title}
-                          </span>
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-border flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-muted-foreground/60">
-                  <span>{TOTAL_DATA_POINTS.toLocaleString('en-US')} DATA POINTS</span>
-                  <span className="text-border">|</span>
-                  <Link href="/me" className="text-primary/80 hover:text-primary transition-colors">
-                    先看看我这个年纪该做什么 →
-                  </Link>
-                </div>
-              </div>
+              <HeroOrbit />
             </div>
           </div>
         </div>

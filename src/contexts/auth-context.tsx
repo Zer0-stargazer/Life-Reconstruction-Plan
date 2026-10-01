@@ -220,12 +220,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isPremium = user?.role === "premium" || user?.role === "developer";
   const isDeveloper = user?.role === "developer";
 
-  // Fixed: unauthenticated users get restricted access, not full access
+  /**
+   * 测试期临时放开全部模块。
+   * 等邀请码/付费链路真的要收口时，这里要恢复成按角色判断。
+   */
   const canAccessModule = useCallback((modulePath: string) => {
-    if (!user) return false;
-    if (isPremium) return true;
-    return NORMAL_USER_MODULES.includes(modulePath);
-  }, [user, isPremium]);
+    void modulePath;
+    return true;
+  }, []);
 
   return (
     <AuthContext.Provider value={{

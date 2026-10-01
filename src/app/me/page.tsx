@@ -13,6 +13,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { lifeWindows, type LifeWindow, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LOCK_FORCE_LABELS } from '@/data/windows';
+import { WINDOW_DENSITY } from '@/data/window-density';
 import { cn } from '@/lib/utils';
 import { PanelHead, HudCorners, HazardStripe } from '@/components/shared/fig-kit';
 import { Reveal } from '@/components/shared/reveal';
@@ -418,48 +419,28 @@ function OverviewBars({ age, windows }: { age: number; windows: ClassifiedWindow
 
 const FOCUS_BEFORE = 8;
 const FOCUS_AFTER = 15;
-const FOCUS_MAX_TRACKS = 9;
-
 function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[] }) {
   const { marks } = useWindowMarks();
   const from = Math.max(0, age - FOCUS_BEFORE);
   const to = age + FOCUS_AFTER;
   const span = to - from;
 
-  // 标了"与我无关"的连色带都不画——这条轨道图的价值就是让你一眼看见还剩什么
-  const inView = windows
-    .filter((w) => w.range.start <= to && w.range.end >= from && w.state !== 'missed' && marks[w.id] !== 'skip')
-    .sort((a, b) => {
-      const priority: Record<ClassifiedWindow['state'], number> = {
-        urgent: 0,
-        open: 1,
-        future: 2,
-        missed: 3,
-      };
-      return priority[a.state] - priority[b.state]
-        || a.range.start - b.range.start
-        || (b.lockForceScore ?? 0) - (a.lockForceScore ?? 0)
-        || a.range.end - b.range.end;
-    });
-
-  // 贪心分轨
-  const tracks: ClassifiedWindow[][] = [];
-  const trackEnds: number[] = [];
-  for (const w of inView) {
-    let placed = false;
-    for (let t = 0; t < tracks.length; t++) {
-      if (trackEnds[t] <= w.range.start) {
-        tracks[t].push(w);
-        trackEnds[t] = w.range.end;
-        placed = true;
-        break;
-      }
-    }
-    if (!placed) {
-      tracks.push([w]);
-      trackEnds.push(w.range.end);
-    }
-  }
+  // 按年份聚合，而不是按窗口画横条。这样每挪一岁，图形会真的变。
+  const yearStats = Array.from({ length: span + 1 }, (_, i) => {
+    const year = from + i;
+    const active = windows.filter(
+      (w) => w.range.start <= year && year <= w.range.end && w.state !== 'missed' && marks[w.id] !== 'skip'
+    );
+    return {
+      year,
+      urgent: active.filter((w) => w.state === 'urgent').length,
+      open: active.filter((w) => w.state === 'open').length,
+      future: active.filter((w) => w.state === 'future').length,
+      total: active.length,
+    };
+  });
+  const maxCount = Math.max(1, ...yearStats.map((s) => s.total));
+  const currentX = ((age - from) / span) * 100;
 
   const barColor = (w: ClassifiedWindow) =>
     w.state === 'urgent'
@@ -468,60 +449,90 @@ function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[
         ? 'bg-emerald-500/80 hover:bg-emerald-400'
         : 'bg-amber-400/60 hover:bg-amber-300';
 
-  const visibleTracks = tracks.slice(0, FOCUS_MAX_TRACKS);
-  const hiddenTrackCount = Math.max(0, tracks.length - FOCUS_MAX_TRACKS);
-  const hiddenItemCount = tracks
-    .slice(FOCUS_MAX_TRACKS)
-    .reduce((sum, track) => sum + track.length, 0);
-  const trackStep = 13;
-
   return (
     <div>
-      <div className="relative" style={{ height: visibleTracks.length * trackStep + 28 }}>
-        {/* 年龄网格 */}
-        {Array.from({ length: span + 1 }, (_, i) => from + i)
-          .filter((a) => a % 5 === 0)
-          .map((a) => (
-            <div key={a} className="absolute top-6 bottom-0 w-px bg-border/60" style={{ left: `${((a - from) / span) * 100}%` }}>
-              <span className="absolute -top-1 left-1 -translate-y-full text-[10px] font-mono text-muted-foreground/60 tabular-nums">{a}</span>
+      <div className="relative h-40 rounded-lg bg-muted/20 px-2 pt-2">
+        {/* 当前年龄线 */}
+        <div
+          className="absolute inset-y-2 w-0.5 bg-red-500/80 z-10"
+          style={{ left: `calc(0.5rem + ${currentX / 100 * 100}% - 1px)` }}
+        />
+        <div className="flex h-full items-end gap-[2px]">
+          {yearStats.map((s) => (
+            <div
+              key={s.year}
+              title={`${s.year} 岁：${s.total} 个窗口（紧急 ${s.urgent} / 开启 ${s.open} / 未来 ${s.future}）`}
+              className="flex h-full flex-1 flex-col justify-end gap-[1px]"
+            >
+              {s.urgent > 0 && (
+                <div
+                  className="rounded-t-sm bg-red-500"
+                  style={{ height: `${(s.urgent / maxCount) * 100}%` }}
+                />
+              )}
+              {s.open > 0 && (
+                <div
+                  className="bg-emerald-500/80"
+                  style={{ height: `${(s.open / maxCount) * 100}%` }}
+                />
+              )}
+              {s.future > 0 && (
+                <div
+                  className="bg-amber-400/60"
+                  style={{ height: `${(s.future / maxCount) * 100}%` }}
+                />
+              )}
             </div>
           ))}
-
-        {/* 当前年龄线 */}
-        <div className="absolute top-6 bottom-0 w-0.5 bg-red-500/70 z-10" style={{ left: `${((age - from) / span) * 100}%` }} />
-
-        {/* 色带 */}
-        {visibleTracks.map((track, t) =>
-          track.map((w) => {
-            const left = ((Math.max(w.range.start, from) - from) / span) * 100;
-            const width = ((Math.min(w.range.end, to) - Math.max(w.range.start, from)) / span) * 100;
-            return (
-              <div
-                key={w.id}
-                title={`${w.title}（${w.age}岁）`}
-                onClick={() => document.getElementById(`me-win-${w.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                className={cn(
-                'absolute h-2 rounded-full cursor-pointer transition-colors group',
-                  barColor(w),
-                  marks[w.id] && 'opacity-40'
-                )}
-                style={{ left: `${left}%`, width: `${Math.max(width, 1.2)}%`, top: 28 + t * trackStep }}
-              />
-            );
-          })
-        )}
-      </div>
-      {hiddenTrackCount > 0 && (
-        <div className="mt-2 flex items-center justify-between rounded-md bg-muted/40 px-2 py-1.5 font-mono text-[10px] text-muted-foreground">
-          <span>DENSE · 另有 {hiddenItemCount} 个窗口被收纳</span>
-          <span>密集时段已压缩显示</span>
         </div>
-      )}
+      </div>
+
+      {/* 年份刻度 */}
+      <div className="relative mt-1 h-4">
+        {yearStats
+          .filter((s) => s.year % 5 === 0)
+          .map((s) => (
+            <span
+              key={s.year}
+              className="absolute -translate-x-1/2 text-[10px] font-mono text-muted-foreground/60 tabular-nums"
+              style={{ left: `${((s.year - from) / span) * 100}%` }}
+            >
+              {s.year}
+            </span>
+          ))}
+      </div>
       <div className="flex items-center gap-4 text-[10px] text-muted-foreground mt-1">
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500/80 inline-block" /> 正在开启</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" /> 即将关闭</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400/60 inline-block" /> 尚未到来</span>
         <span className="text-muted-foreground/60">点击色带跳到对应窗口</span>
+      </div>
+    </div>
+  );
+}
+
+function AgeDensityCurve({ age }: { age: number }) {
+  const max = Math.max(...WINDOW_DENSITY.map((d) => d.total));
+  return (
+    <div className="mt-4">
+      <div className="flex items-end gap-[3px] h-16">
+        {WINDOW_DENSITY.map((bucket) => {
+          const active = age >= bucket.from && age <= bucket.to;
+          return (
+            <div
+              key={bucket.from}
+              title={`${bucket.from}-${bucket.to} 岁 · ${bucket.total} 个窗口`}
+              className={cn(
+                'flex-1 rounded-t-sm transition-all',
+                active ? 'bg-primary' : 'bg-primary/25'
+              )}
+              style={{ height: `${Math.max(6, (bucket.total / max) * 100)}%` }}
+            />
+          );
+        })}
+      </div>
+      <div className="mt-1 flex justify-between text-[10px] font-mono text-muted-foreground/50 tabular-nums">
+        <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
       </div>
     </div>
   );
@@ -654,9 +665,9 @@ export default function MePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Hero：年龄选择 + 钩子 */}
-      <section className="relative overflow-hidden border-b border-border grain-texture">
+      <section className="relative overflow-hidden border-b border-border grain-texture order-1">
         {/* 48px 细网格 */}
         <div className="absolute inset-0 opacity-[0.035]" style={{
           backgroundImage: 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
@@ -735,13 +746,14 @@ export default function MePage() {
             <p className="mt-3 pt-3 border-t border-border/60 font-mono text-[9px] text-muted-foreground/40">
               SYNC · 此年龄全局生效：/user 偏好、/windows 年龄筛选、首页图表指针共用同一个值
             </p>
+            <AgeDensityCurve age={age} />
           </div>
         </div>
       </section>
 
       {/* 概览直方图 + 聚焦轨道 */}
       {/* ===== 现在最该看的三类：聚焦，不把几十张卡平铺 ===== */}
-      <section className="max-w-5xl mx-auto px-6 sm:px-8 py-8 sm:py-10">
+      <section className="max-w-5xl mx-auto px-6 sm:px-8 py-8 sm:py-10 order-3">
         <div className="flex items-baseline justify-between border-b border-border pb-3 mb-5">
           <div className="flex items-baseline gap-2.5">
             <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">FOCUS</span>
@@ -801,7 +813,7 @@ export default function MePage() {
         </div>
       </section>
 
-      <section className="max-w-5xl mx-auto px-6 sm:px-8 py-10">
+      <section className="max-w-5xl mx-auto px-6 sm:px-8 py-10 order-2">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-xl border border-border bg-card p-5 animate-fade-in-up">
             <PanelHead fig="FIG. 02" title="全人生窗口密度" note={`N=${all.length} · 5 岁/桶`} />
