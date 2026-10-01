@@ -6,16 +6,20 @@ import { getClientIp, rateLimit } from '@/lib/rate-limit';
 // Developer password (stored as env var in production)
 const DEV_PASSWORD = process.env.DEV_PASSWORD;
 
-// 会话令牌 = DEV_PASSWORD 的加盐哈希，避免明文密码出服务端/落 localStorage
-function devSessionToken(): string {
-  return createHash('sha256').update(`lrs-dev-session:${DEV_PASSWORD}`).digest('hex');
+// 会话令牌 = DEV_PASSWORD + UTC 日期桶的加盐哈希，避免明文密码出服务端/落 localStorage。
+// 令牌按天轮换：verify 签发今天的桶，校验接受今天与昨天两个桶——
+// 等效 24-48h 有效期，跨零点不会立刻失效；过期后 GET 返回 401，
+// 由 /admin 页回退到重新验证界面（配合 2026-10-02 的错误处理修复）。
+function devSessionToken(dayOffset = 0): string {
+  const day = new Date(Date.now() - dayOffset * 86_400_000).toISOString().slice(0, 10);
+  return createHash('sha256').update(`lrs-dev-session:${DEV_PASSWORD}:${day}`).digest('hex');
 }
 
 function verifyDevAuth(request: NextRequest): boolean {
   if (!DEV_PASSWORD) return false;
   const authHeader = request.headers.get('x-dev-token');
   if (!authHeader) return false;
-  return authHeader === devSessionToken();
+  return authHeader === devSessionToken(0) || authHeader === devSessionToken(1);
 }
 
 const VALID_ROLES = ['normal', 'premium', 'developer'] as const;
