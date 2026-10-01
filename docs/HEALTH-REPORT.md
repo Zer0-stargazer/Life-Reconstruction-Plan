@@ -243,7 +243,7 @@ id 579–1539（778 条）description 为 `"{name}，{category}领域的专业�
 
 | 问题 | 现状 | 需要决策 |
 |---|---|---|
-| 未登录用户可访问全部模块 | `components/auth/module-gate.tsx:12`：`if (!user \|\| canAccessModule(...)) return children` → **未登录 = 全解锁**；`app-sidebar.tsx:117` 同理 | 方案 A：未登录全锁（强制注册）；方案 B：未登录开放 3 个模块做钩子。这是转化策略问题，不是 bug |
+| ~~未登录用户可访问全部模块~~ | ✅ 2026-10-01 已按方案 A 修复：`ModuleGate` 移除 `!user ||` 放行，未登录访问受锁模块显示登录引导 | 已关闭；后续维持 `auth-context` 单一判定来源 |
 | 自定义 AI 源的隐私边界 | 用户填自己的 baseUrl + key 存 localStorage，服务端代为转发 | 是否需要在文档里明确"key 会经过本服务端"？ |
 
 ---

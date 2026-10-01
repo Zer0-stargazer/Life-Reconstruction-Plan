@@ -108,8 +108,8 @@ ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation 
 签名密钥取 `SESSION_SECRET`，未设则回退 `DEV_PASSWORD`，生产环境两者都缺则拒绝签发。
 用户对象本身仍存 localStorage，但**只用于界面展示**——权限判定的唯一权威是服务端令牌。
 
-> ⚠️ 待决策：未登录策略仍自相矛盾（`module-gate.tsx` 的 `!user ||` 放行 vs
-> `auth-context.tsx` 的 `if (!user) return false`），见 KNOWN-ISSUES #4。
+> 2026-10-01 已收敛：`ModuleGate` 只调用 `auth-context.canAccessModule()`；
+> 未登录访问受锁模块时显示登录引导，普通用户 3/7，充电用户 7/7。
 
 ## AI 链路
 
