@@ -175,16 +175,16 @@ id 579–1539（778 条）description 为 `"{name}，{category}领域的专业�
 | 级别 | 问题 |
 |---|---|
 | 🟠 P1 | `docs/API.md:94` 写 module 白名单 9 个 → 实际 12 个（漏了 3 个 `laws_*`）；`:116` 写「不在白名单回落到 window 框架」→ 实际已改为返回 **400** |
-| 🟠 P1 | `docs/DEVELOPER.md:60-64` API 表整体过期：`/api/invite` body 写 `{code,nickname}`（实际只 `{code}`，userId 取自会话）；`/api/ai/analyze` 写 `{prompt,type,model?,apiKey?}`（实际 `{module,item,question?,history?,ai?}`）；admin 写支持 GET/POST/PUT/DELETE（实际只有 GET/POST） |
-| 🟠 P1 | `docs/DEVELOPER.md:181-184` 的"新增 AI 厂商"指引让改 `PROVIDERS` 数组 —— 这套 8 厂商机制**已于 09-28 删除**，指引整体失效 |
+| 🟠 P1 | `docs/history/DEVELOPER.md:60-64` API 表整体过期：`/api/invite` body 写 `{code,nickname}`（实际只 `{code}`，userId 取自会话）；`/api/ai/analyze` 写 `{prompt,type,model?,apiKey?}`（实际 `{module,item,question?,history?,ai?}`）；admin 写支持 GET/POST/PUT/DELETE（实际只有 GET/POST） |
+| 🟠 P1 | `docs/history/DEVELOPER.md:181-184` 的"新增 AI 厂商"指引让改 `PROVIDERS` 数组 —— 这套 8 厂商机制**已于 09-28 删除**，指引整体失效 |
 | 🟡 P2 | `docs/KNOWN-ISSUES.md` 中 `#7` 出现两次（103-109 已修版 + 117-120 旧版残留）；`:161-163` 与 `DEVELOPER.md:140` 仍留"高级设置未被消费"旧句，而 `#11` 已声明该说法过时 |
 | 🟡 P2 | 体积描述全面过期：文档写 careers「1.1MB / 1538条」→ 实际 **404KB / 1535**；luck「548KB / 365」→ 实际 **424KB / 250**；windows「232KB / 524」→ 实际 **240KB / 473** |
 | 🟡 P2 | `docs/DATABASE.md:71-72`、`HANDOVER.md:167`、`HANDOVER.md:185` 称 invite/admin 缺鉴权、analyze 不读用户 Key —— **均已被后续提交修复**，文档未同步 |
 | 🟡 P2 | `docs/ARCHITECTURE.md` 未收录 `/me`（11 个页面中唯一缺的）；`:65` 写「8 套 prompt」实际 12 套 |
-| 🟡 P2 | `docs/INTRODUCTION.md` 整篇未更新：仍写「50 条 redNodes 预留数据」（已删）、「自带 Key 支持 8 个主流厂商」（已删）、技术栈含 `coze-coding-dev-sdk`（包不存在） |
+| 🟡 P2 | `docs/history/INTRODUCTION.md` 整篇未更新：仍写「50 条 redNodes 预留数据」（已删）、「自带 Key 支持 8 个主流厂商」（已删）、技术栈含 `coze-coding-dev-sdk`（包不存在） |
 | 🟡 P2 | `README.md:114-115` 「代码最后修改 2026-07-14」→ 实际 09-29；目录树漏 `components/home/`、`components/shared/`；`:8` 称「8 个模块」实为 10 项 |
 | 🟡 P2 | `supabase/schema.sql:11` 注释指向已删除的 `src/storage/database/shared/schema.ts` |
-| 🔵 P3 | `PROJECT-BRIEF.md` 仍写 `scripts/*.sh`、`public/` 目录（均已不存在） |
+| 🔵 P3 | `docs/PROJECT-BRIEF.md` 曾写 `scripts/*.sh`、`public/` 目录（均已不存在；路径已迁入 docs） |
 
 ---
 

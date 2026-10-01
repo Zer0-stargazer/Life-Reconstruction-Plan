@@ -9,7 +9,7 @@
 >   全站数据合计 **1,768** 条。本文中所有 `1535 / 1538 / 1539` 均为当时的历史数字。
 > - 2026-09-29 全项目体检发现「#3 自定义 AI Key 已修」的结论**不成立**
 >   （存在 `ai-active-source` / `api-active-source` 键名分叉），已于 `8945efe` 修复。
->   详见 `HEALTH-REPORT.md` P1#1。
+>   详见 `docs/history/HEALTH-REPORT.md` P1#1。
 >
 > 当前仍未解决的条目，见文末「修与不修的建议优先级」。
 
@@ -53,7 +53,7 @@
 另外，项目根若残留 `node_modules.deleted_partial*` 之类的目录，Turbopack 编译 CSS 时会报
 `Cannot depend on path ... outside of root directory` 并直接 500 —— 必须**移出项目根**而不只是放着。
 
-→ 完整重建步骤见 `docs/DEVELOPER.md`「本地环境重建 (Windows / pnpm)」。
+→ 完整重建步骤见 `docs/history/DEVELOPER.md`「本地环境重建 (Windows / pnpm)」。
 现状：首页与 9 个主要页面全部 200，dev 日志 0 错误。
 **长期建议**：删掉 `.npmrc` 里那两行让 pnpm 恢复自愈能力。
 

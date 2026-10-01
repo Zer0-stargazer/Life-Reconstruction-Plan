@@ -45,7 +45,7 @@ pnpm build && pnpm start   # 生产
 ```
 
 > Windows 下若 `pnpm install` 因 esbuild postinstall 失败，加 `--ignore-scripts`；
-> 环境重建的完整步骤见 `docs/DEVELOPER.md`。
+> 环境重建的完整步骤见 `docs/history/DEVELOPER.md`。
 
 **首次运行必须配置环境变量**，否则登录/邀请码/AI 分析全部不可用（页面能看，接口会 500）：
 
@@ -122,23 +122,24 @@ src/
 └── storage/database/         # supabase-client.ts
 supabase/schema.sql           # 建表 SQL（手工执行）
 scripts/                      # next-run.mjs（读 $PORT）+ archive/（历史生成脚本）
-docs/                         # 架构 / API / 数据库 / 已知问题 / 体检 / 产品审计 / 交接
+docs/                         # 接手入口 / 项目全景 / 架构 / API / 数据库 / 已知问题 / 产品审计 / 交接；history/ 存旧版参考
 ```
 
 ## 文档索引
 
 | 文档 | 内容 |
 |---|---|
-| [PROJECT-BRIEF.md](PROJECT-BRIEF.md) | **项目全景（评审版）**：产品视角、目录地图、Roadmap、待决策事项 |
+| [docs/00-优先阅读-项目接手.md](docs/00-优先阅读-项目接手.md) | **接手第一入口**：当前状态、启动方式、优先阅读顺序 |
+| [docs/PROJECT-BRIEF.md](docs/PROJECT-BRIEF.md) | **项目全景（评审版）**：产品视角、目录地图、Roadmap、待决策事项 |
 | [docs/HANDOVER.md](docs/HANDOVER.md) | 交接文档：怎么跑起来、从哪继续、历史踩坑记录 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 架构与数据流、权限链路、AI 链路、信息架构 |
 | [docs/API.md](docs/API.md) | 5 个 API 路由的请求/响应契约 |
 | [docs/DATABASE.md](docs/DATABASE.md) | 表结构、字段、建表与连接 |
 | [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md) | **全部已知问题（接手前必读）** |
-| [docs/HEALTH-REPORT.md](docs/HEALTH-REPORT.md) | 全项目体检报告（工程/数据/文档/构建） |
+| [docs/history/HEALTH-REPORT.md](docs/history/HEALTH-REPORT.md) | 历史体检快照（工程/数据/文档/构建） |
 | [docs/PRODUCT-AUDIT.md](docs/PRODUCT-AUDIT.md) | 产品打磨审计（视觉/交互/文案/移动端/无障碍 + 信息架构重做） |
-| [docs/DEVELOPER.md](docs/DEVELOPER.md) | 开发者参考（2026-07 旧版，含校注） |
-| [docs/INTRODUCTION.md](docs/INTRODUCTION.md) | 对外介绍 |
+| [docs/history/DEVELOPER.md](docs/history/DEVELOPER.md) | 旧版开发者参考（2026-07 快照，含校注） |
+| [docs/history/INTRODUCTION.md](docs/history/INTRODUCTION.md) | 旧版对外介绍 |
 
 ## 状态
 
@@ -146,5 +147,6 @@ docs/                         # 架构 / API / 数据库 / 已知问题 / 体检
 - 2026-09-26 ~ 09-28：数据去重与纠偏（careers 1539 → **757**）、安全层重建（HMAC 会话）、AI 全链路打通、自定义 AI 源
 - 2026-09-29：全项目体检 + 产品审计；四个兜底页、AI 限流、CI、无障碍补全
 - 2026-09-30：**信息架构重做**——模块身份唯一真源、首页模块导览、长列表聚焦与折叠、滚动进场、站点图标
+- 2026-10-01：时间轴与 AI 回复打磨；文档收进 `docs/`，旧版参考归档到 `docs/history/`
 - 数据总览：288 规律 + 473 窗口 + 250 运气 + 757 职业 = **1,768 条**
 - 项目由扣子编程 CLI 生成（`.coze` 仍在），但已可独立于扣子运行

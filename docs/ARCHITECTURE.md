@@ -41,6 +41,9 @@ src/lib/module-identity.ts          ← 唯一真源
 
 src/components/shared/reveal.tsx     ← 滚动进场包裹件（IntersectionObserver）
         └─► 首页 / /me / /laws / /career / /windows / /luck
+
+src/components/shared/ai-markdown.tsx ← AI 输出的 Markdown 轻量渲染器
+        └─► /destiny /laws /luck /simulation /windows
 ```
 
 **页面里没有任何一处硬编码 `MODULE · 0X`**（`grep -rn "MODULE · 0" src/` 为空）。
@@ -118,7 +121,8 @@ ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation 
 2. 路由按 `module` 挑选内置分析框架 prompt（8 套，见 route.ts 的 `MODULE_PROMPTS`）
 3. `src/lib/ai-stream.ts` 用 fetch 调 OpenAI-compatible `/chat/completions`（stream:true）
 4. 服务端把 delta 转成 SSE `data: {content}` / `data: [DONE]`，前端逐块渲染
-5. 追问时携带完整 history，走续聊分支
+5. 前端用 `components/shared/ai-markdown.tsx` 渲染标题 / 列表 / 加粗 / 分割线，避免暴露 Markdown 源码
+6. 追问时携带完整 history，走续聊分支
 
 **AI 来源只有两种**（2026-09-28 简化，原写死的 8 家厂商预设已删除）：
 

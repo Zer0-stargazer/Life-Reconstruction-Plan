@@ -75,7 +75,7 @@ pnpm dev
 
 - **不需要任何 Key 就能看**：全部页面、`/me` 时间轴、数据浏览（Supabase 只在调用后端 API 时才需要）
 - **需要 Key 才能用**：登录注册、邀请码、AI 分析、admin 后台（`.env.local` 清单见 §8）
-- pnpm 环境有历史坑（虚拟 store 链接残缺），完整重建步骤见 `docs/DEVELOPER.md`
+- pnpm 环境有历史坑（虚拟 store 链接残缺），完整重建步骤见 `docs/history/DEVELOPER.md`
 
 ---
 
@@ -85,8 +85,9 @@ pnpm dev
 人生重构计划/
 ├── README.md                # 快速开始 + 模块表
 ├── AGENTS.md                # 给 AI 协作者的约定（含历史偏差纠正）
-├── PROJECT-BRIEF.md         # ← 本文档
-├── docs/                    # 7 份专题文档（详见 §10 文档地图）
+├── docs/                    # 项目全景 + 专题文档（详见 §10 文档地图）
+│   ├── 00-优先阅读-项目接手.md
+│   └── PROJECT-BRIEF.md     # ← 本文档
 ├── supabase/schema.sql      # 全部表结构（唯一权威，无 ORM）
 ├── scripts/
 │   ├── *.sh                 # prepare/dev/build/start/validate
@@ -169,7 +170,7 @@ pnpm dev
 | 用户自带 Key（`/user` 页） | ✅ **2026-09-28 已支持自定义接入源**：任意接口地址 + 协议 + Key + 模型，可添加/编辑/启停/测试/删除/导入导出 |
 | 登录 / 邀请码 / admin | ❌ 缺 Supabase 三件套，仍 500 |
 | 生产构建 (`next build`) | ✅ **2026-09-30 已跑通**：编译成功、21 个静态页生成完成（含 `/icon.svg`、`/manifest.webmanifest`） |
-| 2026-10-01 晚间 UI 收敛 | ✅ 首页轨道图、`/me` 年龄分布曲线并入滑块、年度热度图、信息顺序重排 |
+| 2026-10-01 晚间 UI 收敛 | ✅ 首页轨道图、`/me` 年龄分布曲线并入滑块、年度热度图、信息顺序重排；AI 回复改 Markdown 渲染 |
 | 信息架构（2026-09-30 重做后） | ✅ 首页/侧栏/页尾导航三处顺序一致；`/laws` `/career` `/windows` `/luck` 聚焦与折叠生效（SSR 输出已核对） |
 | 未登录时的产品行为 | ⚠️ 测试期临时全开放；正式方案 A 已实现，待权限收口恢复 |
 
@@ -229,17 +230,18 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 | 文档 | 内容 |
 |---|---|
-| `PROJECT-BRIEF.md` | ← 本文档（全景 / 评审版） |
+| `docs/PROJECT-BRIEF.md` | ← 本文档（全景 / 评审版） |
+| `docs/00-优先阅读-项目接手.md` | 接手第一入口：现在状态、跑法、优先读什么 |
 | `README.md` | 快速开始 + 模块表 + 目录结构 |
 | `docs/HANDOVER.md` | 交接文档：怎么跑、从哪继续、踩坑记录 |
 | `docs/ARCHITECTURE.md` | 技术架构 + 信息架构 + 会话机制 + AI 链路 |
 | `docs/API.md` | 5 个 API 的请求/响应契约 |
 | `docs/DATABASE.md` | Supabase 表结构 + 兼容变量 |
-| `docs/DEVELOPER.md` | 开发细节 + **Windows/pnpm 环境重建**（踩坑实录） |
+| `docs/history/DEVELOPER.md` | 旧版开发细节 + **Windows/pnpm 环境重建**（历史踩坑快照） |
 | `docs/KNOWN-ISSUES.md` | 全部问题的来龙去脉与修复记录 |
-| `docs/HEALTH-REPORT.md` | 全项目体检报告（工程 / 数据 / 文档 / 构建） |
+| `docs/history/HEALTH-REPORT.md` | 历史工程体检快照（工程 / 数据 / 文档 / 构建） |
 | `docs/PRODUCT-AUDIT.md` | **产品打磨审计**（视觉 / 交互 / 文案 / 移动端 / 无障碍）+ 第十节「信息架构重做」 |
-| `docs/INTRODUCTION.md` | 对外产品介绍 |
+| `docs/history/INTRODUCTION.md` | 旧版对外产品介绍 |
 | `AGENTS.md` | 给 AI 协作者的约定（含历史偏差纠正） |
 
 ---

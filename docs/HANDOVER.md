@@ -2,7 +2,7 @@
 
 > **2026-10-01 修订**。原 2026-07 版的"踩坑记录"完整保留（仍是真金白银的经验），
 > 过时信息已就地修正并标注。已知问题全集见 [KNOWN-ISSUES.md](KNOWN-ISSUES.md)，
-> 产品侧结论见 [PRODUCT-AUDIT.md](PRODUCT-AUDIT.md)，工程体检见 [HEALTH-REPORT.md](HEALTH-REPORT.md)。
+> 产品侧结论见 [PRODUCT-AUDIT.md](PRODUCT-AUDIT.md)，历史工程体检见 [history/HEALTH-REPORT.md](history/HEALTH-REPORT.md)。
 
 ## 快速启动（本地）
 
@@ -261,13 +261,14 @@ shadcn/ui 组件在 `src/components/ui/`, 不要从外部引入新 UI 库。如�
 | 文档 | 用途 |
 |---|---|
 | README.md | 快速开始 + 模块表 + 目录结构 |
-| PROJECT-BRIEF.md | 项目全景（评审版）：产品视角 / Roadmap / 待决策 |
-| INTRODUCTION.md | 对外介绍（数字已修订） |
-| DEVELOPER.md | 开发者参考（部分过时内容已标注） |
+| docs/PROJECT-BRIEF.md | 项目全景（评审版）：产品视角 / Roadmap / 待决策 |
+| docs/00-优先阅读-项目接手.md | 接手第一入口 |
+| history/INTRODUCTION.md | 旧版对外介绍（历史快照） |
+| history/DEVELOPER.md | 旧版开发者参考（历史快照，部分过时内容已标注） |
 | ARCHITECTURE.md | 架构与数据流 + **信息架构（模块身份/阅读路径/长列表范式）** |
 | API.md | 5 个 API 路由契约 |
 | DATABASE.md | 表结构 + 建表 |
 | KNOWN-ISSUES.md | 全部已知问题（接手必读） |
-| HEALTH-REPORT.md | 全项目体检报告（工程/数据/文档/构建） |
+| history/HEALTH-REPORT.md | 历史工程体检快照（工程/数据/文档/构建） |
 | PRODUCT-AUDIT.md | 产品打磨审计 + 第十节「信息架构重做」 |
 | HANDOVER.md | 本文 |
