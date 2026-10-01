@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { useAuth, ALL_MODULES, NORMAL_USER_MODULES } from '@/contexts/auth-context';
 import { AiSourceManager } from '@/components/ai/ai-source-manager';
 import { STORAGE_KEY_ACTIVE, type AiSource } from '@/lib/ai-sources';
@@ -73,7 +74,6 @@ const DEFAULT_WEIGHTS = [
 export default function UserPage() {
   const pathname = usePathname();
   const { user: authUser, login: authLogin, register: authRegister, logout: authLogout, redeemCode, isPremium, canAccessModule } = useAuth();
-  const [isDark, setIsDark] = useState(false);
   const [visitedPaths, setVisitedPaths] = useState<string[]>([]);
   const [activeAiSource, setActiveAiSource] = useState<AiSourceId>('builtin');
   // 用户自定义接入源（独立存储 ai-sources，供顶部"当前使用"显示）
@@ -104,9 +104,6 @@ export default function UserPage() {
   // ---- Load persisted state ----
 
   useEffect(() => {
-    const html = document.documentElement;
-    setIsDark(html.classList.contains('dark'));
-
     // Track visit - mark current path as visited
     try {
       const stored = localStorage.getItem('visited-modules');
@@ -236,16 +233,11 @@ export default function UserPage() {
 
   // ---- Theme / Age / API helpers ----
 
-  const toggleTheme = () => {
-    const html = document.documentElement;
-    if (html.classList.contains('dark')) {
-      html.classList.remove('dark');
-      setIsDark(false);
-    } else {
-      html.classList.add('dark');
-      setIsDark(true);
-    }
-  };
+  // 主题唯一真源是 next-themes（与侧栏切换共用）；
+  // 之前这里直接改 documentElement.classList，刷新即丢且会被 next-themes 覆盖回去
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  const toggleTheme = () => setTheme(isDark ? 'light' : 'dark');
 
 
   // 参数放宽为 string：自定义源 id 是运行时生成的（src_xxx），不在 AiSourceId 字面量里
