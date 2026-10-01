@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth, ALL_MODULES, NORMAL_USER_MODULES } from '@/contexts/auth-context';
 import { AiSourceManager } from '@/components/ai/ai-source-manager';
 import { STORAGE_KEY_ACTIVE, type AiSource } from '@/lib/ai-sources';
+import { readDefaultAge, writeDefaultAge } from '@/lib/default-age';
 
 const modules = [
   { name: '名字', path: '/name', icon: '01' },
@@ -128,8 +129,7 @@ export default function UserPage() {
       if (storedCustom) setCustomSources(JSON.parse(storedCustom));
     } catch { /* ignore */ }
     try {
-      const storedAge = localStorage.getItem('default-age');
-      if (storedAge) setDefaultAge(parseInt(storedAge, 10));
+      setDefaultAge(readDefaultAge());
     } catch { /* ignore */ }
 
     // Load advanced settings
@@ -277,8 +277,8 @@ export default function UserPage() {
 
   const updateDefaultAge = useCallback((age: number) => {
     setDefaultAge(age);
-    persist('default-age', age);
-  }, [persist]);
+    writeDefaultAge(age);
+  }, []);
 
   // ---- Advanced settings handlers ----
 

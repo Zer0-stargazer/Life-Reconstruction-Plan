@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { DEFAULT_AGE, readDefaultAge, writeDefaultAge } from '@/lib/default-age';
 
 export interface LifeStage { id: string; label: string; range: [number, number]; }
 export interface WeightItem { id: string; label: string; value: number; icon: string; }
@@ -33,13 +34,13 @@ function loadJSON<T>(key: string, fallback: T): T {
 }
 
 export function useAdvancedSettings() {
-  const [defaultAge, setDefaultAge] = useState(25);
+  const [defaultAge, setDefaultAge] = useState(DEFAULT_AGE);
   const [stages, setStages] = useState<LifeStage[]>(DEFAULT_STAGES);
   const [weights, setWeights] = useState<WeightItem[]>(DEFAULT_WEIGHTS);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setDefaultAge(loadJSON('default-age', 25));
+    setDefaultAge(readDefaultAge());
     setStages(loadJSON('life-stages', DEFAULT_STAGES));
     setWeights(loadJSON('preference-weights', DEFAULT_WEIGHTS));
     setLoaded(true);
@@ -48,7 +49,7 @@ export function useAdvancedSettings() {
   /** 保存全局年龄：写入 state + localStorage，所有页面（/me、/windows、首页图表）共用 */
   const saveDefaultAge = useCallback((age: number) => {
     setDefaultAge(age);
-    try { localStorage.setItem('default-age', JSON.stringify(age)); } catch { /* ignore */ }
+    writeDefaultAge(age);
   }, []);
 
   /** 根据年龄获取人生阶段标签 */

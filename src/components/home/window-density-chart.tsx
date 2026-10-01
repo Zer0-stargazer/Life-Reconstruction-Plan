@@ -6,6 +6,7 @@ import {
   WINDOW_CUMULATIVE,
   WINDOW_DENSITY_META,
 } from '@/data/window-density';
+import { readDefaultAge } from '@/lib/default-age';
 
 /**
  * 人生窗口密度分布图（首页主视觉）
@@ -68,13 +69,7 @@ export function WindowDensityChart() {
 
   // 当前年龄指针：与 /user 页的「默认年龄」共用同一个 localStorage 键
   useEffect(() => {
-    try {
-      const v = localStorage.getItem('default-age');
-      const n = v ? parseInt(v, 10) : NaN;
-      setAge(isNaN(n) ? 28 : Math.min(100, Math.max(0, n)));
-    } catch {
-      setAge(28);
-    }
+    setAge(readDefaultAge());
   }, []);
 
   const ageX = useMemo(() => {

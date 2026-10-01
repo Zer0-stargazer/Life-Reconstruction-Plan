@@ -20,6 +20,7 @@ import { Reveal } from '@/components/shared/reveal';
 import { WindowMarkBar, WindowMarkChip } from '@/components/shared/window-mark-bar';
 import { useWindowMarks, type WindowMarkMap } from '@/hooks/use-window-marks';
 import { TIMELINE_IDENTITY } from '@/lib/module-identity';
+import { DEFAULT_AGE, readDefaultAge, writeDefaultAge } from '@/lib/default-age';
 import {
   Flame, Hourglass, CheckCircle2, CalendarClock, ChevronDown, ChevronRight,
   ArrowRight, Lock, AlertTriangle, Info, ListChecks,
@@ -32,10 +33,6 @@ const MAX_AGE = 100;
 /** 每档清单默认显示条数，其余折在"展开其余 N 个"里 */
 const URGENT_PREVIEW = 8;
 const OPEN_PREVIEW = 8;
-/** 全局年龄主键：/user 设置、/me 滑块、/windows 年龄、首页图表指针共用这一个值 */
-const AGE_STORAGE_KEY = 'default-age';
-/** 旧键（/me 曾单独存一份），首次读取时迁移到主键 */
-const LEGACY_AGE_KEY = 'me-age';
 
 function parseAgeRange(age: string): { start: number; end: number } {
   const trimmed = age.trim();
@@ -506,22 +503,14 @@ export default function MePage() {
   const listRef = useRef<HTMLDivElement>(null);
   const { marks, clearAll, markedCount } = useWindowMarks();
 
-  // 读全局年龄（兼容旧 me-age 键：首次读取时迁移）
+  // 读全局年龄（读写统一走 lib/default-age，兼容旧 me-age 键与历史 JSON 编码）
   useEffect(() => {
-    const legacy = localStorage.getItem(LEGACY_AGE_KEY);
-    const primary = localStorage.getItem(AGE_STORAGE_KEY);
-    const raw = primary ?? legacy;
-    const parsed = raw ? parseInt(raw, 10) : NaN;
-    const v = !Number.isNaN(parsed) && parsed >= 0 && parsed <= MAX_AGE ? parsed : 28;
-    setAge(v);
-    if (!primary && legacy) {
-      try { localStorage.setItem(AGE_STORAGE_KEY, String(v)); } catch { /* ignore */ }
-    }
+    setAge(readDefaultAge());
   }, []);
 
   const updateAge = (v: number) => {
     setAge(v);
-    try { localStorage.setItem(AGE_STORAGE_KEY, String(v)); } catch { /* ignore */ }
+    writeDefaultAge(v);
   };
 
   const all = useMemo(() => (age === null ? [] : classify(age)), [age]);
