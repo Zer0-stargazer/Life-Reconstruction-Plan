@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { ModulePageHead } from '@/components/shared/module-page-head';
+import { AiMarkdown } from '@/components/shared/ai-markdown';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { usePersistedState } from '@/hooks/use-persisted-state';
@@ -1031,7 +1032,11 @@ ${contextStr}
                         : 'bg-card border border-border text-foreground'
                     )}
                   >
-                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                    {msg.role === 'assistant' ? (
+                      <AiMarkdown content={msg.content} />
+                    ) : (
+                      <div className="whitespace-pre-wrap">{msg.content}</div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1040,7 +1045,10 @@ ${contextStr}
               {aiStreaming && aiContent && (
                 <div className="flex justify-start">
                   <div className="max-w-[90%] rounded-lg px-4 py-3 text-sm leading-relaxed bg-card border border-border text-foreground">
-                    <div className="whitespace-pre-wrap">{aiContent}</div>
+                    <div className="flex items-end gap-1">
+                      <AiMarkdown content={aiContent} />
+                      <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink -mb-0.5" />
+                    </div>
                     <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink ml-0.5 -mb-0.5" />
                   </div>
                 </div>

@@ -11,6 +11,7 @@ import { Reveal } from '@/components/shared/reveal';
 import { SectionJumper } from '@/components/shared/section-jumper';
 import { useEscapeKey } from '@/hooks/use-escape-key';
 import { ModulePageHead } from '@/components/shared/module-page-head';
+import { AiMarkdown } from '@/components/shared/ai-markdown';
 import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send, Loader2 } from 'lucide-react';
 
 const statusOptions: { value: WindowStatus | 'all'; label: string; dotColor: string }[] = [
@@ -232,14 +233,13 @@ export default function WindowsPage() {
     const systemContext = `你是一位人生战略顾问，专注于长期主义深度规划。用户正在查看"人生关键窗口"面板。
 当前活跃窗口：${currentWindows}${relevantContext}
 
-请从以下维度给出深度分析：
-1. **时间线梳理**：用户当前最该抓住的窗口和即将关闭的窗口
-2. **锁死力评估**：哪些窗口一旦错过将不可逆，哪些还有补救空间
-3. **执行优先级**：按紧迫度排序的行动清单
-4. **避坑指南**：常见的人生窗口误判和踩坑模式
-5. **长期主义策略**：5年/10年/20年的时间线规划和资源分配
+请输出一页式战略面板，总字数控制在 600 字内，只写结论、行动和判断依据：
+1. **马上做**：最多 3 条动作，每条一句话
+2. **锁死风险**：最多 2 个不可逆或高风险窗口，说明为什么优先
+3. **长期策略**：5 年 / 10 年各 1 条
+4. **常见误判**：最多 2 条
 
-要求：直接、有力度、不说废话。用数据和逻辑说话，不要鸡汤。`;
+要求：直接、有力度、不说废话；不要定义概念，不要重复上下文，不要鸡汤，不要铺陈背景。`;
 
     const historyForApi = aiMessages.map(m => ({ role: m.role, content: m.content }));
 
@@ -764,7 +764,11 @@ export default function WindowsPage() {
                         : 'bg-card border border-border text-foreground'
                     )}
                   >
+                  {msg.role === 'assistant' ? (
+                    <AiMarkdown content={msg.content} />
+                  ) : (
                     <div className="whitespace-pre-wrap">{msg.content}</div>
+                  )}
                   </div>
                 </div>
               ))}
@@ -773,7 +777,10 @@ export default function WindowsPage() {
               {aiStreaming && aiContent && (
                 <div className="flex justify-start">
                   <div className="max-w-[90%] rounded-lg px-4 py-3 text-sm leading-relaxed bg-card border border-border text-foreground">
-                    <div className="whitespace-pre-wrap">{aiContent}</div>
+                  <div className="flex items-end gap-1">
+                    <AiMarkdown content={aiContent} />
+                    <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink -mb-0.5" />
+                  </div>
                     <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink ml-0.5 -mb-0.5" />
                   </div>
                 </div>

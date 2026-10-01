@@ -10,6 +10,7 @@ import { ModuleGate } from '@/components/auth/module-gate';
 import { Reveal } from '@/components/shared/reveal';
 import { SectionJumper } from '@/components/shared/section-jumper';
 import { ModulePageHead } from '@/components/shared/module-page-head';
+import { AiMarkdown } from '@/components/shared/ai-markdown';
 import {
   Droplet, TrendingUp, Skull, Sparkles, Search,
   AlertTriangle, Shield, Bot, Wand2,
@@ -293,7 +294,11 @@ function InlineAIChat({
                   : 'bg-card border border-border text-foreground'
               )}
             >
-              <div className="whitespace-pre-wrap">{msg.content}</div>
+              {msg.role === 'assistant' ? (
+                <AiMarkdown content={msg.content} />
+              ) : (
+                <div className="whitespace-pre-wrap">{msg.content}</div>
+              )}
             </div>
           </div>
         ))}
@@ -302,7 +307,10 @@ function InlineAIChat({
         {isStreaming && streamingContent && (
           <div className="flex justify-start">
             <div className="max-w-[88%] rounded-xl px-4 py-3 text-sm leading-relaxed bg-card border border-border text-foreground">
-              <div className="whitespace-pre-wrap">{streamingContent}</div>
+              <div className="flex items-end gap-1">
+                <AiMarkdown content={streamingContent} />
+                <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink -mb-0.5" />
+              </div>
               <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink ml-0.5 -mb-0.5" />
             </div>
           </div>
