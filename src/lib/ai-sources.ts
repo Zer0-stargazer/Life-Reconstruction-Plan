@@ -1,4 +1,5 @@
 import type { AiSourceConfig } from "@/lib/ai-providers";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 /**
  * 用户自定义的 AI 接入源。
@@ -28,8 +29,8 @@ export interface AiSource {
   lastTest?: { ok: boolean; at: number; message?: string };
 }
 
-export const STORAGE_KEY_SOURCES = "ai-sources";
-export const STORAGE_KEY_ACTIVE = "api-active-source";
+export const STORAGE_KEY_SOURCES = STORAGE_KEYS.aiSources;
+export const STORAGE_KEY_ACTIVE = STORAGE_KEYS.aiActiveSource;
 
 export const PROTOCOL_OPTIONS: { id: AiProtocol; label: string; hint: string }[] = [
   { id: "openai", label: "OpenAI 兼容", hint: "绝大多数中转站/自建网关都走这个，推荐先试" },

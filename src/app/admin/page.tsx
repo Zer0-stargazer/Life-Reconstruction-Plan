@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth, type UserRole } from '@/contexts/auth-context';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
 
 // ---- Types ----
 
@@ -83,7 +84,7 @@ export default function AdminPage() {
   // Load saved token
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('dev-token');
+      const saved = localStorage.getItem(STORAGE_KEYS.devToken);
       if (saved) setDevToken(saved);
     } catch { /* ignore */ }
   }, []);
@@ -130,7 +131,7 @@ export default function AdminPage() {
       if (err instanceof AdminApiError && err.status === 401) {
         // token 失效：回验证界面并说明原因，而不是静默显示空数据
         setDevToken(null);
-        try { localStorage.removeItem('dev-token'); } catch { /* ignore */ }
+        try { localStorage.removeItem(STORAGE_KEYS.devToken); } catch { /* ignore */ }
         setLoginError('开发者身份已失效，请重新验证');
       } else {
         setDataError(err instanceof Error ? err.message : '数据加载失败');
@@ -159,7 +160,7 @@ export default function AdminPage() {
       const data = await res.json();
       if (data.success) {
         setDevToken(data.token);
-        try { localStorage.setItem('dev-token', data.token); } catch { /* ignore */ }
+        try { localStorage.setItem(STORAGE_KEYS.devToken, data.token); } catch { /* ignore */ }
         setLoginError('');
         // If API returned updated user (auto-upgraded to developer), update AuthContext
         if (data.user && data.user.role === 'developer') {
@@ -189,7 +190,7 @@ export default function AdminPage() {
       } catch { /* ignore */ }
     }
     setDevToken(null);
-    try { localStorage.removeItem('dev-token'); } catch { /* ignore */ }
+    try { localStorage.removeItem(STORAGE_KEYS.devToken); } catch { /* ignore */ }
   };
 
   // ---- Invite Actions ----

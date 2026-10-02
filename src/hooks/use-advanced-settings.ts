@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { DEFAULT_AGE, readDefaultAge, writeDefaultAge } from '@/lib/default-age';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
 
 export interface LifeStage { id: string; label: string; range: [number, number]; }
 export interface WeightItem { id: string; label: string; value: number; icon: string; }
@@ -41,8 +42,8 @@ export function useAdvancedSettings() {
 
   useEffect(() => {
     setDefaultAge(readDefaultAge());
-    setStages(loadJSON('life-stages', DEFAULT_STAGES));
-    setWeights(loadJSON('preference-weights', DEFAULT_WEIGHTS));
+    setStages(loadJSON(STORAGE_KEYS.lifeStages, DEFAULT_STAGES));
+    setWeights(loadJSON(STORAGE_KEYS.preferenceWeights, DEFAULT_WEIGHTS));
     setLoaded(true);
   }, []);
 

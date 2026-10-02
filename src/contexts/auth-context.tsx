@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { STORAGE_KEYS } from "@/lib/storage-keys";
 
 // ---- Types ----
 
@@ -32,9 +33,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 /** 用户信息（仅用于界面展示，权限判定的唯一依据是服务端会话令牌） */
-const USER_STORAGE_KEY = "auth-user";
+const USER_STORAGE_KEY = STORAGE_KEYS.authUser;
 /** 服务端签发的会话令牌，敏感接口（兑换邀请码等）必须携带 */
-const TOKEN_STORAGE_KEY = "auth-token";
+const TOKEN_STORAGE_KEY = STORAGE_KEYS.authToken;
 
 function readToken(): string | null {
   try {

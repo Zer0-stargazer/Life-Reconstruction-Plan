@@ -8,10 +8,13 @@
  * 约定：写入一律裸数字字符串；读取兼容两种历史格式；默认值全站唯一。
  */
 
+import { STORAGE_KEYS } from './storage-keys';
+
 export const DEFAULT_AGE = 28;
-export const DEFAULT_AGE_KEY = 'default-age';
+/** 兼容旧引用导出；新代码一律走 STORAGE_KEYS */
+export const DEFAULT_AGE_KEY = STORAGE_KEYS.defaultAge;
 /** /me 最早用的键，只作读取迁移，不再写入 */
-const LEGACY_AGE_KEY = 'me-age';
+const LEGACY_AGE_KEY = STORAGE_KEYS.defaultAgeLegacy;
 
 /** 兼容历史 JSON 编码（"40"）与裸字符串（40） */
 function parseAgeValue(raw: string): number | null {

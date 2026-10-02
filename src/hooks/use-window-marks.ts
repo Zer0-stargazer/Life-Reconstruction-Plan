@@ -19,6 +19,7 @@
  */
 
 import { useCallback, useSyncExternalStore } from 'react';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
 
 export type WindowMark = 'doing' | 'done' | 'skip';
 export type WindowMarkMap = Record<number, WindowMark>;
@@ -32,7 +33,7 @@ export const WINDOW_MARK_META: Record<WindowMark, { label: string; short: string
 /** 固定顺序：UI 上不要每次渲染换位置 */
 export const WINDOW_MARK_ORDER: WindowMark[] = ['doing', 'done', 'skip'];
 
-const STORAGE_KEY = 'window-marks.v1';
+const STORAGE_KEY = STORAGE_KEYS.windowMarks;
 
 const EMPTY: WindowMarkMap = {};
 let cache: WindowMarkMap | null = null;

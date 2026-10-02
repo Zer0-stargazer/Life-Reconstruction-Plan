@@ -15,6 +15,7 @@ import { useAuth, ALL_MODULES, NORMAL_USER_MODULES } from '@/contexts/auth-conte
 import { AiSourceManager } from '@/components/ai/ai-source-manager';
 import { STORAGE_KEY_ACTIVE, type AiSource } from '@/lib/ai-sources';
 import { readDefaultAge, writeDefaultAge } from '@/lib/default-age';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
 
 const modules = [
   { name: '名字', path: '/name', icon: '01' },
@@ -103,18 +104,14 @@ export default function UserPage() {
 
   // ---- Load persisted state ----
 
+  // 模块访问记录：写入统一由根布局的 ModuleVisitTracker 负责（含路径白名单），
+  // 本页只读展示。此前这里有两份手写读写，其中一份会把 /user 自身写进记录。
   useEffect(() => {
-    // Track visit - mark current path as visited
     try {
-      const stored = localStorage.getItem('visited-modules');
-      const visited: string[] = stored ? JSON.parse(stored) : [];
-      if (!visited.includes(pathname)) {
-        visited.push(pathname);
-        localStorage.setItem('visited-modules', JSON.stringify(visited));
-      }
-      setVisitedPaths(visited);
+      const stored = localStorage.getItem(STORAGE_KEYS.visitedModules);
+      setVisitedPaths(stored ? JSON.parse(stored) : []);
     } catch {
-      setVisitedPaths([pathname]);
+      setVisitedPaths([]);
     }
 
     try {
@@ -122,7 +119,7 @@ export default function UserPage() {
       if (storedActive) setActiveAiSource(storedActive as AiSourceId);
     } catch { /* ignore */ }
     try {
-      const storedCustom = localStorage.getItem('ai-sources');
+      const storedCustom = localStorage.getItem(STORAGE_KEYS.aiSources);
       if (storedCustom) setCustomSources(JSON.parse(storedCustom));
     } catch { /* ignore */ }
     try {
@@ -131,25 +128,13 @@ export default function UserPage() {
 
     // Load advanced settings
     try {
-      const storedStages = localStorage.getItem('life-stages');
+      const storedStages = localStorage.getItem(STORAGE_KEYS.lifeStages);
       if (storedStages) setLifeStages(JSON.parse(storedStages));
     } catch { /* ignore */ }
     try {
-      const storedWeights = localStorage.getItem('preference-weights');
+      const storedWeights = localStorage.getItem(STORAGE_KEYS.preferenceWeights);
       if (storedWeights) setWeights(JSON.parse(storedWeights));
     } catch { /* ignore */ }
-  }, [pathname]);
-
-  // Track module page visits
-  useEffect(() => {
-    if (pathname && pathname !== '/' && pathname !== '/user') {
-      setVisitedPaths(prev => {
-        if (prev.includes(pathname)) return prev;
-        const next = [...prev, pathname];
-        try { localStorage.setItem('visited-modules', JSON.stringify(next)); } catch { /* ignore */ }
-        return next;
-      });
-    }
   }, [pathname]);
 
   // 登录弹层：Esc 关闭（无键盘出口的弹层对键盘用户等于困住）
@@ -281,7 +266,7 @@ export default function UserPage() {
         const range = field === 'start' ? [value, s.range[1]] : [s.range[0], value];
         return { ...s, range };
       });
-      persist('life-stages', next);
+      persist(STORAGE_KEYS.lifeStages, next);
       return next;
     });
   };
@@ -289,7 +274,7 @@ export default function UserPage() {
   const updateStageLabel = (id: string, label: string) => {
     setLifeStages(prev => {
       const next = prev.map(s => s.id === id ? { ...s, label } : s);
-      persist('life-stages', next);
+      persist(STORAGE_KEYS.lifeStages, next);
       return next;
     });
   };
@@ -297,7 +282,7 @@ export default function UserPage() {
   const updateWeight = (id: string, value: number) => {
     setWeights(prev => {
       const next = prev.map(w => w.id === id ? { ...w, value: Math.max(0, Math.min(100, value)) } : w);
-      persist('preference-weights', next);
+      persist(STORAGE_KEYS.preferenceWeights, next);
       return next;
     });
   };
@@ -305,8 +290,8 @@ export default function UserPage() {
   const resetAdvanced = () => {
     setLifeStages(DEFAULT_LIFE_STAGES);
     setWeights(DEFAULT_WEIGHTS);
-    persist('life-stages', DEFAULT_LIFE_STAGES);
-    persist('preference-weights', DEFAULT_WEIGHTS);
+    persist(STORAGE_KEYS.lifeStages, DEFAULT_LIFE_STAGES);
+    persist(STORAGE_KEYS.preferenceWeights, DEFAULT_WEIGHTS);
   };
 
   // ---- Computed values ----
@@ -713,7 +698,7 @@ export default function UserPage() {
                 const cur = localStorage.getItem(STORAGE_KEY_ACTIVE);
                 if (cur) setActiveSource(cur);
                 try {
-                  setCustomSources(JSON.parse(localStorage.getItem('ai-sources') || '[]'));
+                  setCustomSources(JSON.parse(localStorage.getItem(STORAGE_KEYS.aiSources) || '[]'));
                 } catch { /* ignore */ }
               }} />
             </div>
