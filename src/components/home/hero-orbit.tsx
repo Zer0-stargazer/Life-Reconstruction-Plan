@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Flame } from 'lucide-react';
 import { MODULE_IDENTITIES } from '@/lib/module-identity';
 import { cn } from '@/lib/utils';
 
@@ -19,12 +20,22 @@ export function HeroOrbit() {
       <div className="absolute inset-[30%] rounded-full border border-border/30" />
       <div className="absolute inset-[38%] rounded-full bg-primary/[0.06] blur-2xl" />
 
-      {/* 中心：用户 */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20">
-          <span className="font-serif text-2xl font-bold">你</span>
-          <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-border bg-background/90 px-2 py-0.5 text-[10px] font-mono text-muted-foreground">
-            LIFE CORE
+      {/*
+       * 中心：生命核心。用品牌火焰 + 同心雷达环表达「你是这套系统的原点」；
+       * 纯文字方块（"你"）在轨道图里没有视觉重心，已弃用。
+       * 整块纯装饰，语义由左侧文案与七个模块节点承担。
+       */}
+      <div aria-hidden className="absolute inset-0 flex items-center justify-center">
+        <div className="relative h-28 w-28">
+          {/* 呼吸光晕 */}
+          <span className="absolute inset-3 rounded-full bg-primary/15 blur-xl animate-pulse" />
+          {/* 缓旋虚线外环 */}
+          <span className="absolute inset-0 rounded-full border border-dashed border-primary/25 animate-[spin_80s_linear_infinite]" />
+          {/* 实线中环 */}
+          <span className="absolute inset-[15%] rounded-full border border-primary/30 bg-background/60" />
+          {/* 核心火种 */}
+          <span className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/75 text-primary-foreground shadow-lg shadow-primary/30">
+            <Flame className="h-5 w-5" />
           </span>
         </div>
       </div>
