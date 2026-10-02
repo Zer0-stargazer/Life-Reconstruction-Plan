@@ -121,4 +121,44 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
     book: { title: '流量池', author: '杨飞', why: '系统讲裂变与私域打法，社区团购获客转化实用参考' },
     reference: { name: '人人都是产品经理（含大量私域运营文章）', url: 'https://www.woshipm.com/' },
   },
+  // ---- 黄金赛道 · 科技第二批（2026-10-02 直测；外网超时的 URL 置空处理） ----
+  'Rust开发工程师': {
+    book: { title: 'Rust程序设计语言（The Rust Programming Language）', author: 'Steve Klabnik、Carol Nichols', why: '官方 The Book，Rust 自学的唯一正统入口' },
+    reference: { name: 'Rust 官方 Book（在线阅读）', url: 'https://doc.rust-lang.org/book/' },
+  },
+  '算法工程师': {
+    book: { title: '算法导论', author: 'Thomas H. Cormen 等', why: '算法领域圣经，打牢工程师底层功力' },
+    reference: { name: '力扣 LeetCode（题库 + 官方学习计划）', url: 'https://leetcode.cn/' },
+  },
+  '音视频开发工程师': {
+    book: { title: 'FFmpeg从入门到精通', author: '刘歧', why: '国内 FFmpeg 实战代表作，音视频开发绕不开' },
+    reference: { name: 'FFmpeg 官方文档', url: 'https://ffmpeg.org/documentation.html' },
+  },
+  '自动驾驶工程师': {
+    book: { title: '概率机器人', author: 'Sebastian Thrun 等', why: '感知与定位的理论基石，自动驾驶算法必修' },
+    course: { title: 'Self-Driving Cars Specialization（多伦多大学）', platform: 'Coursera' },
+    reference: { name: '百度 Apollo 开源自动驾驶平台' },
+  },
+  // ---- 高危赛道第二批（2026-10-02 直测；仅录入确定真实的书目/社区） ----
+  '电话销售': {
+    book: { title: 'SPIN销售巨人：大订单销售训练手册', author: '尼尔·雷克汉姆', why: '销售方法论鼻祖，把话术升级为可复制的提问模型' },
+  },
+  '银行柜员': {
+    book: { title: '手把手教你读财报', author: '唐朝', why: '零基础看懂三张表，柜员转岗财务分析的敲门砖' },
+  },
+  '插画师': {
+    book: { title: '伯里曼人体结构绘画教学', author: '乔治·伯里曼', why: '人体结构素描经典，插画基本功必修' },
+    reference: { name: 'ArtStation（全球数字艺术作品社区）' },
+  },
+  '摄影师': {
+    book: { title: '纽约摄影学院摄影教材', author: '纽约摄影学院', why: '中文摄影入门圣经，构图用光体系完整' },
+    reference: { name: '500px / 图虫（摄影作品社区）' },
+  },
+  '动画师': {
+    book: { title: '原动画基础教程：动画师的生存工具', author: '理查德·威廉姆斯', why: '动画运动规律第一经典，迪士尼级方法论' },
+  },
+  '平面设计师': {
+    book: { title: '设计中的设计', author: '原研哉', why: '重新理解设计思维，从技法上升到理念' },
+    reference: { name: 'Adobe 官方教程（Photoshop/Illustrator）' },
+  },
 };
