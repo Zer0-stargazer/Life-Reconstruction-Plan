@@ -9,6 +9,8 @@
 export interface AiSseHandlers {
   /** 每收到一段增量正文，参数是累计全文（调用方直接 setState 即可） */
   onContent: (accumulated: string) => void;
+  /** 每收到一段思维链增量，参数是累计思维链（推理模型先思考后作答） */
+  onReasoning: (accumulated: string) => void;
   /** 服务端返回 error 帧 */
   onError: (message: string) => void;
   /** 流结束（收到 [DONE] 或连接关闭），参数是全文（可能为空串） */
@@ -27,13 +29,18 @@ export async function consumeAiSseStream(
   const decoder = new TextDecoder();
   let buffer = '';
   let accumulated = '';
+  let reasoningAccumulated = '';
 
   const handleData = (data: string): FrameResult => {
     if (data === '[DONE]') return { kind: 'done' };
-    let parsed: { content?: string; error?: string } | null = null;
+    let parsed: { content?: string; reasoning?: string; error?: string } | null = null;
     try { parsed = JSON.parse(data); } catch { parsed = null; }
     if (!parsed) return null;
     if (parsed.error) return { kind: 'error', message: parsed.error };
+    if (parsed.reasoning) {
+      reasoningAccumulated += parsed.reasoning;
+      handlers.onReasoning(reasoningAccumulated);
+    }
     if (parsed.content) {
       accumulated += parsed.content;
       handlers.onContent(accumulated);

@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
-import { AiCopyButton, AiStopButton, AiLoadingBubble } from '@/components/ai/ai-panel-actions';
+import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { consumeAiSseStream } from '@/lib/sse-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
@@ -380,6 +380,7 @@ export default function SimulationPage() {
   // AI 面板
   const [aiOpen, setAiOpen] = useState(false);
   const [aiContent, setAiContent] = useState('');
+  const [aiThinking, setAiThinking] = useState('');
   const [aiStreaming, setAiStreaming] = useState(false);
   const [aiQuestion, setAiQuestion] = useState('');
   const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
@@ -490,6 +491,7 @@ export default function SimulationPage() {
   const startAIAnalysis = useCallback(async (question?: string) => {
     setAiStreaming(true);
     setAiContent('');
+    setAiThinking('');
     abortRef.current = new AbortController();
 
     const dimSummary = dimensions.map(d => {
@@ -531,6 +533,7 @@ ${contextStr}
       if (!response.ok) throw new Error(`请求失败: ${response.status}`);
 
       await consumeAiSseStream(response, {
+        onReasoning: (accumulated) => setAiThinking(accumulated),
         onContent: (accumulated) => setAiContent(accumulated),
         onError: (message) => {
           setAiMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${message}` }]);
@@ -1025,6 +1028,10 @@ ${contextStr}
                   </div>
                 </div>
               ))}
+
+              {aiThinking && (
+                <AiThinkingBlock content={aiThinking} active={aiStreaming && !aiContent} />
+              )}
 
               {/* Streaming content */}
               {aiStreaming && aiContent && (

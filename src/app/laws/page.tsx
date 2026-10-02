@@ -9,7 +9,7 @@ import { ModuleGate } from '@/components/auth/module-gate';
 import { Reveal } from '@/components/shared/reveal';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
-import { AiCopyButton, AiStopButton, AiLoadingBubble } from '@/components/ai/ai-panel-actions';
+import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
 import {
   TrendingUp, AlertTriangle, Shield, Bot,
   ChevronLeft, ChevronRight, X, Maximize2,
@@ -194,6 +194,7 @@ function InlineAIChat({
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
+  const [thinkingContent, setThinkingContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -222,6 +223,7 @@ function InlineAIChat({
   useEffect(() => {
     setMessages([]);
     setStreamingContent('');
+    setThinkingContent('');
     setIsStreaming(false);
     initialSent.current = false;
   }, [subTopicKey, item.id]);
@@ -240,6 +242,7 @@ function InlineAIChat({
   const startChat = useCallback(async (question?: string) => {
     setIsStreaming(true);
     setStreamingContent('');
+    setThinkingContent('');
     abortRef.current = new AbortController();
 
     const itemContext = `【${item.name}】\n维度：${dimension.name}\n描述：${item.description}\n指标：${item.metric} ${item.metricValue}\n举例：${item.example}\n挽回概率：${item.breakthrough}%\n恢复难度：${item.recovery}\n代价：${item.cost}\n策略：${item.strategies.join('；')}`;
@@ -264,6 +267,7 @@ function InlineAIChat({
       }
 
       await consumeAiSseStream(response, {
+        onReasoning: (accumulated) => setThinkingContent(accumulated),
         onContent: (accumulated) => setStreamingContent(accumulated),
         onError: (message) => {
           setMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${message}` }]);
@@ -354,6 +358,10 @@ function InlineAIChat({
             </div>
           </div>
         ))}
+
+        {thinkingContent && (
+          <AiThinkingBlock content={thinkingContent} active={isStreaming && !streamingContent} />
+        )}
 
         {isStreaming && streamingContent && (
           <div className="flex justify-start">

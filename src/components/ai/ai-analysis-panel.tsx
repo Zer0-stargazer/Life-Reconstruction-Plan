@@ -7,7 +7,7 @@ import { X, Send, Sparkles } from 'lucide-react';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { consumeAiSseStream } from '@/lib/sse-client';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
-import { AiCopyButton, AiStopButton, AiLoadingBubble } from '@/components/ai/ai-panel-actions';
+import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -35,6 +35,7 @@ export function AIAnalysisPanel({
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
+  const [thinkingContent, setThinkingContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -52,6 +53,7 @@ export function AIAnalysisPanel({
   useEffect(() => {
     setMessages([]);
     setStreamingContent('');
+    setThinkingContent('');
     setIsStreaming(false);
     initialAnalysisSent.current = false;
   }, [itemTitle, module]);
@@ -72,6 +74,7 @@ export function AIAnalysisPanel({
   const startAnalysis = useCallback(async (question?: string) => {
     setIsStreaming(true);
     setStreamingContent('');
+    setThinkingContent('');
     abortRef.current = new AbortController();
 
     const itemContext = `【${itemTitle}】\n${itemDescription}`;
@@ -101,6 +104,7 @@ export function AIAnalysisPanel({
       }
 
       await consumeAiSseStream(response, {
+        onReasoning: (accumulated) => setThinkingContent(accumulated),
         onContent: (accumulated) => setStreamingContent(accumulated),
         onError: (message) => {
           setMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${message}` }]);
@@ -230,6 +234,10 @@ export function AIAnalysisPanel({
                 </div>
               </div>
             </div>
+          )}
+
+          {thinkingContent && (
+            <AiThinkingBlock content={thinkingContent} active={isStreaming && !streamingContent} />
           )}
 
           {/* Loading indicator */}

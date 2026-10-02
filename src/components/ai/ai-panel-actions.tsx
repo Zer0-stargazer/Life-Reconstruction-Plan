@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Check, Copy, Loader2 } from 'lucide-react';
+import { Brain, Check, Copy, Loader2 } from 'lucide-react';
 
 /**
  * AI 面板通用操作件：停止生成 / 复制最近回复。
@@ -71,5 +71,43 @@ export function AiLoadingBubble() {
         </span>
       </div>
     </div>
+  );
+}
+
+/**
+ * 推理模型的思维链展示。
+ *
+ * GLM-5 系列每请求先"思考"十几秒且服务端 thinking:disabled 被中转站忽略
+ * （实测首正文要等约 60% 的总时长），把思考过程实时显示出来，
+ * 等待就变成了"看得见的推进"。active=true 时展示滚动尾部，
+ * 正文开始后折叠成可展开的"查看思考过程"。
+ */
+export function AiThinkingBlock({ content, active }: { content: string; active: boolean }) {
+  if (!content.trim()) return null;
+
+  if (active) {
+    return (
+      <div className="rounded-lg border border-dashed border-primary/25 bg-primary/[0.03] px-4 py-3">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <Brain className="h-3 w-3 text-primary/60 animate-pulse" />
+          <span className="text-[10px] font-mono text-primary/50">THINKING · 思考中</span>
+        </div>
+        <p className="text-xs text-muted-foreground/70 leading-relaxed whitespace-pre-wrap line-clamp-6 select-none">
+          {content.slice(-600)}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <details className="group rounded-lg border border-dashed border-border bg-muted/20 px-4 py-2.5">
+      <summary className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground/60 cursor-pointer select-none hover:text-muted-foreground transition-colors">
+        <Brain className="h-3 w-3" />
+        查看思考过程
+      </summary>
+      <p className="mt-2 text-xs text-muted-foreground/70 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
+        {content}
+      </p>
+    </details>
   );
 }

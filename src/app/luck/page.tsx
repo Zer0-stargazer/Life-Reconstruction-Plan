@@ -12,7 +12,7 @@ import { Reveal } from '@/components/shared/reveal';
 import { SectionJumper } from '@/components/shared/section-jumper';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
-import { AiCopyButton, AiStopButton, AiLoadingBubble } from '@/components/ai/ai-panel-actions';
+import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
 import {
   Droplet, TrendingUp, Skull, Sparkles, Search,
   AlertTriangle, Shield, Bot, Wand2,
@@ -120,6 +120,7 @@ function InlineAIChat({
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
+  const [thinkingContent, setThinkingContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -152,6 +153,7 @@ function InlineAIChat({
   useEffect(() => {
     setMessages([]);
     setStreamingContent('');
+    setThinkingContent('');
     setIsStreaming(false);
     initialSent.current = false;
   }, [subTopicKey, node.id]);
@@ -171,6 +173,7 @@ function InlineAIChat({
   const startChat = useCallback(async (question?: string) => {
     setIsStreaming(true);
     setStreamingContent('');
+    setThinkingContent('');
     abortRef.current = new AbortController();
 
     const itemContext = `【${node.name}】\n类别：${config.label}\n描述：${node.description}\n核心分析：${node.coreAnalysis}\n策略：${node.strategy}\n应对：${node.copingStrategy}\nAI分析：${node.aiMultiAnalysis}`;
@@ -195,6 +198,7 @@ function InlineAIChat({
       }
 
       await consumeAiSseStream(response, {
+        onReasoning: (accumulated) => setThinkingContent(accumulated),
         onContent: (accumulated) => setStreamingContent(accumulated),
         onError: (message) => {
           setMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${message}` }]);
@@ -289,6 +293,10 @@ function InlineAIChat({
             </div>
           </div>
         ))}
+
+        {thinkingContent && (
+          <AiThinkingBlock content={thinkingContent} active={isStreaming && !streamingContent} />
+        )}
 
         {/* Streaming */}
         {isStreaming && streamingContent && (

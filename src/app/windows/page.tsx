@@ -13,7 +13,7 @@ import { SectionJumper } from '@/components/shared/section-jumper';
 import { useEscapeKey } from '@/hooks/use-escape-key';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
-import { AiCopyButton, AiStopButton, AiLoadingBubble } from '@/components/ai/ai-panel-actions';
+import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
 import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send } from 'lucide-react';
 
 const statusOptions: { value: WindowStatus | 'all'; label: string; dotColor: string }[] = [
@@ -102,6 +102,7 @@ export default function WindowsPage() {
   const [showAgeInput, setShowAgeInput] = useState(false);
   const [aiPlanning, setAiPlanning] = useState(false);
   const [aiContent, setAiContent] = useState('');
+  const [aiThinking, setAiThinking] = useState('');
   const [aiStreaming, setAiStreaming] = useState(false);
   const [aiQuestion, setAiQuestion] = useState('');
   const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
@@ -224,6 +225,7 @@ export default function WindowsPage() {
   const startAIPlanning = useCallback(async (question?: string) => {
     setAiStreaming(true);
     setAiContent('');
+    setAiThinking('');
     abortRef.current = new AbortController();
 
     const relevantContext = relevantWindows.length > 0
@@ -262,6 +264,7 @@ export default function WindowsPage() {
       if (!response.ok) throw new Error(`请求失败: ${response.status}`);
 
       await consumeAiSseStream(response, {
+        onReasoning: (accumulated) => setAiThinking(accumulated),
         onContent: (accumulated) => setAiContent(accumulated),
         onError: (message) => {
           setAiMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${message}` }]);
@@ -765,6 +768,10 @@ export default function WindowsPage() {
                   </div>
                 </div>
               ))}
+
+              {aiThinking && (
+                <AiThinkingBlock content={aiThinking} active={aiStreaming && !aiContent} />
+              )}
 
               {/* Streaming content */}
               {aiStreaming && aiContent && (

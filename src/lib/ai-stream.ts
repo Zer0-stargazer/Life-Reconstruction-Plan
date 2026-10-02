@@ -25,6 +25,8 @@ function envConfigError(baseUrl: string, apiKey: string, model: string): string 
 
 interface StreamChunk {
   content?: string;
+  /** 推理模型的思维链增量（GLM-5 等先出 reasoning_content 再出 content） */
+  reasoning?: string;
   error?: string;
 }
 
@@ -107,6 +109,10 @@ export async function* streamChat(
         if (data === "[DONE]") return;
         try {
           const json = JSON.parse(data);
+          const reasoning = json.choices?.[0]?.delta?.reasoning_content;
+          if (reasoning) {
+            yield { reasoning };
+          }
           const content = json.choices?.[0]?.delta?.content;
           if (content) {
             yield { content };

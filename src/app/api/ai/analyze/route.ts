@@ -215,6 +215,12 @@ export async function POST(request: NextRequest) {
               const sseMessage = `data: ${JSON.stringify({ content: chunk.content })}\n\n`;
               controller.enqueue(encoder.encode(sseMessage));
             }
+            // 推理模型的思维链透传给前端：让用户看见"正在思考"，
+            // 否则首正文前的十几秒是纯黑等待（实测占整个请求 60% 时长）
+            if (chunk.reasoning) {
+              const sseMessage = `data: ${JSON.stringify({ reasoning: chunk.reasoning })}\n\n`;
+              controller.enqueue(encoder.encode(sseMessage));
+            }
           }
           // Send done signal
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
