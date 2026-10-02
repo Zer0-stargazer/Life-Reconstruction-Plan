@@ -157,8 +157,12 @@ export function AIAnalysisPanel({
         onClick={handleClose}
       />
 
-      {/* Panel */}
-      <div role="dialog" aria-modal="true" aria-label="AI 分析面板" className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-lg bg-background border-l border-border shadow-2xl animate-slide-in-right flex flex-col">
+      {/* Panel：居中模态（与 laws/luck 详情一致），不再是右侧抽屉 */}
+      <div className={cn(
+        'fixed z-50 animate-scale-in transition-all duration-300',
+        'inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:top-[5%] sm:-translate-x-1/2 sm:w-full sm:max-w-2xl sm:h-[90vh]'
+      )}>
+      <div role="dialog" aria-modal="true" aria-label="AI 分析面板" className="h-full rounded-2xl border border-primary/20 bg-background shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card">
           <div className="flex items-center gap-3 min-w-0">
@@ -265,6 +269,7 @@ export function AIAnalysisPanel({
             </button>
           </div>
         </div>
+      </div>
       </div>
     </>
   );
