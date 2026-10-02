@@ -1019,7 +1019,7 @@ export default function LawsPage() {
                 key={opt.value}
                 onClick={() => { setTagFilter(opt.value); setListShowAll(false); }}
                 className={cn(
-                  'rounded-md px-2.5 py-1 text-[11px] font-medium transition-all',
+                  'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
                   tagFilter === opt.value
                     ? 'bg-primary/10 text-primary border border-primary/20'
                     : 'bg-muted/40 text-muted-foreground border border-transparent hover:bg-accent/60'

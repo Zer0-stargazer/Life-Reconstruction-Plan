@@ -41,7 +41,7 @@ export function WindowMarkBar({ id, className }: { id: number; className?: strin
               setMark(id, active ? null : m);
             }}
             className={cn(
-              'rounded-full border px-2 py-[3px] text-[10px] font-medium leading-none transition-colors',
+              'rounded-full border px-3 py-1.5 text-[11px] font-medium leading-none transition-colors',
               active
                 ? TONE[m]
                 : 'border-border bg-transparent text-muted-foreground/55 hover:border-primary/30 hover:text-foreground'
@@ -69,7 +69,7 @@ export function WindowMarkChip({ id }: { id: number }) {
       }}
       title="撤销标记"
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none transition-opacity hover:opacity-70',
+        'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold leading-none transition-opacity hover:opacity-70',
         TONE[cur]
       )}
     >

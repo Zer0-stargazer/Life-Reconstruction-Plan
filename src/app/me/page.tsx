@@ -760,7 +760,7 @@ export default function MePage() {
               key={t.key}
               onClick={() => { setTab(t.key); setOpenShowAll(false); setMissedPermanentShowAll(false); setMissedOtherShowAll(false); setUrgentShowAll(false); setShowMarked(false); }}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-all',
+                'inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-medium transition-all',
                 tab === t.key
                   ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                   : 'border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30'
