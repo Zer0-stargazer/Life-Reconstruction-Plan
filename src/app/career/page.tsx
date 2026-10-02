@@ -5,7 +5,7 @@ import { careers, CAREER_CATEGORIES, type Career, getTutorials, getBooks, getLea
 import { cn } from '@/lib/utils';
 import {
   Briefcase, TrendingUp, TrendingDown, Minus, Bot, Filter, X, BarChart3,
-  ArrowUpRight, ArrowDownRight, MinusCircle, Sparkles,
+  ArrowUpRight, ArrowDownRight, MinusCircle, Sparkles, Search,
   GraduationCap, BookOpen, Video,
   ChevronDown, ChevronUp, MessageSquare, Star, AlertTriangle,
 } from 'lucide-react';
@@ -140,6 +140,7 @@ function QuickLookGroup({
 
 export default function CareerPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [activeSorts, setActiveSorts] = useState<SortKey[]>([]);
   const [selectedCareer, setSelectedCareer] = useState<number | null>(null);
   const [showResources, setShowResources] = useState<number | null>(null);
@@ -171,6 +172,17 @@ export default function CareerPage() {
       ? careers
       : careers.filter(c => c.category === selectedCategory);
 
+    // 搜索：名称 > 技能 > 描述/分类，任一字段命中即保留
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      result = result.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.keySkill.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.category.toLowerCase().includes(q)
+      );
+    }
+
     if (activeSorts.length > 0) {
       result = [...result].sort((a, b) => {
         for (const sortKey of activeSorts) {
@@ -195,7 +207,7 @@ export default function CareerPage() {
     }
 
     return result;
-  }, [selectedCategory, activeSorts]);
+  }, [selectedCategory, activeSorts, searchQuery]);
 
   /** 快看组：黄金赛道（趋势上升 + AI 低风险）与高危赛道（趋势下降 + AI 高风险） */
   const goldenCareers = useMemo(
@@ -216,7 +228,7 @@ export default function CareerPage() {
   // 全量渲染会卡：先渲染一小页，点击"加载更多"再追加
   const PAGE_SIZE = 24;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [selectedCategory, activeSorts]);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [selectedCategory, activeSorts, searchQuery]);
   const visibleCareers = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const hiddenCount = filtered.length - visibleCareers.length;
 
@@ -322,6 +334,26 @@ export default function CareerPage() {
               </button>
             ))}
           </div>
+          {/* 搜索：757 个职业靠翻页找不到目标，按名称/技能/描述直接定位 */}
+          <div className="relative mb-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索职业、技能关键词（如：心理咨询 / Python）..."
+              className="w-full rounded-lg border border-border bg-background pl-9 pr-9 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                aria-label="清除搜索"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground/50 hover:text-foreground transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
           {/* 排序 chip：手机上 py-0.5 的点击区按不住，加大到 32px 高 */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide sm:overflow-visible">
             <span className="shrink-0 text-[9px] text-muted-foreground/50">
@@ -392,7 +424,11 @@ export default function CareerPage() {
             {/* 显示进度读数 */}
             <div className="col-span-full flex items-center justify-between font-mono text-[10px] text-muted-foreground/60 mb-1">
               <span>SHOWING {visibleCareers.length} / {filtered.length}</span>
-              {filtered.length !== careers.length && <span>FILTER: {selectedCategory === 'all' ? 'ALL' : selectedCategory.toUpperCase()}</span>}
+              {filtered.length !== careers.length && (
+                <span>
+                  FILTER: {searchQuery ? `"${searchQuery}"` : selectedCategory === 'all' ? 'ALL' : selectedCategory.toUpperCase()}
+                </span>
+              )}
             </div>
             {visibleCareers.map((career, ci) => {
               const TrendIcon = trendIcon[career.trend];
