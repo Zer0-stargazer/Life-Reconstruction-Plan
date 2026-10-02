@@ -16,8 +16,10 @@ export interface Career {
 
 /* ============ 分类级学习资源（真实平台/书目，按职业所属分类查找） ============ */
 
-export interface CareerTutorial { type: 'video' | 'course'; title: string; platform: string; note?: string; }
-export interface CareerBook { title: string; author: string; }
+import { CAREER_RESOURCES } from './career-resources';
+
+export interface CareerTutorial { type: 'video' | 'course'; title: string; platform: string; note?: string; url?: string }
+export interface CareerBook { title: string; author: string; why?: string }
 
 const CATEGORY_CHANNELS: Record<string, string[]> = {"科技": ["GitHub 开源社区", "掘金 / V2EX 技术社区", "LeetCode / 牛客网"], "金融": ["雪球 / 集思录", "中国大学MOOC 财经课程", "CFA 协会学习平台"], "医疗": ["丁香园 / 丁香人才", "中国大学MOOC 医学课程", "国家卫生健康委官网"], "教育": ["中国大学MOOC / 学堂在线", "国家中小学智慧教育平台", "Edutopia"], "设计": ["站酷 / UI中国", "Dribbble / Behance", "优设网"], "法律": ["无讼 / 法信", "中国裁判文书网", "中国大学MOOC 法学课程"], "商业销售": ["得到 / 混沌学园", "36氪 / 虎嗅", "中国大学MOOC 管理课程"], "管理": ["得到 / 混沌学园", "哈佛商业评论中文版", "中国大学MOOC 管理课程"], "工程制造": ["中国大学MOOC 工科课程", "北极星电力/工业互联网社区", "B站 工程实操"], "服务": ["中国大学MOOC 服务管理课程", "行业头部企业公开课", "B站 服务场景案例"], "传媒": ["新榜 / 飞瓜数据", "人人都是产品经理 媒体专栏", "B站 创作学院"], "科研": ["中国大学MOOC / 学堂在线", "知网 / Google Scholar", "Coursera / edX"], "能源": ["中国大学MOOC 能源电力课程", "北极星电力网", "国际能源署（IEA）报告库"]};
 
@@ -27,19 +29,32 @@ const CATEGORY_BOOKS: Record<string, CareerBook[]> = {"科技": [{"title": "深�
 
 const FALLBACK_CHANNELS = ['行业社区', '中国大学MOOC / 学堂在线', 'B站 优质公开课'];
 
-/** 学习渠道：按职业所属分类返回真实渠道 */
-export function getLearningChannels(c: Pick<Career, 'category'>): string[] {
-  return CATEGORY_CHANNELS[c.category] || FALLBACK_CHANNELS;
+/** 学习渠道：职业专属参考（若有）在前，分类级通用渠道兜底 */
+export function getLearningChannels(c: Pick<Career, 'category'> & { name?: string }): string[] {
+  const own = c.name ? CAREER_RESOURCES[c.name]?.reference : undefined;
+  const cat = CATEGORY_CHANNELS[c.category] || FALLBACK_CHANNELS;
+  if (own) {
+    const label = own.url ? `${own.name}（${own.url}）` : own.name;
+    return [label, ...cat];
+  }
+  return cat;
 }
 
-/** 推荐课程：按职业所属分类返回 */
-export function getTutorials(c: Pick<Career, 'category'>): CareerTutorial[] {
-  return CATEGORY_TUTORIALS[c.category] || CATEGORY_TUTORIALS['科技'];
+/** 推荐课程：职业专属（若有）在前，分类级通用兜底 */
+export function getTutorials(c: Pick<Career, 'category'> & { name?: string }): CareerTutorial[] {
+  const own = c.name ? CAREER_RESOURCES[c.name]?.course : undefined;
+  const cat = CATEGORY_TUTORIALS[c.category] || CATEGORY_TUTORIALS['科技'];
+  if (own) {
+    return [{ type: 'course', title: own.title, platform: own.platform, note: own.note, url: own.url }, ...cat];
+  }
+  return cat;
 }
 
-/** 推荐书籍：按职业所属分类返回 */
-export function getBooks(c: Pick<Career, 'category'>): CareerBook[] {
-  return CATEGORY_BOOKS[c.category] || CATEGORY_BOOKS['科技'];
+/** 推荐书籍：职业专属（若有）在前，分类级通用兜底 */
+export function getBooks(c: Pick<Career, 'category'> & { name?: string }): CareerBook[] {
+  const own = c.name ? CAREER_RESOURCES[c.name]?.book : undefined;
+  const cat = CATEGORY_BOOKS[c.category] || CATEGORY_BOOKS['科技'];
+  return own ? [own, ...cat] : cat;
 }
 
 const AI_RISK_TEXT: Record<Career['aiRisk'], string> = {

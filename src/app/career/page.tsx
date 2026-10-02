@@ -97,6 +97,7 @@ function QuickLookGroup({
   hint,
   icon: Icon,
   items,
+  reasonOf,
   onPick,
 }: {
   tone: 'good' | 'bad';
@@ -104,6 +105,7 @@ function QuickLookGroup({
   hint: string;
   icon: React.ComponentType<{ className?: string }>;
   items: Career[];
+  reasonOf: (c: Career) => string;
   onPick: (c: Career) => void;
 }) {
   const shell = tone === 'good'
@@ -123,10 +125,13 @@ function QuickLookGroup({
           <button
             key={c.id}
             onClick={() => onPick(c)}
-            className="flex w-full items-center gap-2 rounded-lg border border-border/60 bg-card/70 px-3 py-2 text-left transition-all hover:border-primary/30 hover:bg-card active:scale-[0.99]"
+            className="w-full rounded-lg border border-border/60 bg-card/70 px-3 py-2 text-left transition-all hover:border-primary/30 hover:bg-card active:scale-[0.99]"
           >
-            <span className="truncate text-sm font-medium text-foreground">{c.name}</span>
-            <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">{c.salary}</span>
+            <span className="flex items-center gap-2">
+              <span className="truncate text-sm font-medium text-foreground">{c.name}</span>
+              <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">{c.salary}</span>
+            </span>
+            <span className="mt-0.5 block truncate text-[10px] text-muted-foreground/60">{reasonOf(c)}</span>
           </button>
         ))}
       </div>
@@ -209,21 +214,41 @@ export default function CareerPage() {
     return result;
   }, [selectedCategory, activeSorts, searchQuery]);
 
-  /** 快看组：黄金赛道（趋势上升 + AI 低风险）与高危赛道（趋势下降 + AI 高风险） */
+  /**
+   * 快看组：黄金赛道（趋势上升 + AI 低风险，按薪资取前 6）与
+   * 高危赛道（趋势下行或 AI 高风险，风险因子多者优先）。
+   * 高危原口径「down 且 high」全库只有 1 条，是口径过严不是数据缺失。
+   */
+  const goldenAll = useMemo(
+    () => filtered.filter(c => c.trend === 'up' && c.aiRisk === 'low'),
+    [filtered]
+  );
   const goldenCareers = useMemo(
-    () => filtered
-      .filter(c => c.trend === 'up' && c.aiRisk === 'low')
-      .sort((a, b) => parseSalaryLower(b.salary) - parseSalaryLower(a.salary))
-      .slice(0, 3),
+    () => [...goldenAll].sort((a, b) => parseSalaryLower(b.salary) - parseSalaryLower(a.salary)).slice(0, 6),
+    [goldenAll]
+  );
+  const riskScore = (c: Career) => (c.trend === 'down' ? 1 : 0) + (c.aiRisk === 'high' ? 1 : 0);
+  const riskyAll = useMemo(
+    () => filtered.filter(c => c.trend === 'down' || c.aiRisk === 'high'),
     [filtered]
   );
   const riskyCareers = useMemo(
-    () => filtered
-      .filter(c => c.trend === 'down' && c.aiRisk === 'high')
-      .sort((a, b) => parseSalaryLower(b.salary) - parseSalaryLower(a.salary))
-      .slice(0, 3),
-    [filtered]
+    () => [...riskyAll].sort((a, b) =>
+      riskScore(b) - riskScore(a) || parseSalaryLower(b.salary) - parseSalaryLower(a.salary)
+    ).slice(0, 6),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [riskyAll]
   );
+
+  /** 快看组逐项理由：直接从数据字段推导，不编故事 */
+  const goldenReason = (c: Career) => `趋势上升 · AI 替代风险低 · 自学可行度 ${c.selfStudyScore}/10`;
+  const riskyReason = (c: Career) => {
+    const parts: string[] = [];
+    if (c.aiRisk === 'high') parts.push('AI 替代风险高');
+    if (c.trend === 'down') parts.push('赛道在收缩');
+    if (c.trend === 'up') parts.push('是风口但内卷重');
+    return parts.join(' · ');
+  };
 
   // 全量渲染会卡：先渲染一小页，点击"加载更多"再追加
   const PAGE_SIZE = 24;
@@ -398,9 +423,10 @@ export default function CareerPage() {
                 <QuickLookGroup
                   tone="good"
                   title="黄金赛道"
-                  hint="趋势上升 · AI 低风险 · 薪资最高"
+                  hint={`共 ${goldenAll.length} 个 · 按薪资取前 6`}
                   icon={Sparkles}
                   items={goldenCareers}
+                  reasonOf={goldenReason}
                   onPick={(c) => setSelectedCareer(c.id)}
                 />
               )}
@@ -408,9 +434,10 @@ export default function CareerPage() {
                 <QuickLookGroup
                   tone="bad"
                   title="高危赛道"
-                  hint="趋势下降 · AI 高风险"
+                  hint={`共 ${riskyAll.length} 个 · AI 替代或收缩风险`}
                   icon={AlertTriangle}
                   items={riskyCareers}
+                  reasonOf={riskyReason}
                   onPick={(c) => setSelectedCareer(c.id)}
                 />
               )}
@@ -685,10 +712,24 @@ export default function CareerPage() {
                                 <span className="text-[10px] text-muted-foreground/40 uppercase font-medium">{tutorialTypeLabel[t.type]}</span>
                                 <span className="text-[10px] text-muted-foreground/30">·</span>
                                 <span className="text-[10px] text-muted-foreground/40">{t.platform}</span>
+                                {i === 0 && t.url && (
+                                  <span className="rounded-sm bg-primary/10 px-1 py-0.5 text-[8px] font-mono text-primary/80">专属</span>
+                                )}
                               </div>
                               <span className="text-xs font-medium text-foreground">{t.title}</span>
                               {t.note && (
                                 <p className="text-[10px] text-muted-foreground/60 mt-0.5 leading-relaxed">{t.note}</p>
+                              )}
+                              {t.url && (
+                                <a
+                                  href={t.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="mt-0.5 inline-block text-[10px] text-primary/70 underline decoration-primary/30 underline-offset-2 hover:text-primary"
+                                >
+                                  打开课程页 ↗
+                                </a>
                               )}
                             </div>
                           </div>
@@ -707,8 +748,12 @@ export default function CareerPage() {
                       <div className="space-y-1.5">
                         {getBooks(selected).map((b, i) => (
                           <div key={i} className="rounded-md border border-border/50 bg-background/50 px-2.5 py-2 hover:border-primary/20 transition-colors">
-                            <p className="text-xs font-medium text-foreground">{b.title}</p>
+                            <p className="text-xs font-medium text-foreground">
+                              {b.title}
+                              {i === 0 && b.why && <span className="ml-1.5 rounded-sm bg-primary/10 px-1 py-0.5 text-[8px] font-mono text-primary/80">专属</span>}
+                            </p>
                             <p className="text-[10px] text-muted-foreground/50">{b.author}</p>
+                            {b.why && <p className="mt-0.5 text-[10px] text-muted-foreground/70 leading-relaxed">{b.why}</p>}
                           </div>
                         ))}
                       </div>
