@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Check, Copy } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, Copy, Loader2 } from 'lucide-react';
 
 /**
  * AI 面板通用操作件：停止生成 / 复制最近回复。
@@ -47,5 +47,29 @@ export function AiCopyButton({ getText }: { getText: () => string }) {
     >
       {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
+  );
+}
+
+/**
+ * AI 加载气泡：转圈 + 已等待秒数。
+ * 首字延迟可能十几秒，一个会跳动的计数器比静止的"正在分析..."更让人安心。
+ */
+export function AiLoadingBubble() {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="flex justify-start">
+      <div className="flex items-center gap-2 rounded-lg px-4 py-3 bg-card border border-border">
+        <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+        <span className="text-xs text-muted-foreground">
+          正在分析<span className="tabular-nums"> · {elapsed}s</span>
+        </span>
+      </div>
+    </div>
   );
 }

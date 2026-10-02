@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
-import { AiCopyButton, AiStopButton } from '@/components/ai/ai-panel-actions';
+import { AiCopyButton, AiStopButton, AiLoadingBubble } from '@/components/ai/ai-panel-actions';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { consumeAiSseStream } from '@/lib/sse-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
@@ -13,7 +13,7 @@ import { useEscapeKey } from '@/hooks/use-escape-key';
 import { ModuleGate } from '@/components/auth/module-gate';
 import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, Target, Zap, Clock,
   ArrowRight, Sparkles, User, PenLine, Heart, Briefcase, MessageSquare,
-  Bot, X, Send, Loader2,
+  Bot, X, Send,
 } from 'lucide-react';
 
 // ============================================================
@@ -883,14 +883,7 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
               )}
 
               {/* Loading */}
-              {aiStreaming && !aiContent && (
-                <div className="flex justify-start">
-                  <div className="flex items-center gap-2 rounded-lg px-4 py-3 bg-card border border-border">
-                    <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
-                    <span className="text-xs text-muted-foreground">正在深度分析...</span>
-                  </div>
-                </div>
-              )}
+              {aiStreaming && !aiContent && <AiLoadingBubble />}
 
               <div ref={aiEndRef} />
             </div>

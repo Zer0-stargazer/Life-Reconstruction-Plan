@@ -13,8 +13,8 @@ import { SectionJumper } from '@/components/shared/section-jumper';
 import { useEscapeKey } from '@/hooks/use-escape-key';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
-import { AiCopyButton, AiStopButton } from '@/components/ai/ai-panel-actions';
-import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send, Loader2 } from 'lucide-react';
+import { AiCopyButton, AiStopButton, AiLoadingBubble } from '@/components/ai/ai-panel-actions';
+import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send } from 'lucide-react';
 
 const statusOptions: { value: WindowStatus | 'all'; label: string; dotColor: string }[] = [
   { value: 'all', label: '全部', dotColor: '' },
@@ -779,14 +779,7 @@ export default function WindowsPage() {
               )}
 
               {/* Loading */}
-              {aiStreaming && !aiContent && (
-                <div className="flex justify-start">
-                  <div className="flex items-center gap-2 rounded-lg px-4 py-3 bg-card border border-border">
-                    <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
-                    <span className="text-xs text-muted-foreground">正在分析...</span>
-                  </div>
-                </div>
-              )}
+              {aiStreaming && !aiContent && <AiLoadingBubble />}
 
               <div ref={aiEndRef} />
             </div>

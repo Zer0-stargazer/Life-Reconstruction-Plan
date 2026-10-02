@@ -12,14 +12,14 @@ import { Reveal } from '@/components/shared/reveal';
 import { SectionJumper } from '@/components/shared/section-jumper';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
-import { AiCopyButton, AiStopButton } from '@/components/ai/ai-panel-actions';
+import { AiCopyButton, AiStopButton, AiLoadingBubble } from '@/components/ai/ai-panel-actions';
 import {
   Droplet, TrendingUp, Skull, Sparkles, Search,
   AlertTriangle, Shield, Bot, Wand2,
   ChevronLeft, ChevronRight, X, Maximize2,
   ArrowUpRight, ArrowDownRight, Zap, Eye,
   Crosshair, BookOpen, Radar, Swords, CalendarCheck,
-  Send, Loader2, MessageSquare,
+  Send, MessageSquare,
 } from 'lucide-react';
 
 /* ============ AI Sub-topic definitions ============ */
@@ -303,14 +303,7 @@ function InlineAIChat({
         )}
 
         {/* Loading */}
-        {isStreaming && !streamingContent && (
-          <div className="flex justify-start">
-            <div className="flex items-center gap-2 rounded-xl px-4 py-3 bg-card border border-border">
-              <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
-              <span className="text-xs text-muted-foreground">正在分析...</span>
-            </div>
-          </div>
-        )}
+        {isStreaming && !streamingContent && <AiLoadingBubble />}
 
         <div ref={messagesEndRef} />
       </div>

@@ -3,11 +3,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useEscapeKey } from '@/hooks/use-escape-key';
-import { X, Send, Sparkles, Loader2 } from 'lucide-react';
+import { X, Send, Sparkles } from 'lucide-react';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { consumeAiSseStream } from '@/lib/sse-client';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
-import { AiCopyButton, AiStopButton } from '@/components/ai/ai-panel-actions';
+import { AiCopyButton, AiStopButton, AiLoadingBubble } from '@/components/ai/ai-panel-actions';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -233,14 +233,7 @@ export function AIAnalysisPanel({
           )}
 
           {/* Loading indicator */}
-          {isStreaming && !streamingContent && (
-            <div className="flex justify-start">
-              <div className="flex items-center gap-2 rounded-lg px-4 py-3 bg-card border border-border">
-                <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
-                <span className="text-xs text-muted-foreground">正在分析...</span>
-              </div>
-            </div>
-          )}
+          {isStreaming && !streamingContent && <AiLoadingBubble />}
 
           <div ref={messagesEndRef} />
         </div>
