@@ -370,7 +370,10 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
 
       {/* Dual data cards */}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className={cn('rounded-md border border-border/40 p-2.5', node.category === 'red' || node.category === 'purple' ? 'bg-red-50/70 dark:bg-red-950/20' : 'bg-muted/40')}>
+        <div
+          title="影响指数 = 发生概率 × 影响强度，数值越大对人生冲击越大；负值 = 消耗你的，正值 = 能借力的"
+          className={cn('rounded-md border border-border/40 p-2.5', node.category === 'red' || node.category === 'purple' ? 'bg-red-50/70 dark:bg-red-950/20' : 'bg-muted/40')}
+        >
           <div className="flex items-center gap-1 mb-1">
             {drainValue < 0 ? (
               <ArrowDownRight className="h-3 w-3 text-red-500" />
@@ -386,7 +389,10 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
             {drainValue < 0 ? drainValue : `+${drainValue}`}%
           </span>
         </div>
-        <div className="rounded-md border border-border/40 p-2.5 bg-muted/40">
+        <div
+          title="可控度 = 你能靠行动改变它的程度：0% = 纯看天意，75% = 基本可以主动操作"
+          className="rounded-md border border-border/40 p-2.5 bg-muted/40"
+        >
           <div className="flex items-center gap-1 mb-1">
             <ArrowUpRight className="h-3 w-3 text-muted-foreground/50" />
             <span className="text-[9px] text-muted-foreground">{config.gainLabel}</span>
@@ -543,6 +549,9 @@ function LuckDetailPanel({
                     )}>
                       {drainValue < 0 ? drainValue : `+${drainValue}`}%
                     </span>
+                    <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground/70">
+                      发生概率 × 影响强度，数值越大对人生冲击越大；负值 = 消耗你的，正值 = 能借力的
+                    </p>
                   </div>
                   <div className="rounded-xl p-4 bg-muted/40">
                     <div className="flex items-center gap-1.5 mb-2">
@@ -555,6 +564,9 @@ function LuckDetailPanel({
                     )}>
                       {gainValue}%
                     </span>
+                    <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground/70">
+                      你能靠行动改变它的程度：0% = 纯看天意，75% = 基本可以主动操作
+                    </p>
                   </div>
                 </div>
 
