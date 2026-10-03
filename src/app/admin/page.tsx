@@ -21,6 +21,7 @@ interface AdminUser {
   role: string;
   is_active: boolean;
   invite_code_used: string | null;
+  ai_credits: number;
   last_login_at: string | null;
   created_at: string;
 }
@@ -78,7 +79,9 @@ export default function AdminPage() {
   const [newCode, setNewCode] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [newMaxUses, setNewMaxUses] = useState('1');
+  const [newCredits, setNewCredits] = useState('200');
   const [batchCount, setBatchCount] = useState('5');
+  const [batchCredits, setBatchCredits] = useState('200');
   const [batchPrefix, setBatchPrefix] = useState('LR');
 
   // Load saved token
@@ -206,6 +209,7 @@ export default function AdminPage() {
           code: newCode.trim(),
           label: newLabel.trim() || undefined,
           maxUses: newMaxUses ? parseInt(newMaxUses) : undefined,
+          aiCredits: newCredits ? parseInt(newCredits) || 0 : 0,
         }),
       });
       const data = await res.json();
@@ -231,6 +235,7 @@ export default function AdminPage() {
           count: parseInt(batchCount) || 5,
           prefix: batchPrefix || 'LR',
           maxUses: 1,
+          aiCredits: batchCredits ? parseInt(batchCredits) || 0 : 0,
         }),
       });
       const data = await res.json();
@@ -485,6 +490,7 @@ export default function AdminPage() {
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">角色</th>
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">状态</th>
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">邀请码</th>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">AI 余额</th>
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">注册时间</th>
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">操作</th>
                     </tr>
@@ -525,6 +531,11 @@ export default function AdminPage() {
                         </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
                           {user.invite_code_used || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-mono tabular-nums">
+                          <span className={cn(user.ai_credits > 0 ? 'text-primary' : 'text-muted-foreground/40')}>
+                            {user.ai_credits ?? 0}
+                          </span>
                         </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">
                           {formatDate(user.created_at)}
@@ -602,6 +613,14 @@ export default function AdminPage() {
                         min="1"
                         className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
+                      <input
+                        type="number"
+                        value={newCredits}
+                        onChange={(e) => setNewCredits(e.target.value)}
+                        placeholder="含 AI 次数"
+                        min="0"
+                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      />
                       <button
                         onClick={handleCreateInvite}
                         disabled={!newCode.trim()}
@@ -629,6 +648,14 @@ export default function AdminPage() {
                         placeholder="数量 (1-50)"
                         min="1"
                         max="50"
+                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      />
+                      <input
+                        type="number"
+                        value={batchCredits}
+                        onChange={(e) => setBatchCredits(e.target.value)}
+                        placeholder="每码含 AI 次数"
+                        min="0"
                         className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                       <div />

@@ -16,6 +16,7 @@ import { AiSourceManager } from '@/components/ai/ai-source-manager';
 import { STORAGE_KEY_ACTIVE, type AiSource } from '@/lib/ai-sources';
 import { readDefaultAge, writeDefaultAge } from '@/lib/default-age';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { getAuthHeader } from '@/lib/client-auth';
 
 const modules = [
   { name: '名字', path: '/name', icon: '01' },
@@ -94,6 +95,7 @@ export default function UserPage() {
 
   // Invite code
   const [inviteCode, setInviteCode] = useState('');
+  const [aiCredits, setAiCredits] = useState<number | null>(null);
   const [inviteStatus, setInviteStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [inviteMessage, setInviteMessage] = useState('');
 
@@ -210,11 +212,24 @@ export default function UserPage() {
       setInviteStatus('success');
       setInviteMessage('充电成功！已解锁全部模块');
       setInviteCode('');
+      fetchCredits();
     } else {
       setInviteStatus('error');
       setInviteMessage(result.error || '兑换失败');
     }
   };
+
+  // ---- AI 额度（额度制：授权码到账，AI 分析按次扣减） ----
+  const fetchCredits = useCallback(async () => {
+    if (!authUser) { setAiCredits(null); return; }
+    try {
+      const res = await fetch('/api/ai/credits', { headers: getAuthHeader() });
+      const data = await res.json();
+      if (data.success) setAiCredits(data.credits as number);
+    } catch { /* 静默：额度展示失败不影响主流程 */ }
+  }, [authUser]);
+
+  useEffect(() => { fetchCredits(); }, [fetchCredits]);
 
   // ---- Theme / Age / API helpers ----
 
@@ -388,9 +403,14 @@ export default function UserPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Ticket className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium text-foreground">邀请码充电</span>
+                    {aiCredits !== null && (
+                      <span className="ml-auto font-mono text-[11px] tabular-nums text-muted-foreground">
+                        AI 余额 <span className="text-primary font-semibold">{aiCredits}</span> 次
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mb-3">
-                    输入邀请码升级为充电用户，解锁全部 {totalModules} 个模块
+                    输入授权码升级为充电用户并到账 AI 额度；AI 分析按次扣减，自带 Key 不扣
                   </p>
                   <div className="flex gap-2">
                     <input

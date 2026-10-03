@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     if (type === 'users') {
       const { data, error } = await client
         .from('app_users')
-        .select('id, nickname, avatar, role, is_active, invite_code_used, last_login_at, created_at')
+        .select('id, nickname, avatar, role, is_active, invite_code_used, ai_credits, last_login_at, created_at')
         .order('created_at', { ascending: false })
         .limit(500);
 
@@ -198,10 +198,12 @@ export async function POST(request: NextRequest) {
     const client = getSupabaseClient();
 
     if (action === 'create_invite') {
-      const { code, label, maxUses, expiresInDays } = body;
+      const { code, label, maxUses, expiresInDays, aiCredits } = body;
       if (!code) {
         return NextResponse.json({ error: '请输入邀请码' }, { status: 400 });
       }
+      // AI 额度：非负整数，上限 10 万（防手滑）
+      const credits = Math.max(0, Math.min(100000, Math.floor(Number(aiCredits) || 0)));
 
       const expiresAt = expiresInDays
         ? new Date(Date.now() + expiresInDays * 86400000).toISOString()
@@ -213,6 +215,7 @@ export async function POST(request: NextRequest) {
           code,
           label: label || null,
           max_uses: maxUses || null,
+          ai_credits: credits,
           created_by: 'developer',
           expires_at: expiresAt,
         })
@@ -229,8 +232,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data });
 
     } else if (action === 'batch_invite') {
-      const { count, prefix, maxUses, expiresInDays } = body;
+      const { count, prefix, maxUses, expiresInDays, aiCredits } = body;
       const num = Math.min(count || 5, 50); // max 50 at a time
+      const credits = Math.max(0, Math.min(100000, Math.floor(Number(aiCredits) || 0)));
       const codes: string[] = [];
 
       for (let i = 0; i < num; i++) {
@@ -246,6 +250,7 @@ export async function POST(request: NextRequest) {
         code,
         label: `批量生成`,
         max_uses: maxUses || null,
+        ai_credits: credits,
         created_by: 'developer',
         expires_at: expiresAt,
       }));

@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     // 5) 查询用户（userId 来自会话，不是请求体）
     const { data: user, error: userError } = await client
       .from("app_users")
-      .select("id, role, nickname, is_active")
+      .select("id, role, nickname, is_active, ai_credits")
       .eq("id", userId)
       .maybeSingle();
 
@@ -130,10 +130,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "邀请码刚刚被用完了，请换个码试试" }, { status: 409 });
     }
 
-    // 7) 再升级用户
+    // 7) 再升级用户：角色 + AI 额度一并到账
+    const grantCredits = invite.ai_credits ?? 0;
+    const newBalance = (user.ai_credits ?? 0) + grantCredits;
     const { error: updateError } = await client
       .from("app_users")
-      .update({ role: "premium", invite_code_used: code })
+      .update({
+        role: "premium",
+        invite_code_used: code,
+        ai_credits: newBalance,
+        ai_credits_total: (user.ai_credits ?? 0) + grantCredits,
+      })
       .eq("id", userId);
 
     if (updateError) {
@@ -143,6 +150,17 @@ export async function POST(request: NextRequest) {
         .update({ used_count: invite.used_count })
         .eq("id", invite.id);
       throw new Error(`升级失败: ${updateError.message}`);
+    }
+
+    // 7.5) 额度流水（审计/对账）；失败不阻断兑换，只打日志
+    if (grantCredits > 0) {
+      const { error: logError } = await client.from("ai_credit_logs").insert({
+        user_id: userId,
+        delta: grantCredits,
+        reason: "redeem_code",
+        balance: newBalance,
+      });
+      if (logError) console.error("ai_credit_logs 写入失败:", logError.message);
     }
 
     // 8) 记录日志
@@ -159,7 +177,7 @@ export async function POST(request: NextRequest) {
       role: "premium",
     });
 
-    return NextResponse.json({ success: true, role: "premium", token });
+    return NextResponse.json({ success: true, role: "premium", credits: newBalance, token });
 
   } catch (err) {
     const message = err instanceof Error ? err.message : "服务器错误";
