@@ -5,6 +5,7 @@ import { ThemeProvider } from"@/components/layout/theme-provider";
 import { ModuleVisitTracker } from "@/components/layout/module-visit-tracker";
 import { ModuleNextNav } from "@/components/shared/module-next-nav";
 import { AuthProvider } from "@/contexts/auth-context";
+import { UnlockDialog } from "@/components/auth/unlock-dialog";
 
 export const metadata: Metadata = {
   title: {
@@ -51,6 +52,7 @@ export default function RootLayout({
           </div>
         </AuthProvider>
         </ThemeProvider>
+        <UnlockDialog />
       </body>
     </html>
   );

@@ -27,7 +27,10 @@ interface AuthContextType {
   // Feature gating
   isPremium: boolean;
   isDeveloper: boolean;
+  /** 是否可完整使用该模块（持码用户/开发者）；否则是预览态 */
   canAccessModule: (modulePath: string) => boolean;
+  /** 是否可预览该模块（列表与摘要人人可逛，锁定点在各页触发动作上） */
+  canPreviewModule: (modulePath: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -222,10 +225,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isDeveloper = user?.role === "developer";
 
   /**
-   * 测试期临时放开全部模块。
-   * 等邀请码/付费链路真的要收口时，这里要恢复成按角色判断。
+   * 正式权限模型（2026-10-02 起生效，取代测试期全开放）：
+   * 持码用户（premium）/开发者完整使用全部模块；
+   * 访客与普通用户进入预览态——列表可逛，详情弹层、AI 分析、
+   * 报告生成等触发动作由各页 useLockedAction 拦截。
+   * 设计稿：docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md
    */
   const canAccessModule = useCallback((modulePath: string) => {
+    void modulePath;
+    return isPremium;
+  }, [isPremium]);
+
+  /** 预览模式：列表与摘要人人可看 */
+  const canPreviewModule = useCallback((modulePath: string) => {
     void modulePath;
     return true;
   }, []);
@@ -243,6 +255,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isPremium,
       isDeveloper,
       canAccessModule,
+      canPreviewModule,
     }}>
       {children}
     </AuthContext.Provider>

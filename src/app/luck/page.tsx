@@ -13,6 +13,7 @@ import { SectionJumper } from '@/components/shared/section-jumper';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
 import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
+import { useLockedAction } from '@/hooks/use-locked-action';
 import {
   Droplet, TrendingUp, Skull, Sparkles, Search,
   AlertTriangle, Shield, Bot, Wand2,
@@ -713,6 +714,7 @@ function LuckDetailPanel({
 /* ============ Main Page ============ */
 
 export default function LuckPage() {
+  const { guard } = useLockedAction();
   const [isMac, setIsMac] = useState(false);
   useEffect(() => {
     setIsMac(/Mac|iP(hone|ad|od)/.test(navigator.userAgent));
@@ -775,10 +777,12 @@ export default function LuckPage() {
 
   // Navigation for detail panel
   const handleOpenNode = useCallback((node: LuckNode) => {
-    const idx = filtered.findIndex(n => n.id === node.id);
-    setSelectedIndex(idx >= 0 ? idx : 0);
-    setSelectedNode(node);
-  }, [filtered]);
+    guard(() => {
+      const idx = filtered.findIndex(n => n.id === node.id);
+      setSelectedIndex(idx >= 0 ? idx : 0);
+      setSelectedNode(node);
+    });
+  }, [filtered, guard]);
 
   const handlePrev = useCallback(() => {
     if (filtered.length === 0) return;

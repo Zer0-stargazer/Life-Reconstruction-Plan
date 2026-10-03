@@ -1,14 +1,17 @@
 'use client';
 
 import { useAuth } from '@/contexts/auth-context';
-import { Lock, Zap, Crown, LogIn } from 'lucide-react';
-import Link from 'next/link';
+import { Lock, Zap, Crown } from 'lucide-react';
+import { unlockStore } from '@/lib/unlock-store';
 
 // Module lock overlay - wraps module page content
+//
+// 2026-10-02 起为预览模式：不再整页拦截——列表/摘要永远渲染，
+// 详情弹层、AI 分析等触发动作由各页 useLockedAction().guard 拦截；
+// 预览态时在页头下方挂一条解锁引导横幅（PreviewBanner）。
 export function ModuleGate({ modulePath, children }: { modulePath: string; children: React.ReactNode }) {
-  const { user, isLoading, canAccessModule } = useAuth();
+  const { isLoading, canAccessModule } = useAuth();
 
-  // 身份状态恢复中不渲染内容，避免登录态闪变。
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[70vh] px-4">
@@ -21,68 +24,36 @@ export function ModuleGate({ modulePath, children }: { modulePath: string; child
     );
   }
 
-  if (canAccessModule(modulePath)) {
-    return <>{children}</>;
-  }
-
-  // Locked module
   return (
-    <div className="flex items-center justify-center min-h-[70vh] px-4">
-      <div className="text-center max-w-md animate-[fade-in-up_0.5s_ease-out]">
-        <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-          <Lock className="w-10 h-10 text-primary" />
-        </div>
-        <h2 className="text-2xl font-serif font-bold text-foreground mb-3">
-          {user ? '该功能需要充电' : '请先登录'}
-        </h2>
-        <p className="text-muted-foreground mb-6 leading-relaxed">
-          {user ? (
-            <>
-              普通用户可免费使用「名字」「职业」「窗口」3个模块。<br />
-              充电用户可解锁全部7个模块，畅享完整人生规划体验。
-            </>
-          ) : (
-            <>
-              未登录可免费浏览「名字」「职业」「窗口」3个基础模块。<br />
-              注册后可使用基础模块；充电后解锁全部 7 个模块。
-            </>
-          )}
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            href="/user"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            {user ? (
-              <>
-                <Zap className="w-4 h-4" />
-                输入邀请码充电
-              </>
-            ) : (
-              <>
-                <LogIn className="w-4 h-4" />
-                登录 / 注册
-              </>
-            )}
-          </Link>
-        </div>
-        <div className="mt-8 grid grid-cols-3 gap-3 text-sm">
-          <div className="p-3 rounded-lg bg-muted/50 border border-border">
-            <Crown className="w-5 h-5 text-primary mx-auto mb-1" />
-            <div className="font-medium text-foreground">充电用户</div>
-            <div className="text-muted-foreground text-xs">7/7 模块</div>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/50 border border-border">
-            <Lock className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-            <div className="font-medium text-foreground">普通用户</div>
-            <div className="text-muted-foreground text-xs">3/7 模块</div>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/50 border border-border">
-            <div className="w-5 h-5 flex items-center justify-center mx-auto mb-1 text-primary font-serif font-bold">?</div>
-            <div className="font-medium text-foreground">未登录</div>
-            <div className="text-muted-foreground text-xs">需先登录</div>
-          </div>
-        </div>
+    <>
+      {!canAccessModule(modulePath) && <PreviewBanner />}
+      {children}
+    </>
+  );
+}
+
+/**
+ * 访客预览横幅：一句话说明当前是"可逛不可点"的预览态，
+ * 解锁动作收口到全局 UnlockDialog（unlockStore.show）。
+ */
+export function PreviewBanner() {
+  const { user } = useAuth();
+
+  return (
+    <div className="w-full max-w-5xl mx-auto px-6 sm:px-8 pt-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-primary/25 bg-primary/[0.05] px-4 py-2.5">
+        <Lock className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+        <span className="text-xs text-muted-foreground leading-relaxed">
+          访客预览：可浏览全部条目；<span className="text-foreground font-medium">详情与 AI 分析</span>需授权码解锁
+          {user ? '' : '（登录后可用码兑换）'}
+        </span>
+        <button
+          onClick={() => unlockStore.show()}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors btn-press"
+        >
+          <Zap className="h-3.5 w-3.5" />
+          解锁
+        </button>
       </div>
     </div>
   );

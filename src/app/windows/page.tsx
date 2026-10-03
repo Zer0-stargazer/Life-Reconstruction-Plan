@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { byWindowSeverity } from '@/lib/default-order';
 import { TickRule } from '@/components/shared/fig-kit';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
+import { useLockedAction } from '@/hooks/use-locked-action';
+import { PreviewBanner } from '@/components/auth/module-gate';
 import { consumeAiSseStream } from '@/lib/sse-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { Reveal } from '@/components/shared/reveal';
@@ -89,6 +91,7 @@ function LockForceBar({ score }: { score: number }) {
 
 export default function WindowsPage() {
   const { defaultAge, saveDefaultAge, stages } = useAdvancedSettings();
+  const { guard } = useLockedAction();
   const [filter, setFilter] = useState<WindowStatus | 'all'>('all');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['青年起步', '壮年奋斗', '中年深耕']));
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
@@ -310,7 +313,7 @@ export default function WindowsPage() {
         desc="每个人生阶段都有打开又关闭的窗口。有些错过了就永远关上了，有些只有精英才能看见。看清窗口，才知道什么时候该全力以赴。"
         aside={
           <button
-            onClick={() => { setAiPlanning(true); if (aiMessages.length === 0) startAIPlanning(); }}
+            onClick={() => { guard(() => { setAiPlanning(true); if (aiMessages.length === 0) startAIPlanning(); }); }}
             className="shrink-0 flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-2.5 text-xs font-medium text-primary hover:bg-primary/15 transition-all active:scale-[0.97]"
           >
             <Bot className="h-4 w-4" />
@@ -407,6 +410,8 @@ export default function WindowsPage() {
 
       </ModulePageHead>
 
+      <PreviewBanner />
+
       {/*
         筛选 + 分组跳转。
         top-12：移动端有一条 fixed 的 h-12 顶栏（见 app-sidebar），
@@ -494,11 +499,11 @@ export default function WindowsPage() {
                         role="button"
                         tabIndex={0}
                         aria-expanded={isCardExpanded}
-                        onClick={() => toggleCard(w.id)}
+                        onClick={() => guard(() => toggleCard(w.id))}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            toggleCard(w.id);
+                            guard(() => toggleCard(w.id));
                           }
                         }}
                         className={cn(

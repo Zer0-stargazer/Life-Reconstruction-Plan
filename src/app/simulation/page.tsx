@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
 import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
+import { useLockedAction } from '@/hooks/use-locked-action';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { consumeAiSseStream } from '@/lib/sse-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
@@ -370,6 +371,7 @@ type Step = 'assessment' | 'result';
 
 export default function SimulationPage() {
   const { defaultAge, loaded } = useAdvancedSettings();
+  const { guard } = useLockedAction();
   const [step, setStep] = useState<Step>('assessment');
   // 用户填的维度与答案持久化：刷新后不再从头来过（原来是纯 useState，刷新即丢）
   const [dimensions, setDimensions] = usePersistedState<SimDimension[]>('sim.dimensions.v1', createDefaultDimensions);
@@ -441,12 +443,14 @@ export default function SimulationPage() {
     });
   }, [answers]);
 
-  // 完成问卷
+  // 完成问卷（评估结果属于锁定内容：预览态弹解锁引导）
   const handleCompleteAssessment = useCallback(() => {
-    const dims = calculateFromAnswers();
-    setDimensions(dims);
-    setStep('result');
-  }, [calculateFromAnswers, setDimensions]);
+    guard(() => {
+      const dims = calculateFromAnswers();
+      setDimensions(dims);
+      setStep('result');
+    });
+  }, [calculateFromAnswers, setDimensions, guard]);
 
   // 手动微调滑块
   const handleSliderChange = useCallback((key: string, value: number) => {
@@ -468,8 +472,8 @@ export default function SimulationPage() {
 
   // 推演
   const handleSimulate = useCallback(() => {
-    setSimulated(true);
-  }, []);
+    guard(() => setSimulated(true));
+  }, [guard]);
 
   useEffect(() => {
     setAnimatedScore(score);

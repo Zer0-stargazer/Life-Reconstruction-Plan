@@ -10,6 +10,8 @@ import {
   ChevronDown, ChevronUp, MessageSquare, Star, AlertTriangle,
 } from 'lucide-react';
 import { AIAnalysisPanel } from '@/components/ai/ai-analysis-panel';
+import { useLockedAction } from '@/hooks/use-locked-action';
+import { PreviewBanner } from '@/components/auth/module-gate';
 import { Reveal } from '@/components/shared/reveal';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 
@@ -151,6 +153,13 @@ export default function CareerPage() {
   const [showResources, setShowResources] = useState<number | null>(null);
   const [aiPanel, setAiPanel] = useState<{ open: boolean; career: Career | null }>({ open: false, career: null });
   const detailPanelRef = useRef<HTMLDivElement>(null);
+  const { guard } = useLockedAction();
+
+  /** 详情与 AI 分析是锁定点：预览态（未持码）弹解锁引导 */
+  const openCareerDetail = (id: number) => guard(() => {
+    setSelectedCareer(selectedCareer === id ? null : id);
+    setShowResources(null);
+  });
 
   // 移动端（<lg 单列布局）详情面板渲染在整片卡片网格之后，
   // 选中后不滚过去的话，用户点了卡片却看不到任何反馈
@@ -306,6 +315,8 @@ export default function CareerPage() {
         </div>
       </ModulePageHead>
 
+      <PreviewBanner />
+
       {/* Salary Distribution */}
       <div className="border-b border-border bg-muted/10">
         <div className="max-w-5xl mx-auto px-6 sm:px-8 py-5">
@@ -427,7 +438,7 @@ export default function CareerPage() {
                   icon={Sparkles}
                   items={goldenCareers}
                   reasonOf={goldenReason}
-                  onPick={(c) => setSelectedCareer(c.id)}
+                  onPick={(c) => openCareerDetail(c.id)}
                 />
               )}
               {riskyCareers.length > 0 && (
@@ -438,7 +449,7 @@ export default function CareerPage() {
                   icon={AlertTriangle}
                   items={riskyCareers}
                   reasonOf={riskyReason}
-                  onPick={(c) => setSelectedCareer(c.id)}
+                  onPick={(c) => openCareerDetail(c.id)}
                 />
               )}
             </div>
@@ -465,11 +476,8 @@ export default function CareerPage() {
                   <div
                     role="button"
                     tabIndex={0}
-                    onClick={() => {
-                      setSelectedCareer(selectedCareer === career.id ? null : career.id);
-                      setShowResources(null);
-                    }}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedCareer(selectedCareer === career.id ? null : career.id); setShowResources(null); } }}
+                    onClick={() => openCareerDetail(career.id)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCareerDetail(career.id); } }}
                     className={cn(
                       'w-full text-left rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] card-hover cursor-pointer',
                       selectedCareer === career.id ? 'border-primary/30 ring-1 ring-primary/10' : 'border-border'
@@ -495,7 +503,7 @@ export default function CareerPage() {
                         {career.category}
                       </span>
                       <span
-                        onClick={(e) => { e.stopPropagation(); setAiPanel({ open: true, career }); }}
+                        onClick={(e) => { e.stopPropagation(); guard(() => setAiPanel({ open: true, career })); }}
                         className="ml-auto rounded-md border border-primary/15 bg-primary/5 px-2 py-0.5 text-[9px] text-primary/60 hover:text-primary hover:bg-primary/10 transition-colors flex items-center gap-1 cursor-pointer"
                       >
                         <Sparkles className="h-2.5 w-2.5" />

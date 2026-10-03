@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
 import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
+import { useLockedAction } from '@/hooks/use-locked-action';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { consumeAiSseStream } from '@/lib/sse-client';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
@@ -286,6 +287,7 @@ function AnimatedScoreBar({ label, score, color, icon, delay }: { label: string;
 
 export default function DestinyPage() {
   const { defaultAge, weightMap } = useAdvancedSettings();
+  const { guard } = useLockedAction();
   // 表单输入持久化：刷新后不再重填（原来是纯 useState，刷新即丢）
   const [input, setInput] = usePersistedState<DestinyInput>('destiny.input.v1', () => ({
     birthYear: String(new Date().getFullYear() - defaultAge),
@@ -594,7 +596,7 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
 
           <div className="animate-fade-in-up stagger-5">
             <button
-              onClick={handleGenerate}
+              onClick={() => guard(handleGenerate)}
               className="group inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98] btn-press"
             >
               生成命运报告

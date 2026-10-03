@@ -10,6 +10,7 @@ import { Reveal } from '@/components/shared/reveal';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
 import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
+import { useLockedAction } from '@/hooks/use-locked-action';
 import {
   TrendingUp, AlertTriangle, Shield, Bot,
   ChevronLeft, ChevronRight, X, Maximize2,
@@ -828,6 +829,7 @@ function LawDetailPanel({
 /* ============ Main Page ============ */
 
 export default function LawsPage() {
+  const { guard } = useLockedAction();
   const [activeDimensionId, setActiveDimensionId] = useState<string>(LAW_DIMENSIONS[0].id);
   const [tagFilter, setTagFilter] = useState<LawTag | 'all'>('all');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -1062,7 +1064,7 @@ export default function LawsPage() {
                       <FocusLawCard
                         key={item.id}
                         item={item}
-                        onClick={() => setSelectedItemId(item.id)}
+                        onClick={() => guard(() => setSelectedItemId(item.id))}
                       />
                     ))}
                   </div>
@@ -1087,7 +1089,7 @@ export default function LawsPage() {
                       <LawCard
                         item={item}
                         dimension={activeDimension}
-                        onClick={() => setSelectedItemId(item.id)}
+                        onClick={() => guard(() => setSelectedItemId(item.id))}
                       />
                     </Reveal>
                   ))}
