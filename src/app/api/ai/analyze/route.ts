@@ -2,6 +2,8 @@
 import { streamChatAuto } from "@/lib/ai-stream";
 import { resolveAiSource, type AiSourceConfig } from "@/lib/ai-providers";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { sessionFromRequest, type SessionPayload } from "@/lib/session";
+import { getSupabaseClient } from "@/storage/database/supabase-client";
 
 const SYSTEM_PROMPT = `你是"人生重构计划"的AI分析顾问，专注于人生决策、职业规划、命运概率分析。你的角色是帮助用户深入理解每个模块的内涵，给出具体、可操作的建议。
 
@@ -158,6 +160,73 @@ export async function POST(request: NextRequest) {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    /**
+     * 额度门（2026-10-02 额度制）：
+     * - 内置 AI（服务端 env Key）是付费资源 → 需要会话，按次扣额度（开发者不限）；
+     * - 用户自带 Key（BYOK）永久免费 → 不要求登录、不扣额度。
+     * 扣减用与邀请码同款乐观锁，防并发透支；扣减失败/额度不足都在
+     * 进入流式之前返回明确错误（不是 500）。
+     */
+    const isCustomSource = aiSource.kind !== "env";
+    let session: SessionPayload | null = null;
+
+    if (!isCustomSource) {
+      session = sessionFromRequest(request);
+      if (!session) {
+        return new Response(
+          JSON.stringify({ error: "使用内置 AI 需先登录并用授权码解锁（在「我的」页填入自己的 Key 可免登录使用）" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      if (session.role !== "developer") {
+        const client = getSupabaseClient();
+        const { data: userData, error: userError } = await client
+          .from("app_users")
+          .select("ai_credits")
+          .eq("id", session.userId)
+          .maybeSingle();
+        if (userError) {
+          return new Response(JSON.stringify({ error: `额度查询失败: ${userError.message}` }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const credits = userData?.ai_credits ?? 0;
+        if (credits < 1) {
+          return new Response(
+            JSON.stringify({ error: "AI 额度已用完，请找开发者续码（用授权码即可到账）；或在「我的」页改用自己的 Key（不扣额度）" }),
+            { status: 402, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        // 乐观锁扣减：写不进去说明并发下余额已变，让用户重试
+        const { data: claimed } = await client
+          .from("app_users")
+          .update({ ai_credits: credits - 1 })
+          .eq("id", session.userId)
+          .eq("ai_credits", credits)
+          .select("ai_credits");
+
+        if (!claimed || claimed.length === 0) {
+          return new Response(JSON.stringify({ error: "额度扣减冲突，请重试" }), {
+            status: 409,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        // 流水（失败不影响分析主流程）
+        const { error: logError } = await client.from("ai_credit_logs").insert({
+          user_id: session.userId,
+          delta: -1,
+          reason: "analyze",
+          balance: credits - 1,
+        });
+        if (logError) console.error("ai_credit_logs 写入失败:", logError.message);
+      }
     }
 
     const messages: { role: string; content: string }[] = [

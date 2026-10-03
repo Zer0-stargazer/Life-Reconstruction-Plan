@@ -8,6 +8,7 @@ import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/
 import { useLockedAction } from '@/hooks/use-locked-action';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { consumeAiSseStream } from '@/lib/sse-client';
+import { getAuthHeader } from '@/lib/client-auth';
 import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { usePersistedState } from '@/hooks/use-persisted-state';
 import { useEscapeKey } from '@/hooks/use-escape-key';
@@ -523,7 +524,7 @@ ${contextStr}
     try {
       const response = await fetch('/api/ai/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify({
           module: 'simulation',
           item: systemContext,
@@ -534,7 +535,11 @@ ${contextStr}
         signal: abortRef.current.signal,
       });
 
-      if (!response.ok) throw new Error(`请求失败: ${response.status}`);
+      if (!response.ok) {
+        let detail = `请求失败: ${response.status}`;
+        try { const j = await response.json(); if (j?.error) detail = j.error; } catch { /* 保留默认 */ }
+        throw new Error(detail);
+      }
 
       await consumeAiSseStream(response, {
         onReasoning: (accumulated) => setAiThinking(accumulated),

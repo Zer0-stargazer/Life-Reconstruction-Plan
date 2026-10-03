@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useEscapeKey } from '@/hooks/use-escape-key';
 import { X, Send, Sparkles } from 'lucide-react';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
+import { getAuthHeader } from '@/lib/client-auth';
 import { consumeAiSseStream } from '@/lib/sse-client';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
 import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
@@ -83,7 +84,7 @@ export function AIAnalysisPanel({
     try {
       const response = await fetch('/api/ai/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify({
           module,
           item: itemContext,
