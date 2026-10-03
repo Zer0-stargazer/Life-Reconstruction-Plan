@@ -18,13 +18,20 @@
 
 | 项 | 位置 | 为什么临时放开 | 什么时候收回 |
 |---|---|---|---|
-| 全模块开放 | `src/contexts/auth-context.tsx` 的 `canAccessModule()` | 测试期方便逐页检查，不被登录/邀请码挡住 | 邀请码、权限、商业化链路开始收口前必须恢复按角色判断 |
+| ~~全模块开放~~ | `src/contexts/auth-context.tsx` 的 `canAccessModule()` | 测试期方便逐页检查 | ✅ **已于 2026-10-02 收回**：正式权限模型上线（访客预览 + 持码解锁），见下 |
 
-恢复时：
+~~恢复时：~~（已完成，留档）
 
-1. `canAccessModule()` 重新按 `user`、`isPremium`、`NORMAL_USER_MODULES` 判断。
-2. 侧栏锁定图标跟随 `ModuleLockIcon()` 自动恢复。
-3. 文档里的「测试期全开放」要改成正式权限模型。
+1. ~~`canAccessModule()` 重新按 `user`、`isPremium`、`NORMAL_USER_MODULES` 判断~~ → 实际落地为 `isPremium`（premium/developer 全解锁），其余身份进入**预览态**：列表可逛，详情/AI/报告生成由 `useLockedAction().guard` 拦截（见 `docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md`）。
+2. ~~侧栏锁定图标跟随 `ModuleLockIcon()` 自动恢复~~ ✅ 已自动恢复。
+3. ~~文档里的「测试期全开放」要改成正式权限模型~~ ✅ 本文与 00-优先阅读 已同步。
+
+## 正式商业化模型（2026-10-02 起）
+
+- **权限**：访客/普通用户 = 预览态（全模块列表可逛，详情弹层、AI 分析、报告生成锁定）；持码（premium）= 全解锁；developer = 全解锁 + 后台。
+- **AI 额度**：授权码自带次数（/admin 建码时填，默认 200），兑换到账，内置 AI 每次分析扣 1，乐观锁防透支，流水在 `ai_credit_logs`；**用户自带 Key（BYOK）永久免费不扣额度**；developer 不限次。
+- **发码**：/admin 单个/批量建码 → 用户加好友或邮件找开发者领码 → 解锁弹窗或 /user 页兑换。
+- 未做（明确推迟）：在线支付、按 token 计费、免费模型兜底。
 
 ## 下一批 UI 工作
 
