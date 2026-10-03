@@ -41,6 +41,7 @@ export default function RootLayout({
         )}
         <ThemeProvider>
         <AuthProvider>
+          <UnlockDialog />
           <div className="flex min-h-screen">
             <ModuleVisitTracker />
             <AppSidebar />
@@ -52,7 +53,6 @@ export default function RootLayout({
           </div>
         </AuthProvider>
         </ThemeProvider>
-        <UnlockDialog />
       </body>
     </html>
   );
