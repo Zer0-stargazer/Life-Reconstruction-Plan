@@ -18,8 +18,10 @@
 | password_hash | varchar(128) NOT NULL | bcrypt cost=10 |
 | avatar | varchar(20) | 默认 🧑‍💻（注册接口写 👤） |
 | role | varchar(20) NOT NULL | normal / premium / developer |
-| invite_code_used | varchar(50) | 升级所用邀请码；退出开发者模式时据此决定降回 premium 还是 normal |
+| invite_code_used | varchar(50) | 升级所用授权码；退出开发者模式时据此决定降回 premium 还是 normal |
 | is_active | boolean | false = 禁止登录 |
+| **ai_credits** | integer NOT NULL DEFAULT 0 | **AI 剩余额度（2026-10-03 额度制）**：内置 AI 每次分析乐观锁扣 1；BYOK 自定义源不扣 |
+| **ai_credits_total** | integer NOT NULL DEFAULT 0 | 累计已到账（/user 展示用） |
 | last_login_at | timestamptz | |
 | created_at | timestamptz | |
 
@@ -33,11 +35,27 @@
 | code | varchar(50) UNIQUE NOT NULL | 格式 `PREFIX-XXXXXX` |
 | label | varchar(100) | 后台备注 |
 | max_uses | integer | NULL = 不限次 |
-| used_count | integer | 兑换时 +1（读后写，见 KNOWN-ISSUES #7） |
+| used_count | integer | 兑换时乐观锁占位 +1（`.eq("used_count", 读到的值)` 防并发超发） |
+| **ai_credits** | integer NOT NULL DEFAULT 0 | **兑换此码到账的 AI 次数（2026-10-03）**；/admin 建码时填，默认 200 |
 | is_active | boolean | |
 | created_by | varchar(50) | 固定写 'developer' |
 | expires_at | timestamptz | NULL = 永久 |
 | created_at | timestamptz | |
+
+### ai_credit_logs（2026-10-03 新增）
+
+AI 额度流水：每一笔增减都留痕，供审计与对账。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| id | serial PK | |
+| user_id | integer FK → app_users.id | |
+| delta | integer NOT NULL | +N 到账（redeem_code）/ -1 消耗（analyze） |
+| reason | varchar(100) NOT NULL | redeem_code / analyze / admin_grant |
+| balance | integer NOT NULL | 变动后余额（对账用） |
+| created_at | timestamptz | |
+
+索引：user_id。
 
 ### access_logs
 
@@ -77,3 +95,8 @@
 2. Dashboard → SQL Editor → 粘贴执行 `supabase/schema.sql`（可重复执行）
 3. Project Settings → API 复制 URL / anon key / service_role key
 4. 填入 `.env.local`（参考 `.env.example`）
+
+> **2026-10-03 起已有环境必须重跑一次 schema.sql**：额度制新增了
+> `app_users.ai_credits(_total)`、`invite_codes.ai_credits` 三列与
+> `ai_credit_logs` 表；脚本含 `ADD COLUMN IF NOT EXISTS`，可安全重复执行、不动已有数据。
+> 未执行前：后台建码/兑换/内置 AI 扣次会因缺列报错。

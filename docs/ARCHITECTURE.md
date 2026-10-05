@@ -1,24 +1,25 @@
 # 架构 ARCHITECTURE.md
 
-> 描述 **2026-10-01** 时点的真实代码状态（已逐一核对源码，非设计稿）。
-> 最近一次实质变更：2026-09-30「信息架构重做」——新增模块身份真源、页尾模块路径、滚动进场。
+> 描述 **2026-10-03** 时点的真实代码状态（已逐一核对源码，非设计稿）。
+> 最近一次实质变更：2026-10-02/03「商业化落地」——访客预览模型、AI 额度制、SSE 共享解析、思维链透传。
 
 ## 总体形态
 
 单体 Next.js 16 App Router 全栈应用：
 
 - **页面层**：`src/app/**/page.tsx`，全部 `'use client'`（无服务端组件取数，纯客户端渲染）
-- **API 层**：`src/app/api/**/route.ts`，5 个路由，全部无状态、直连 Supabase
-- **数据层**：静态数据 `src/data/`（TypeScript 数组，构建时打包进 bundle）+ Supabase（仅用户体系）
+- **API 层**：`src/app/api/**/route.ts`，6 个路由，全部无状态、直连 Supabase
+- **数据层**：静态数据 `src/data/`（TypeScript 数组，构建时打包进 bundle）+ Supabase（用户体系与额度）
 - **状态层**：无全局状态库，靠 React Context（认证）+ localStorage（用户偏好/进度/Key）
 
 ```
 浏览器
  ├── 页面（client components）
  │     ├── 静态数据直接 import（careers/windows/luck/laws 打进 bundle）
- │     └── ModuleGate / ModuleVisitTracker / AIAnalysisPanel
- ├── fetch /api/auth|invite|admin ──► Next API Route ──► Supabase (@supabase/supabase-js)
- └── fetch /api/ai/analyze (SSE) ──► Next API Route ──► 火山方舟 / OpenAI-compatible（服务端流式转发）
+ │     ├── useLockedAction().guard(action)  ──┐ 预览态拦截：详情/AI/报告生成
+ │     └── ModuleGate / PreviewBanner / UnlockDialog
+ ├── fetch /api/auth|invite|admin|ai/credits ──► Next API Route ──► Supabase (@supabase/supabase-js)
+ └── fetch /api/ai/analyze (SSE，带会话头) ──► Next API Route ──► 额度门 ──► 中转站 / OpenAI-compatible（流式转发）
 ```
 
 ## 信息架构（2026-09-30 重做）
@@ -75,27 +76,34 @@ src/components/shared/ai-markdown.tsx ← AI 输出的 Markdown 轻量渲染器
 > 注意：**包 `Reveal` 会改变谁是 grid item**。卡片原本直接是 grid item 时等高拉伸，
 > 外面套一层 div 后内层不再拉伸。要么给卡片加 `h-full`，要么把 `Reveal` 包在整个 grid 外面。
 
-## 权限链路
+## 权限链路（2026-10-03 起为正式模型）
 
 ```
+访客（未登录）/ 普通用户
+   └─ 预览态：全部模块的列表与摘要可逛（canPreviewModule 恒 true）
+      锁定点 = useLockedAction().guard(action) 拦截三类动作：
+        ① 条目详情弹层（career/windows 卡片、laws/luck 详情）
+        ② AI 分析 / 对话按钮
+        ③ simulation 问卷出分与推演、destiny 报告生成
+      guard 未通过 → unlockStore.show() 唤起全局 UnlockDialog（挂 root layout）：
+        访客 → 引导去 /user 登录/注册；已登录 → 就地输授权码兑换
+   └─ ModuleGate 不再整页 403：正常渲染内容，未持码时挂 PreviewBanner 引导条
+
 注册/登录 (POST /api/auth)
    └─► app_users.role ∈ {normal, premium, developer}
-   └─► 前端把 user JSON 存 localStorage("auth-user")   ← ⚠ 无服务端会话，见 KNOWN-ISSUES
+   └─► 前端存 localStorage("auth-user")（仅展示）+ localStorage("auth-token")（权限依据）
 
-normal（3 模块：/name /career /windows）
-   └─ /user 页输入邀请码 → POST /api/invite
-        └─ 校验 invite_codes（有效期/次数/激活）→ role=premium
+兑换授权码（POST /api/invite，需会话）
+   └─ role=premium + ai_credits 到账（码自带次数）→ 全站即时解锁
 
-premium（全模块）
+premium（全模块 + AI 额度计次）
    └─ /admin 输入 DEV_PASSWORD → POST /api/admin {action:"verify"}
-        └─ role=developer，服务端返回 token=sha256("lrs-dev-session:"+DEV_PASSWORD)
-           前端存 localStorage("dev-token")，后续请求带 x-dev-token
-           （2026-09-26 起不再回传明文密码；旧浏览器存的明文 token 会失效，需重新验证一次）
-
-ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation /luck
-   └─ 前端门控看 localStorage 里的 user.role（仅作界面展示，可被篡改）
-      服务端侧的权限依据：登录/注册签发的 HMAC 会话令牌（src/lib/session.ts）
+        └─ role=developer，token=sha256("lrs-dev-session:"+DEV_PASSWORD+":"+UTC日期)
+           按日轮换（接受今天+昨天两桶，等效 24-48h），存 localStorage("dev-token")
 ```
+
+侧栏锁标 `ModuleLockIcon` 跟随 `canAccessModule` 自动显隐；
+各页接入 guard 的位置清单见 `docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md`。
 
 ## 会话机制（2026-09-27 新增）
 
@@ -104,32 +112,38 @@ ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation 
             payload = { userId, nickname, role, exp }  有效期 7 天
             → 前端存 localStorage("auth-token")
 
-受保护接口（目前 /api/invite）→ Authorization: Bearer <token>
+受保护接口（/api/invite、/api/ai/credits、/api/ai/analyze 内置分支）→ Authorization: Bearer <token>
             → 服务端 sessionFromRequest() 校验签名与过期，userId 以令牌为准
 ```
 
 签名密钥取 `SESSION_SECRET`，未设则回退 `DEV_PASSWORD`，生产环境两者都缺则拒绝签发。
 用户对象本身仍存 localStorage，但**只用于界面展示**——权限判定的唯一权威是服务端令牌。
+前端各 AI 面板统一用 `lib/client-auth.ts` 的 `getAuthHeader()` 带上令牌。
 
-> **2026-10-01 晚间测试期临时调整**：`auth-context.canAccessModule()` 现在无条件返回 `true`，  
-> 所有模块开放，便于当前 UI / UX 测试。正式权限模型仍保留方案 A：
-> 未登录 = 登录引导，普通用户 3/7，充电用户 7/7。
+> **2026-10-03 起正式权限模型生效**（测试期全开放已收回）：`canAccessModule()` 按角色判定，
+> 预览态由 `canPreviewModule()` + `useLockedAction()` 承载。决策记录见
+> `docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md`。
 
-## AI 链路
+## AI 链路（2026-10-03 时点）
 
-1. 页面打开 `AIAnalysisPanel` → 自动 POST `/api/ai/analyze` `{module, item, question?, history?}`
-2. 路由按 `module` 挑选内置分析框架 prompt（8 套，见 route.ts 的 `MODULE_PROMPTS`）
-3. `src/lib/ai-stream.ts` 用 fetch 调 OpenAI-compatible `/chat/completions`（stream:true）
-4. 服务端把 delta 转成 SSE `data: {content}` / `data: [DONE]`，前端逐块渲染
-5. 前端用 `components/shared/ai-markdown.tsx` 渲染标题 / 列表 / 加粗 / 分割线，避免暴露 Markdown 源码
-6. 追问时携带完整 history，走续聊分支
+1. 页面打开 AI 面板 → POST `/api/ai/analyze` `{module, item, question?, history?, ai?, Authorization}`
+2. 路由依次：IP 限流 → 入参截断（item≤6000 / question≤2000 / history 12 条×4000 字、role 白名单）→
+   AI 源解析 → **额度门**（内置 AI 需会话并乐观锁扣 1 次；BYOK 免登录免扣；developer 不限）
+3. `src/lib/ai-stream.ts` 按协议调用上游（stream:true），delta 的 `content` 与
+   `reasoning_content` 分别透传
+4. 服务端把 delta 转成 SSE `data: {content}` / `data: {reasoning}` / `data: [DONE]`
+5. 前端 **`lib/sse-client.ts` 统一解析**（跨 chunk 行缓冲，全站唯一实现，2026-10-02 收编 6 处手写解析），
+   `AiThinkingBlock` 实时显示思维链、正文开始后折叠；加载期 `AiLoadingBubble` 显示已等待秒数
+6. 正文用 `components/shared/ai-markdown.tsx` 渲染；追问携带完整 history 走续聊分支
+7. 交互三件套（`components/ai/ai-panel-actions.tsx`，6 个面板复用）：停止生成（abort）/ 复制回复 /
+   计时加载气泡；面板本体为居中模态（role=dialog），laws/luck 关闭时中止流式
 
 **AI 来源只有两种**（2026-09-28 简化，原写死的 8 家厂商预设已删除）：
 
 | 来源 | provider | 配置位置 | 说明 |
 |---|---|---|---|
-| 内置 AI | `builtin` / 缺省 | 服务端 env（`AI_API_URL/AI_API_KEY/AI_MODEL`，三项缺一即报未配置） | 模型由 `AI_MODEL` 决定，前端改不了 |
-| 自定义源 | `custom` | `/user` 页，localStorage `ai-sources` | 用户自己填 baseUrl + protocol + key + model |
+| 内置 AI | `builtin` / 缺省 | 服务端 env（`AI_API_URL/AI_API_KEY/AI_MODEL`，三项缺一即报未配置） | 模型由 `AI_MODEL` 决定，前端改不了；**需登录持码，按次扣额度** |
+| 自定义源 | `custom` | `/user` 页，localStorage `ai-sources` | 用户自己填 baseUrl + protocol + key + model；**免登录、不扣额度（BYOK 免费）** |
 
 **用户自带 key**（2026-09-26 已接通，见 KNOWN-ISSUES #3）：`AIAnalysisPanel` 每次请求携带当前选中的 AI 源
 `ai: { provider, protocol, baseUrl, apiKey, model }`，`analyze` 路由用 `resolveAiSource()` 解析后
@@ -140,15 +154,19 @@ ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation 
 
 ## 数据流（用户偏好）
 
-`use-advanced-settings.ts` 管理 3 组 localStorage：
+**localStorage 键名唯一真源：`lib/storage-keys.ts`**（2026-10-02 收敛，业务代码禁止新写裸字符串键）。
+全局年龄的读写只走 `lib/default-age.ts` 的 `readDefaultAge()/writeDefaultAge()`（兼容历史 JSON 编码与 me-age 旧键）。
 
-| key | 内容 | 消费方 |
+| key（storage-keys.ts 常量） | 内容 | 消费方 |
 |---|---|---|
-| `default-age` | 默认年龄（数字） | destiny / simulation / windows |
+| `default-age` | 默认年龄（统一写裸数字，读兼容 `"40"` 历史格式） | me / windows / user / 首页密度图 |
 | `life-stages` | 7 个人生阶段（可调起止年龄） | windows（按年龄过滤） |
 | `preference-weights` | 6 维偏好权重（健康/财富/事业/关系/成长/自由） | destiny / simulation（weightMap） |
-
-> 注：AGENTS.md 旧版写"高级设置数据未被其他模块消费"，**已过时**——destiny/windows/simulation 三个页面都在消费。
+| `window-marks.v1` | 窗口三态个人标记（doing/done/skip） | /me |
+| `visited-modules` | 模块访问记录（写入只在根布局 ModuleVisitTracker） | /user |
+| `auth-user` / `auth-token` | 登录展示信息 / 会话令牌 | 全站 |
+| `dev-token` | 后台会话（按 UTC 日轮换） | /admin |
+| `ai-sources` / `api-active-source` | 自定义 AI 源列表 / 当前源 id | /user、6 个 AI 面板 |
 
 ## 构建与运行
 
@@ -156,7 +174,7 @@ ModuleGate 组件在 4 个 🔒 页面包裹内容：/destiny /laws /simulation 
   该脚本读 `$PORT` 并透传给 Next（默认 5000）。2026-09-29 起不再硬编码端口
 - `pnpm validate` = `tsc` + `eslint --quiet`，CI（`.github/workflows/ci.yml`）跑同一套
 - `src/server.ts` 自定义 HTTP server 入口（曾未被引用）——**2026-09-26 已删除**
-- `scripts/*.sh` 供扣子 `.coze` 配置调用；本地直接用 pnpm scripts 即可
+- 扣子 `.coze` 配置已随 2026-10-02 工程清理删除，项目完全独立运行
 - 静态数据 `src/data/` 合计约 **1.1MB** 全部打进 client bundle
   （careers 192KB / windows 240KB / luck-nodes 424KB / laws-*.ts 232KB），首屏性能受此影响
 

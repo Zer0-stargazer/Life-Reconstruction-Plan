@@ -16,22 +16,23 @@
 
 模块清单（编号、图标、配色、每块「能回答什么问题」的唯一真源在 `src/lib/module-identity.ts`）：
 
-| # | 模块 | 路由 | 能回答什么问题 | 内容 | 权限 |
+| # | 模块 | 路由 | 能回答什么问题 | 内容 | 访问 |
 |---|------|------|------|------|------|
-| ★ | 时间轴 | `/me` | 在我这个年纪，有哪些事正等着我？ | **个性化主线**：年龄滑块内嵌全人生分布曲线 → 473 个窗口按“正在开启 / 已错过 / 尚未到来”分档，含 ±15 年年度热度图和「现在最该看的三类」聚焦层 | 免费 |
-| 01 | 名字 | `/name` | 这个名字，会在别人心里留下什么？ | 笔画 / 音律 / 意象分析（当前为本地随机生成，未接 AI） | 免费 |
-| 02 | 职业 | `/career` | 757 条赛道里，哪条上限更高、更抗 AI？ | 757 个职业 + 自学路线 + 课程/书籍资源 | 免费 |
-| 03 | 规律 | `/laws` | 哪些齿轮，在你没注意的地方一直转动？ | 8 个维度 × 36 条 = 288 条人生规律 | 🔒 |
-| 04 | 窗口 | `/windows` | 哪些门还开着，哪些马上要关？ | 473 个人生关键窗口卡片 | 免费 |
-| 05 | 努力 | `/simulation` | 付出同样的努力，差距到底从哪来？ | 命运模拟器（SVG 雷达图 + 6 维滑块 + AI 策略） | 🔒 |
-| 06 | 运气 | `/luck` | 哪些是概率，哪些其实你能动手改？ | 250 个运气节点 | 🔒 |
-| 07 | 命运 | `/destiny` | 把上面六项叠起来，我现在的牌面是什么？ | 命势运综合报告（规则计算，非 AI） | 🔒 |
-| — | 用户 | `/user` | — | 角色 / 邀请码 / AI Key 配置 / 高级设置 | 登录 |
-| — | 后台 | `/admin` | — | 用户管理 / 邀请码生成 / 访问日志 | 开发者 |
+| ★ | 时间轴 | `/me` | 在我这个年纪，有哪些事正等着我？ | **个性化主线**：年龄滑块内嵌全人生分布曲线 → 473 个窗口按“正在开启 / 已错过 / 尚未到来”分档，含 ±15 年年度热度图和「现在最该看的三类」聚焦层 | 开放 |
+| 01 | 名字 | `/name` | 这个名字，会在别人心里留下什么？ | 笔画 / 音律 / 意象分析（当前为本地随机生成，未接 AI） | 开放 |
+| 02 | 职业 | `/career` | 757 条赛道里，哪条上限更高、更抗 AI？ | 757 个职业 + 搜索 + 职业级专属学习资源（首批 27 个）+ 黄金/高危赛道快看组 | 列表开放，详情持码 |
+| 03 | 规律 | `/laws` | 哪些齿轮，在你没注意的地方一直转动？ | 8 个维度 × 36 条 = 288 条人生规律 | 列表开放，详情持码 |
+| 04 | 窗口 | `/windows` | 哪些门还开着，哪些马上要关？ | 473 个人生窗口卡片库 | 列表开放，详情持码 |
+| 05 | 努力 | `/simulation` | 付出同样的努力，差距到底从哪来？ | 命运模拟器（SVG 雷达图 + 6 维滑块 + AI 策略） | 出分与推演持码 |
+| 06 | 运气 | `/luck` | 哪些是概率，哪些其实你能动手改？ | 250 个运气节点 | 列表开放，详情持码 |
+| 07 | 命运 | `/destiny` | 把上面六项叠起来，我现在的牌面是什么？ | 命势运综合报告（规则计算，非 AI） | 报告生成持码 |
+| — | 用户 | `/user` | — | 角色 / 授权码兑换 / AI 额度余额 / AI Key 配置 / 高级设置 | 登录 |
+| — | 后台 | `/admin` | — | 用户管理 / 批量生成授权码（含 AI 次数） / 访问日志 | 开发者 |
 
-> **测试期注意**：2026-10-01 晚间起，前端门控临时全开放，方便测试。  
-> 正式权限模型仍按 `normal`（3 个基础模块）→ 邀请码升级 → `premium` → `developer` 设计。
-门控由 `ModuleGate` 包裹 `/destiny` `/laws` `/simulation` `/luck` 四个页面。
+> **访问模型（2026-10-03 正式上线）**：访客可逛全部模块的**列表与摘要**；
+> 条目详情、AI 分析、报告生成需**授权码解锁**（后台批量生成，码自带 AI 额度）。
+> 内置 AI 按次扣额度；**用户自带 API Key（BYOK）永久免费**。
+> 门控唯一权威：`auth-context.canAccessModule()`（角色判定）+ `useLockedAction().guard`（动作拦截）。
 
 ## 快速开始
 
@@ -68,9 +69,12 @@ cp .env.example .env.local    # 然后填入真实值
 - **UI**：shadcn/ui（Radix UI）+ Tailwind CSS v4 + Lucide React
 - **图表**：无第三方图表库，全部手写 SVG（雷达图 / 直方图 / 轨道图）。Recharts 已于 2026-09-28 移除（无引用）
 - **数据库**：Supabase PostgreSQL（@supabase/supabase-js 直连；drizzle 已于 2026-09-26 移除）
-- **AI**：多协议流式（`src/lib/ai-stream.ts`）。两种来源：内置 AI（服务端 env）+ 用户自定义接入源（任意 baseUrl，协议 openai/claude/gemini/minimax）。项目不内置任何厂商地址与模型 id
+- **AI**：多协议流式（`src/lib/ai-stream.ts` + `src/lib/sse-client.ts` 统一客户端解析，思维链透传实时显示）。
+  两种来源：内置 AI（服务端 env，需登录持码、按次扣额度）+ 用户自定义接入源（BYOK，任意 baseUrl，
+  协议 openai/claude/gemini/minimax，免登录不扣额度）。项目不内置任何厂商地址与模型 id
+- **商业化**（2026-10-03）：访客预览 + 授权码解锁 + AI 额度计次（乐观锁防透支，`ai_credit_logs` 流水）
 - **密码**：bcryptjs（服务端哈希，cost=10）
-- **包管理**：pnpm 9（registry 走 npmmirror）
+- **包管理**：pnpm 9（registry 走 npmmirror；`.npmrc` 已恢复校验自愈）
 
 ## 目录结构
 
@@ -86,43 +90,55 @@ src/
 │   ├── not-found.tsx / error.tsx / global-error.tsx / loading.tsx  # 兜底页
 │   └── api/
 │       ├── auth/route.ts     # 注册/登录（bcrypt + HMAC 会话签发）
-│       ├── invite/route.ts   # 邀请码兑换升级
-│       ├── admin/route.ts    # 后台管理（x-dev-token）
+│       ├── invite/route.ts   # 授权码兑换升级（含 AI 额度到账 + 流水）
+│       ├── admin/route.ts    # 后台管理（x-dev-token 日期桶哈希）
 │       └── ai/
-│           ├── analyze/route.ts  # AI 分析（SSE 流式，带限流）
+│           ├── analyze/route.ts  # AI 分析（SSE 流式，内置 AI 走额度门）
+│           ├── credits/route.ts  # 额度余额查询（2026-10-03 新增）
 │           └── test-key/route.ts # AI 连通性测试（builtin / custom）
 ├── components/
-│   ├── auth/module-gate.tsx  # 🔒 模块门控 + 角色徽章
-│   ├── layout/app-sidebar.tsx# 侧边栏（桌面 w-56 / 移动端抽屉）
-│   ├── ai/ai-analysis-panel.tsx # AI 分析侧滑面板（SSE 流式渲染）
+│   ├── auth/module-gate.tsx      # 预览模式门控 + PreviewBanner 解锁引导条
+│   ├── auth/unlock-dialog.tsx    # 全局解锁弹窗（挂 root layout）
+│   ├── layout/app-sidebar.tsx    # 侧边栏（桌面 w-56 / 移动端抽屉）
+│   ├── ai/
+│   │   ├── ai-analysis-panel.tsx # 共享 AI 面板（SSE 流式 + Markdown）
+│   │   ├── ai-source-manager.tsx # 自定义 AI 源管理
+│   │   └── ai-panel-actions.tsx  # 停止生成 / 复制回复 / 计时气泡 / 思维链展示
 │   ├── shared/
 │   │   ├── module-next-nav.tsx  # ★ 页尾「上一步/下一步」模块路径（挂 root layout，全站生效）
 │   │   ├── module-page-head.tsx # ★ 七个模块页的统一页头（编号/图标/提问自动取）
 │   │   ├── reveal.tsx           # ★ 滚动进场包裹件（IntersectionObserver）
 │   │   └── fig-kit.tsx          # PanelHead / HudCorners 等图表装饰件
 │   └── ui/                   # shadcn/ui 组件库（只保留实际用到的 8 个）
-├── contexts/auth-context.tsx # 全局认证（localStorage 持久化，见已知问题）
+├── contexts/auth-context.tsx # 全局认证（角色/权限/授权码；canAccessModule / canPreviewModule）
 ├── data/                     # 静态数据
 │   ├── careers.ts            # 757 个职业（192KB）
+│   ├── career-resources.ts   # ★ 职业级专属学习资源（首批 27 个职业，联网调研）
 │   ├── windows.ts            # 473 个人生窗口
 │   ├── window-density.ts     # 窗口密度预聚合（首页/时间轴用）
 │   ├── luck-nodes.ts         # 250 个运气节点
 │   └── laws-*.ts             # 8 个维度规律，各 36 条（共 288）
 ├── hooks/
+│   ├── use-locked-action.ts  # ★ 预览态锁定动作统一入口（guard）
 │   ├── use-advanced-settings.ts # 7 个人生阶段 + 6 维偏好权重（localStorage）
 │   └── use-module-visit.ts   # 模块访问记录（探索进度）
 ├── lib/
 │   ├── module-identity.ts    # ★ 七个模块的编号/图标/配色/「能回答什么问题」唯一真源
+│   ├── storage-keys.ts       # ★ localStorage 键名唯一真源（2026-10-02 起）
+│   ├── default-age.ts        # 全局默认年龄统一读写
 │   ├── session.ts            # HMAC 会话签名与校验
+│   ├── client-auth.ts        # 前端会话头（getAuthHeader）
+│   ├── unlock-store.ts       # 解锁弹窗全局开关
+│   ├── sse-client.ts         # ★ SSE 统一解析（跨 chunk 行缓冲）
 │   ├── rate-limit.ts         # 内存滑动窗口限流
-│   ├── ai-stream.ts          # AI 流式客户端（OpenAI 兼容 + Claude/Gemini/MiniMax 协议适配）
-│   ├── ai-providers.ts       # AI 源解析：builtin（env）/ custom（用户地址）
+│   ├── ai-stream.ts          # AI 流式服务端客户端（多协议 + 思维链透传）
+│   ├── ai-providers.ts       # AI 源解析：builtin（env）/ custom（用户地址，含 SSRF 防护）
 │   ├── ai-sources.ts         # 自定义接入源的数据模型与导入导出
 │   └── active-ai-client.ts   # 前端读取用户当前 AI 源（localStorage）
 └── storage/database/         # supabase-client.ts
-supabase/schema.sql           # 建表 SQL（手工执行）
+supabase/schema.sql           # 建表 SQL（手工执行；2026-10-03 起含额度制表，存量环境需重跑）
 scripts/                      # next-run.mjs（读 $PORT）+ archive/（历史生成脚本）
-docs/                         # 接手入口 / 项目全景 / 架构 / API / 数据库 / 已知问题 / 产品审计 / 交接；history/ 存旧版参考
+docs/                         # 接手入口 / 开发日志 / 全景 / 架构 / API / 数据库 / 已知问题 / 设计稿 / 交接；history/ 存旧版参考
 ```
 
 ## 文档索引
@@ -130,10 +146,12 @@ docs/                         # 接手入口 / 项目全景 / 架构 / API / 数
 | 文档 | 内容 |
 |---|---|
 | [docs/00-优先阅读-项目接手.md](docs/00-优先阅读-项目接手.md) | **接手第一入口**：当前状态、启动方式、优先阅读顺序 |
+| [docs/DEVLOG.md](docs/DEVLOG.md) | **开发日志**：2026-04 至今全时间线（每日批次 + commit 哈希） |
 | [docs/PROJECT-BRIEF.md](docs/PROJECT-BRIEF.md) | **项目全景（评审版）**：产品视角、目录地图、Roadmap、待决策事项 |
+| [docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md](docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md) | **商业化设计稿**：访客预览模型 + AI 额度制（已实施） |
 | [docs/HANDOVER.md](docs/HANDOVER.md) | 交接文档：怎么跑起来、从哪继续、历史踩坑记录 |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 架构与数据流、权限链路、AI 链路、信息架构 |
-| [docs/API.md](docs/API.md) | 5 个 API 路由的请求/响应契约 |
+| [docs/API.md](docs/API.md) | 6 个 API 路由的请求/响应契约 |
 | [docs/DATABASE.md](docs/DATABASE.md) | 表结构、字段、建表与连接 |
 | [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md) | **全部已知问题（接手前必读）** |
 | [docs/history/HEALTH-REPORT.md](docs/history/HEALTH-REPORT.md) | 历史体检快照（工程/数据/文档/构建） |
@@ -148,5 +166,7 @@ docs/                         # 接手入口 / 项目全景 / 架构 / API / 数
 - 2026-09-29：全项目体检 + 产品审计；四个兜底页、AI 限流、CI、无障碍补全
 - 2026-09-30：**信息架构重做**——模块身份唯一真源、首页模块导览、长列表聚焦与折叠、滚动进场、站点图标
 - 2026-10-01：时间轴与 AI 回复打磨；文档收进 `docs/`，旧版参考归档到 `docs/history/`
+- 2026-10-02：**P0 止血 + 体验 + 加固三大批次**（年龄同步/SSE 解析/移动端顶栏/后台假空/键盘可达/双光标/AI 面板三件套/SSRF/额度地基）；AI 思维链透明化；职业搜索与快看组升级
+- 2026-10-03：**商业化上线**——访客预览模型（列表可逛、详情/AI/报告持码解锁）+ AI 额度制（授权码自带次数）；首批 27 个职业专属资源；工程清理（86MB 截图/.coze/pnpm 自愈）
 - 数据总览：288 规律 + 473 窗口 + 250 运气 + 757 职业 = **1,768 条**
-- 项目由扣子编程 CLI 生成（`.coze` 仍在），但已可独立于扣子运行
+- 前身为扣子编程 CLI 生成项目，2026-10-02 起 `.coze` 配置已删除，完全独立运行（开发日志见 `docs/DEVLOG.md`）

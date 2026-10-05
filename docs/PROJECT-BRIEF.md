@@ -8,13 +8,15 @@
 
 ## 1. 一句话介绍
 
-**「人生重构计划」是一个把人生决策"游戏化拆解"的静态知识产品**：
+**「人生重构计划」是一个把人生决策"游戏化拆解"的决策参考产品**：
 1,768 条结构化数据（288 条人生规律 / 473 个人生窗口 / 250 个运气因子 / 757 个职业分析），
 用 7 个模块 + 1 条个性化时间轴呈现，定位是"不是算命，是算概率"的决策参考工具。
 
-- **技术形态**：Next.js 16 (App Router) + React 19 + TypeScript + Tailwind 4 + Supabase，纯前端优先，可完全静态跑
+- **技术形态**：Next.js 16 (App Router) + React 19 + TypeScript + Tailwind 4 + Supabase
+- **商业模式**（2026-10-03 上线）：**访客预览 + 授权码解锁 + AI 额度计次**——列表人人可逛，
+  详情/AI/报告生成持码解锁；授权码自带 AI 次数（/admin 批量生成发放）；用户自带 Key（BYOK）永久免费
 - **项目年龄**：2026 年 4 月由扣子编程 CLI 生成，2026-07 起搁置约 2.5 个月，2026-09-25 起人工接手整理
-- **当前状态**：✅ 可运行（dev 全页面 200，`next build` 已跑通 21 个静态页）；数据资产完整；无 Supabase 三件套（登录/邀请码/后台 500）；信息架构于 2026-09-30 重做
+- **当前状态**：✅ 可运行（dev 全页面 200）；数据资产完整；商业化权限模型已上线（Supabase 三件套仍需配置，未配置时登录/后台/内置 AI 不可用，预览态浏览不受影响）
 
 ---
 
@@ -47,7 +49,7 @@
 | 05 | `/simulation` | 努力 | 付出同样的努力，差距到底从哪来？ | 6 维滑块模拟器 + AI 策略 | 完整 |
 | 06 | `/luck` | 运气 | 哪些是概率，哪些其实你能动手改？ | 250 节点四色分类（红/紫/蓝/青），每类默认 12 条折叠 | 完整 |
 | 07 | `/destiny` | 命运 | 把上面六项叠起来，我现在的牌面是什么？ | 规则计算报告 + SVG 雷达 | 完整 |
-| — | `/user` `/admin` | 用户/后台 | — | 登录、邀请码、Key 配置、管理 | 需 Supabase |
+| — | `/user` `/admin` | 用户/后台 | — | 登录、授权码兑换、AI 额度余额、Key 配置、批量发码管理 | 登录 / 开发者 |
 
 ### 2.3 数据是核心资产
 
@@ -73,8 +75,9 @@ pnpm dev
 # 3) 打开 http://localhost:5000
 ```
 
-- **不需要任何 Key 就能看**：全部页面、`/me` 时间轴、数据浏览（Supabase 只在调用后端 API 时才需要）
-- **需要 Key 才能用**：登录注册、邀请码、AI 分析、admin 后台（`.env.local` 清单见 §8）
+- **不需要任何 Key 就能看**：全部页面、`/me` 时间轴、各模块**列表与摘要**（预览态，2026-10-03 起）
+- **需要配置才能用**：注册登录/授权码兑换/后台/AI 额度 → Supabase 三件套；内置 AI 分析 → 额度（持码用户）；
+  **自带 Key（BYOK）→ 在 /user 填好即可用，无需登录不扣额度**（`.env.local` 清单见 §8）
 - pnpm 环境有历史坑（虚拟 store 链接残缺），完整重建步骤见 `docs/history/DEVELOPER.md`
 
 ---
@@ -101,9 +104,9 @@ pnpm dev
 │   │   ├── manifest.ts      # PWA manifest
 │   │   └── api/
 │   │       ├── auth/        # 注册/登录（bcrypt + 会话令牌签发）
-│   │       ├── invite/      # 邀请码兑换（会话鉴权 + 乐观锁 + 限流）
-│   │       ├── admin/       # 管理后台（dev-token 哈希鉴权）
-│   │       └── ai/          # analyze（SSE 流式）/ test-key
+│   │       ├── invite/      # 授权码兑换（会话鉴权 + 乐观锁 + 限流 + 额度到账）
+│   │       ├── admin/       # 管理后台（dev-token 日期桶哈希鉴权）
+│   │       └── ai/          # analyze（SSE 流式 + 额度门）/ test-key / credits（额度查询）
 │   ├── components/
 │   │   ├── layout/app-sidebar.tsx   # 导航（按 module-identity 顺序）
 │   │   ├── shared/
@@ -111,30 +114,40 @@ pnpm dev
 │   │   │   ├── module-page-head.tsx # ★ 七个模块页的统一页头
 │   │   │   ├── reveal.tsx           # ★ 滚动进场（IntersectionObserver）
 │   │   │   └── fig-kit.tsx          # 图表装饰件
-│   │   ├── auth/                    # ModuleGate / RoleBadge
-│   │   └── ai/                      # AIAnalysisPanel（SSE 渲染）
-│   ├── contexts/auth-context.tsx    # 登录态（localStorage + auth-token）
+│   │   ├── auth/                    # ModuleGate（预览模式）/ PreviewBanner / UnlockDialog / RoleBadge
+│   │   └── ai/                      # AIAnalysisPanel（共享面板）/ ai-panel-actions（停止/复制/计时/思维链）
+│   ├── contexts/auth-context.tsx    # 登录态（localStorage + auth-token）+ 权限判定
 │   ├── data/                # ★ 核心资产
 │   │   ├── windows.ts       # 473 窗口（注意：单行+多行两种格式批次，正则易漏计）
 │   │   ├── window-density.ts# 窗口密度预聚合（首页/时间轴共用）
-│   │   ├── careers.ts       # 757 职业（192KB，2026-09-26 去重 + 09-28 清理机器填充）
-│   │   ├── luck-nodes.ts    # 250 节点（luck-red.ts 50 条预留未接线，2026-09-28 已删）
+│   │   ├── careers.ts       # 757 职业（192KB）
+│   │   ├── career-resources.ts # ★ 职业级专属学习资源（2026-10-02 起分批联网调研填充）
+│   │   ├── luck-nodes.ts    # 250 节点
 │   │   └── laws*.ts         # 8 维度 × 36 条
+│   ├── hooks/
+│   │   └── use-locked-action.ts  # ★ 预览态锁定动作统一入口（guard）
 │   ├── lib/
 │   │   ├── module-identity.ts   # ★ 模块编号/图标/配色/「能回答什么问题」唯一真源
-│   │   ├── session.ts       # ★ HMAC 会话层（2026-09-27 新增）
-│   │   ├── rate-limit.ts    # 内存滑动窗口限流（2026-09-29 新增）
-│   │   ├── ai-stream.ts     # SSE 多协议适配（OpenAI兼容/Claude/Gemini/MiniMax）
-│   │   ├── ai-providers.ts  # AI 源解析（builtin / custom）
+│   │   ├── storage-keys.ts  # ★ localStorage 键名唯一真源（2026-10-02 起）
+│   │   ├── default-age.ts   # 全局年龄统一读写（2026-10-02 起）
+│   │   ├── session.ts       # ★ HMAC 会话层
+│   │   ├── client-auth.ts   # 前端取会话头（getAuthHeader）
+│   │   ├── unlock-store.ts  # 解锁弹窗全局开关
+│   │   ├── sse-client.ts    # ★ SSE 统一解析（跨 chunk 行缓冲，2026-10-02 收编 6 处）
+│   │   ├── rate-limit.ts    # 内存滑动窗口限流
+│   │   ├── ai-stream.ts     # SSE 多协议适配（含思维链透传）
+│   │   ├── ai-providers.ts  # AI 源解析（builtin / custom + SSRF 防护）
 │   │   ├── ai-sources.ts    # 自定义接入源（增删改/启停/导入导出）
 │   │   └── active-ai-client.ts  # 前端读用户自选 AI 源
 │   └── storage/database/supabase-client.ts
-└── public/
 ```
 
 ---
 
 ## 5. 接手后做了什么（git 时间线，全部可回溯）
+
+> 2026-09-25 ~ 10-01 的逐条记录见下表；**2026-10-02 起的完整时间线（含全部 commit 哈希）
+> 已迁入 [`DEVLOG.md`](DEVLOG.md)（开发日志）**，避免本文档无限膨胀。
 
 | 提交 | 内容 |
 |---|---|
@@ -172,7 +185,10 @@ pnpm dev
 | 生产构建 (`next build`) | ✅ **2026-09-30 已跑通**：编译成功、21 个静态页生成完成（含 `/icon.svg`、`/manifest.webmanifest`） |
 | 2026-10-01 晚间 UI 收敛 | ✅ 首页轨道图、`/me` 年龄分布曲线并入滑块、年度热度图、信息顺序重排；AI 回复改 Markdown 渲染 |
 | 信息架构（2026-09-30 重做后） | ✅ 首页/侧栏/页尾导航三处顺序一致；`/laws` `/career` `/windows` `/luck` 聚焦与折叠生效（SSR 输出已核对） |
-| 未登录时的产品行为 | ⚠️ 测试期临时全开放；正式方案 A 已实现，待权限收口恢复 |
+| 未登录时的产品行为 | ✅ **2026-10-03 起正式预览模型上线**：列表人人可逛；详情/AI/报告生成持码解锁（`useLockedAction` + UnlockDialog） |
+| AI 额度门 | ✅ 2026-10-03 上线：内置 AI 需会话并按次扣减（乐观锁 + 流水表）；BYOK 免登录免扣；匿名请求返回 401 引导文案（实测） |
+| AI 思维链透明化 | ✅ 2026-10-02：`{"reasoning"}` SSE 帧 + `AiThinkingBlock` 实时显示（实测中转站忽略 thinking:disabled，思维链占总时长约 60%） |
+| 工程整洁度 | ✅ 2026-10-02 清理：删 86MB 旧截图与 `.coze`；`.npmrc` 恢复 pnpm 自愈；lockfile 重新同步（frozen 校验通过） |
 
 ---
 
@@ -183,7 +199,7 @@ pnpm dev
 | 1 | 缺 `.env` | 🟡 **AI 已通**（2026-09-28）；**仍缺 Supabase 三件套** |
 | 2/2b/2c | node_modules 各层损坏（顶层链接/语法/虚拟 store） | ✅ 全修，含重建文档 |
 | 3 | 自定义 AI Key 是死功能 | ✅ 已修（部分协议未实测） |
-| **4** | 未登录策略自相矛盾 | ✅ **2026-10-01 按方案 A 修复**：未登录 = 登录引导；普通用户 3/7；充电用户 7/7 |
+| **4** | 未登录策略自相矛盾 | ✅ **2026-10-03 最终形态上线**：访客预览模型（列表可逛、详情/AI 锁定），取代早期"3/7 模块"方案 |
 | 5 | 无服务端会话 | ✅ 大部分已修（会话层已落地，admin 仍用独立 dev-token） |
 | 6 | admin 越权口 | ✅ 已修 |
 | 7 | 邀请码无鉴权+竞态超发 | ✅ 已修 |
@@ -217,12 +233,13 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 ## 9. 待决策事项（需要项目主人拍板）
 
-1. ~~**#4 未登录策略**（二选一）~~
-   → ✅ **2026-10-01 已拍板并落地方案 A**：未登录 = 登录引导；普通用户可看 3 个基础模块。
+1. ~~**#4 未登录策略**~~ → ✅ 2026-10-03 预览模型上线（见 §6/§7）。
 2. **Supabase 三件套**（`SUPABASE_URL` / `ANON_KEY` / `SERVICE_ROLE_KEY`）：
-   没有它们，注册登录 / 邀请码 / 后台全部 500。AI 三件套与 `SESSION_SECRET` 已配。
-3. ~~`luck-red.ts`（50 条"红运"数据，从未被引用）：做功能还是删？~~
-   → ✅ 2026-09-28 已删除，此条关闭。
+   没有它们，注册登录 / 授权码兑换 / 后台全部不可用；**内置 AI 也要求登录**
+   （BYOK 不需要）。AI 三件套与 `SESSION_SECRET` 已配。**已有 Supabase 环境需重跑 `supabase/schema.sql`**（额度制补列）。
+3. ~~`luck-red.ts` 做还是删~~ → ✅ 已删除。
+4. ~~AI 商业化路径~~ → ✅ 2026-10-02 拍板并落地：授权码含 AI 额度 + BYOK 免费；支付/按 token 计费明确推迟（见 `docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md`）。
+5. **职业数据 888 目标**：首批 27 个职业已配专属资源；黄金赛道余约 300 个待逐批补（每批 30-50 个）。
 
 ---
 
@@ -232,11 +249,13 @@ SUPABASE_SERVICE_ROLE_KEY=
 |---|---|
 | `docs/PROJECT-BRIEF.md` | ← 本文档（全景 / 评审版） |
 | `docs/00-优先阅读-项目接手.md` | 接手第一入口：现在状态、跑法、优先读什么 |
+| `docs/DEVLOG.md` | **开发日志**（2026-04 起全时间线，含每日批次与 commit 哈希） |
 | `README.md` | 快速开始 + 模块表 + 目录结构 |
 | `docs/HANDOVER.md` | 交接文档：怎么跑、从哪继续、踩坑记录 |
 | `docs/ARCHITECTURE.md` | 技术架构 + 信息架构 + 会话机制 + AI 链路 |
-| `docs/API.md` | 5 个 API 的请求/响应契约 |
+| `docs/API.md` | 6 个 API 的请求/响应契约 |
 | `docs/DATABASE.md` | Supabase 表结构 + 兼容变量 |
+| `docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md` | **商业化设计稿**：访客预览模型 + AI 额度制（已实施） |
 | `docs/history/DEVELOPER.md` | 旧版开发细节 + **Windows/pnpm 环境重建**（历史踩坑快照） |
 | `docs/KNOWN-ISSUES.md` | 全部问题的来龙去脉与修复记录 |
 | `docs/history/HEALTH-REPORT.md` | 历史工程体检快照（工程 / 数据 / 文档 / 构建） |
@@ -264,12 +283,14 @@ SUPABASE_SERVICE_ROLE_KEY=
 ### 待启动 ⏳
 - **阶段 1.3 爆点互动**：今日一签、命运体检（10 题出报告）、反常识卡
 - **阶段 1.4 首页继续仪表盘化**（模块导览已就位，缺"今日该做什么"的动态入口）
-- **阶段 2：跑通真实数据链路**（部分已完成）
-  - ✅ AI 三件套已配并端到端跑通（GLM-5.3-flash）
-  - ⏳ 补 Supabase 三件套 → 注册登录 / 邀请码 / admin 可用
+- **阶段 2：跑通真实数据链路**（大部分已完成）
+  - ✅ AI 三件套已配并端到端跑通（GLM-5.3-flash）；思维链透明化（2026-10-02）
+  - ⏳ 补 Supabase 三件套 + 重跑 schema.sql → 注册登录 / 授权码 / 后台 / AI 额度全部可用
   - ⏳ AI 全协议实测（claude / gemini / minimax 三个适配代码从未被真实 Key 验证过）
   - ✅ `next build` 生产构建验证（2026-09-30，21 个静态页）
   - ✅ 支持**自定义接口地址（baseUrl）**：中转站 / 自建网关 / 本地模型都能接
+- **阶段 2.5 商业化地基** ✅（2026-10-02/03）：预览模型 + 额度制 + 批量发码（详见 DESIGN 文档）
+- **阶段 2.6 职业数据扩充**：首批 27 个职业已配专属资源 ⏳ 目标 888 个（黄金赛道余约 300 个，分批 30-50/批）
 - **阶段 3：部署上线**——静态化/边缘部署方案（参考同作者阅读项目走的 Cloudflare Pages + 免费后端路线）
 - **阶段 4：功能深化**——读书记录/打卡类社交功能的可能性评估；
   时间轴「与我无关 / 已在做」标记能力（`LifeWindow` 已有 `planningStatus`/`completionStatus`
@@ -277,8 +298,8 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 ### 技术债（低优先）
 - 各页默认排序口径不统一（有的按年龄、有的按原始数据顺序）
-- admin 改用统一会话、invite 限流改持久存储
-- 名字模块接 AI 流式
+- admin 改用统一会话（现为按日轮换的 dev-token）、invite 限流改持久存储
+- 名字模块接 AI 流式；统一卡片体系/容器宽度/色板收敛（需视觉迭代）
 - 零测试（无测试框架），CI 目前只跑 `tsc` + `eslint`
 
 ---
