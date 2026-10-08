@@ -13,8 +13,8 @@ import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
 import { usePersistedState } from '@/hooks/use-persisted-state';
 import { useEscapeKey } from '@/hooks/use-escape-key';
 import { ModuleGate } from '@/components/auth/module-gate';
-import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, Target, Zap, Clock,
-  ArrowRight, Sparkles, User, PenLine, Heart, Briefcase, MessageSquare,
+import { ChevronRight, ChevronDown, ChevronUp, TrendingUp, Target, Clock,
+  ArrowRight, User, PenLine, Heart, Briefcase, MessageSquare,
   Bot, X, Send,
 } from 'lucide-react';
 
@@ -36,21 +36,18 @@ interface DestinyInput {
 }
 
 interface DestinyReport {
+  // 三个维度的强度，仅用于条形图展示：不排序、不评级、不显示数值
   fate: number;
   fortune: number;
-  effort: number;
-  totalScore: number;
-  tier: string;
-  analysis: string;
-  suggestions: string[];
-  warnings: string[];
   phase: string;
   phaseDesc: string;
   nextWindow: string;
   nextWindowDesc: string;
   age: number;
-  destinySplit: { label: string; ratio: number; color: string }[];
-  customInsights: string[];
+  // 描述性画像
+  base: string[];       // 你的底色
+  resilience: string[]; // 你的弹性
+  next: string[];       // 你的下一步
 }
 
 // ============================================================
@@ -66,17 +63,17 @@ const educationLabelMap = { top: '985/211', good: '一本', average: '二本/专
 const locationLabelMap = { tier1: '一线城市', tier2: '二线城市', tier3: '三线及以下', rural: '农村/乡镇' };
 
 const phaseDescriptions: Record<string, string> = {
-  '探索期': '20-25岁，试错成本最低的阶段。大胆尝试不同方向，积累经验和认知。错误是这个阶段最好的投资。',
-  '积累期': '25-35岁，能力与资源快速增长的关键十年。选择比努力更重要，方向决定上限。',
-  '收获期': '35-45岁，前期积累开始变现的阶段。经验和判断力达到峰值，是影响力最大的时期。',
-  '传承期': '45岁以后，从追求个人成就转向传承与回馈。人生的意义在这个阶段重新定义。',
+  '探索期': '约20-25岁，尝试的成本相对较低，适合接触不同方向，积累经验与认知。',
+  '积累期': '约25-35岁，能力与资源常在这一阶段累积，方向的选择会带来一定影响。',
+  '收获期': '约35-45岁，前期的积累开始显现成果，经验与判断力通常较为成熟。',
+  '传承期': '约45岁以后，不少人会更多关注传承与回馈，人生的意义可以重新思考。',
 };
 
 const nextWindowDescriptions: Record<string, string> = {
-  '专业选择与第一份实习': '这是方向性窗口——选对赛道，10年后差距会以10倍放大。',
-  '职业分水岭与婚恋决策': '双重压力窗口——职业上升期与社会期望正面碰撞，需要同时兼顾策略与情感。',
-  '管理转型与副业窗口': '能力跃迁窗口——从"做事"到"带人"是最难的一跳，副业是安全网也是增长极。',
-  '财富积累与经验变现': '复利窗口——前期做对了，这是复利开始显现的时期；做错了，这是最后的补救机会。',
+  '专业选择与第一份实习': '这一阶段常见的是方向的初步选择，可以通过实习了解不同行业的实际情况。',
+  '职业分水岭与婚恋决策': '职业发展与个人生活的安排可能需要同时考虑，兼顾策略与感受。',
+  '管理转型与副业窗口': '从执行者转向管理者，以及尝试副业，是这一阶段常见的话题。',
+  '财富积累与经验变现': '前期积累的经验与资源，可以逐步转化为收入或影响力。',
 };
 
 // 自定义输入字段配置
@@ -128,7 +125,7 @@ const customFields: {
 // 报告生成
 // ============================================================
 
-function generateReport(input: DestinyInput, weightMap?: Record<string, number>): DestinyReport {
+function generateReport(input: DestinyInput): DestinyReport {
   const birthYear = parseInt(input.birthYear) || 1995;
   const currentYear = new Date().getFullYear();
   const age = currentYear - birthYear;
@@ -146,108 +143,94 @@ function generateReport(input: DestinyInput, weightMap?: Record<string, number>)
     50 * 0.2
   );
 
-  // 根据自定义内容调整努力分数
-  let effort = 55;
-  const customText = [input.personality, input.hobbies, input.keyExperiences, input.currentChallenge, input.otherInfo].join(' ');
-  if (customText.length > 10) {
-    // 有自定义内容说明用户在认真思考，略微提升努力分
-    effort = Math.min(effort + 5, 70);
-  }
-  // 性格关键词微调
-  if (/自律|坚持|拼命|狠人|刻苦/.test(customText)) effort = Math.min(effort + 10, 80);
-  if (/摆烂|拖延|懒|躺平|三天打鱼/.test(customText)) effort = Math.max(effort - 10, 30);
-
-  // 偏好权重影响：用户重视的维度放大，不重视的缩小
-  const wm = weightMap || { career: 0.5, wealth: 0.5, freedom: 0.5, relationship: 0.5, growth: 0.5, health: 0.5 };
-  const wFate = (wm.career + wm.wealth) / 2;
-  const wFortune = (wm.freedom + wm.relationship) / 2;
-  const wEffort = (wm.growth + wm.health) / 2;
-  const wSum = wFate + wFortune + wEffort || 1;
-  const totalScore = Math.round(fate * (wFate / wSum) + fortune * (wFortune / wSum) + effort * (wEffort / wSum));
-  const tier = totalScore >= 80 ? 'S' : totalScore >= 65 ? 'A' : totalScore >= 50 ? 'B' : totalScore >= 35 ? 'C' : 'D';
-
   const familyLabel = familyLabelMap[input.familyBackground];
   const eduLabel = educationLabelMap[input.educationLevel];
   const locLabel = locationLabelMap[input.location];
 
-  let analysis = `你今年约${age}岁，出身${familyLabel}家庭，学历${eduLabel}，身处${locLabel}。你的命（先天条件）评分${fate}分，运（时机与环境）评分${fortune}分。${fate >= 60 ? '先天条件尚可，这是优势。' : '先天条件偏弱，但这不是终局。'}${fortune >= 60 ? '当前运势不错，要抓住机会。' : '运势偏弱，需要更多耐心和策略。'}`;
-
-  // 结合自定义内容补充分析
+  // ---- 你的底色：起点条件、性格、兴趣、经历（描述，不下结论）----
+  const base: string[] = [
+    `你今年约${age}岁，出身${familyLabel}家庭，学历${eduLabel}，身处${locLabel}。这些是起点条件，描述的是出发位置，并不决定终点。`,
+  ];
   if (input.personality) {
-    analysis += `\n\n性格方面：${input.personality}。`;
+    let line = `性格方面：${input.personality}。`;
     if (/内向|敏感|焦虑/.test(input.personality)) {
-      analysis += '内向敏感不是弱点——深度思考和共情能力是稀缺资源，关键是找到适合你的表达方式。';
+      line += '这类特质常见的优势是深度思考与共情，同时也需要留意精力的消耗。';
     } else if (/外向|开朗|社交/.test(input.personality)) {
-      analysis += '外向是社交杠杆——善用人际网络，但注意不要在无效社交上消耗太多精力。';
+      line += '这类特质便于建立人际网络，也需要留意社交投入与产出之间的平衡。';
     } else {
-      analysis += '了解自己是最重要的第一步——性格没有好坏，只有是否用对了场景。';
+      line += '了解自己的性格，有助于判断自己适合在哪类场景中发挥。';
     }
+    base.push(line);
   }
   if (input.keyExperiences) {
-    analysis += `\n\n关键经历：${input.keyExperiences}。`;
-    analysis += '每一次经历都在塑造你——尤其是那些让你痛苦的经历，往往蕴含着最大的成长。';
+    base.push(`关键经历：${input.keyExperiences}。`);
+  }
+  if (input.hobbies) {
+    if (/编程|代码|技术|开发/.test(input.hobbies)) {
+      base.push('你的技术兴趣与当下的行业趋势相关，同时需要留意AI对编程工作的影响，可以关注架构与产品方面的能力。');
+    } else if (/写作|内容|自媒体/.test(input.hobbies)) {
+      base.push('写作是一项可以跨行业使用的能力，能够影响较多的人。');
+    } else if (/投资|理财|金融/.test(input.hobbies)) {
+      base.push('对投资感兴趣，同时也可以把个人能力看作需要长期投入的资产。');
+    } else {
+      base.push(`你的兴趣"${input.hobbies}"，可能与某些职业方向相关，可以尝试把它和实际能力联系起来。`);
+    }
   }
 
-  const suggestions = [
-    fate < 50 ? '先天牌面不够好，但牌技可以弥补——专注提升不可替代的技能' : '先天条件不错，不要浪费——选择比努力更重要',
-    fortune < 50 ? '运势偏弱时适合蓄力：学习、存钱、建立人脉' : '运势较好时适合出击：跳槽、创业、投资',
-    input.educationLevel === 'low' ? '学历是短板，但终身学习可以弥补——考证、自学、项目经验' : '学历是优势，但不要躺在文凭上——经验和技能才是护城河',
-    input.location === 'rural' || input.location === 'tier3' ? '地理位置限制了机会密度——考虑迁移到更大城市，或利用远程工作突破地理限制' : '城市给了你机会密度，但竞争也更激烈——找到差异化优势',
-  ];
+  // ---- 你的弹性：面对变化时的资源与约束 ----
+  const resilience: string[] = [];
+  if (input.keyExperiences) {
+    resilience.push('过往经历中的应对方式，可以作为面对变化时的参考。');
+  }
+  if (input.currentChallenge) {
+    resilience.push(`你提到的困惑"${input.currentChallenge}"，说明你正在思考这件事，这是梳理问题的起点之一。`);
+  }
+  if (age >= 30 && age <= 35) {
+    resilience.push('你可能正处于职业发展的一个常见转折阶段，未来几年的选择可能对后续路径有较长影响。');
+  }
+  if (input.familyBackground === 'poor') {
+    resilience.push('经济基础较薄，抗风险的余量相对小，可以先建立一定的安全垫，再尝试较大的变动。');
+  }
+  if (age >= 25 && age <= 30) {
+    resilience.push('25-30岁通常是尝试成本相对较低的阶段，可以根据兴趣做一些探索。');
+  }
 
-  // 根据自定义内容追加个性化建议
-  const customInsights: string[] = [];
+  // ---- 你的下一步：可执行的方向，不做绝对判断 ----
+  const next: string[] = [
+    fate < 50 ? '先天条件相对有限，可以把精力放在培养难以被替代的技能上' : '先天条件相对充足，可以把注意力放在方向的选择上',
+    fortune < 50 ? '当前的外部机会相对有限，可以优先积累学习、储蓄与人脉' : '当前的外部机会相对充足，可以考虑尝试跳槽、创业或投资等方向',
+    input.educationLevel === 'low' ? '学历可以通过自学、考证和项目经验来补充' : '学历可以作为起点，经验与技能同样需要持续积累',
+    input.location === 'rural' || input.location === 'tier3'
+      ? '所在地的机会密度相对有限，可以尝试远程工作等方式拓展可接触的机会'
+      : '所在地的机会密度较高，竞争也更激烈，可以寻找自己的差异化方向',
+  ];
   if (input.hobbies) {
-    const hobbyStr = input.hobbies;
-    if (/编程|代码|技术|开发/.test(hobbyStr)) {
-      suggestions.push('技术是当下的硬通货——关键是从"会写代码"升级到"能解决商业问题"');
-      customInsights.push('你的技术兴趣是时代红利，但要注意AI对编程的冲击——向架构思维和产品思维升级');
-    } else if (/写作|内容|自媒体/.test(hobbyStr)) {
-      suggestions.push('内容能力可以叠加任何行业——找到你的垂直领域，做"行业+内容"的组合拳');
-      customInsights.push('写作是杠杆率极高的能力——一个人一支笔就能影响成千上万人');
-    } else if (/投资|理财|金融/.test(hobbyStr)) {
-      suggestions.push('投资能力需要本金和时间——先积累第一桶金，再放大复利');
-      customInsights.push('对投资感兴趣是好事，但年轻人最大的投资标的是自己');
-    } else {
-      customInsights.push(`你的兴趣"${hobbyStr}"可能蕴含着独特的职业方向——把爱好变成能力，把能力变成收入`);
+    if (/编程|代码|技术|开发/.test(input.hobbies)) {
+      next.push('技术能力可以作为基础，进一步可以尝试从"会写代码"走向"解决具体的业务问题"');
+    } else if (/写作|内容|自媒体/.test(input.hobbies)) {
+      next.push('内容能力可以与不同行业结合，可以尝试找一个垂直领域深耕');
+    } else if (/投资|理财|金融/.test(input.hobbies)) {
+      next.push('投资需要本金与时间的积累，可以先从稳定的储蓄开始');
     }
   }
   if (input.currentChallenge) {
-    customInsights.push(`当前困惑"${input.currentChallenge}"——这说明你在思考，思考本身就是破局的起点`);
     if (/换行|转行|方向/.test(input.currentChallenge)) {
-      suggestions.push('转行的最佳策略不是"跳"，而是"滑"——在现有工作中积累新方向的技能和人脉，平滑过渡');
+      next.push('转行可以循序渐进：在现有工作中积累新方向的技能与人脉');
     } else if (/感情|恋爱|婚/.test(input.currentChallenge)) {
-      suggestions.push('感情困惑往往源于"想要什么"不清晰——先想清楚你的核心需求，再判断当前关系是否匹配');
+      next.push('可以先梳理自己的核心需求，再判断当前关系是否匹配');
     } else if (/钱|存不下|收入|薪资/.test(input.currentChallenge)) {
-      suggestions.push('财务问题的根源通常是"收入结构"而非"收入金额"——建立多元收入来源比涨薪更可靠');
+      next.push('财务问题往往与收入结构有关，可以尝试建立多元的收入来源');
     }
   }
-
-  const warnings = [
-    age >= 30 && age <= 35 ? '你正处于职业分水岭，未来3年的选择决定下一个10年' : '',
-    input.familyBackground === 'poor' ? '经济基础薄弱意味着抗风险能力差——先建立安全垫再冒险' : '',
-    age >= 25 && age <= 30 ? '25-30岁是试错成本最低的窗口，大胆尝试' : '',
-  ].filter(Boolean) as string[];
 
   const phase = age < 25 ? '探索期' : age < 35 ? '积累期' : age < 45 ? '收获期' : '传承期';
   const nextWindow = age < 25 ? '专业选择与第一份实习' : age < 30 ? '职业分水岭与婚恋决策' : age < 35 ? '管理转型与副业窗口' : '财富积累与经验变现';
 
-  // 三大成分对总分（totalScore）的真实贡献占比，随用户偏好权重动态变化
-  const contribFate = fate * (wFate / wSum);
-  const contribFortune = fortune * (wFortune / wSum);
-  const contribEffort = effort * (wEffort / wSum);
-  const contribSum = contribFate + contribFortune + contribEffort || 1;
-  const destinySplit = [
-    { label: '命', ratio: Math.round((contribFate / contribSum) * 100), color: '#ef4444' },
-    { label: '运', ratio: Math.round((contribFortune / contribSum) * 100), color: '#3b82f6' },
-    { label: '努力', ratio: Math.round((contribEffort / contribSum) * 100), color: '#22c55e' },
-  ];
-
   return {
-    fate, fortune, effort, totalScore, tier, analysis, suggestions, warnings,
+    fate, fortune,
     phase, phaseDesc: phaseDescriptions[phase] || '',
     nextWindow, nextWindowDesc: nextWindowDescriptions[nextWindow] || '',
-    age, destinySplit, customInsights,
+    age, base, resilience, next,
   };
 }
 
@@ -270,7 +253,6 @@ function AnimatedScoreBar({ label, score, color, icon, delay }: { label: string;
           {icon}
           <span className="text-xs font-medium text-foreground">{label}</span>
         </div>
-        <span className="text-sm font-mono font-semibold tabular-nums" style={{ color }}>{width}</span>
       </div>
       <div className="h-2.5 rounded-full bg-muted overflow-hidden">
         <div
@@ -287,7 +269,7 @@ function AnimatedScoreBar({ label, score, color, icon, delay }: { label: string;
 // ============================================================
 
 export default function DestinyPage() {
-  const { defaultAge, weightMap } = useAdvancedSettings();
+  const { defaultAge } = useAdvancedSettings();
   const { guard } = useLockedAction();
   // 表单输入持久化：刷新后不再重填（原来是纯 useState，刷新即丢）
   const [input, setInput] = usePersistedState<DestinyInput>('destiny.input.v1', () => ({
@@ -328,7 +310,7 @@ export default function DestinyPage() {
     const year = parseInt(input.birthYear) || 1995;
     const safeYear = Math.min(Math.max(year, 1950), currentYear - 5);
     const safeInput = { ...input, birthYear: String(safeYear) };
-    const result = generateReport(safeInput, weightMap);
+    const result = generateReport(safeInput);
     setReport(result);
     setShowReport(false);
     requestAnimationFrame(() => {
@@ -358,18 +340,15 @@ export default function DestinyPage() {
 
     const systemContext = `你是一位命运分析顾问，专注于基于个人特质的深度分析与破局策略。
 
-【命运报告】
-命（先天条件）：${report.fate}分 | 运（时机环境）：${report.fortune}分 | 努力（可控）：${report.effort}分
-综合评分：${report.totalScore}分（${report.tier}级）
+【命运画像】
 当前阶段：${report.phase}（约${report.age}岁）
 下一个窗口：${report.nextWindow}
 ${customContext}
 
 【已有分析】
-${report.analysis}
-
-破局建议：${report.suggestions.join('；')}
-${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsights.join('；')}` : ''}
+你的底色：${report.base.join('；')}
+你的弹性：${report.resilience.join('；')}
+你的下一步：${report.next.join('；')}
 
 请从以下维度给出深度分析：
 1. **个人画像**：结合用户的基本信息、性格、经历，给出精准的个人画像（不是泛泛而谈）
@@ -618,53 +597,11 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
         {/* Report */}
         {report && showReport && (
           <div className="mt-10 space-y-5">
-            {/* Score Section */}
+            {/* Three-dimension visualization (not ranked, not graded) */}
             <div className="rounded-lg border border-border bg-card p-6 animate-fade-in-up">
-              <div className="text-center mb-6">
-                <div className="text-[10px] text-muted-foreground/60 uppercase tracking-[0.15em] mb-2">命运等级</div>
-                <div className={cn(
-                  'text-6xl font-serif font-bold mb-1',
-                  report.tier === 'S' ? 'text-primary' :
-                  report.tier === 'A' ? 'text-green-600 dark:text-green-400' :
-                  report.tier === 'B' ? 'text-blue-600 dark:text-blue-400' :
-                  report.tier === 'C' ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'
-                )}>
-                  {report.tier}
-                </div>
-                <div className="text-2xl font-mono font-light text-foreground tabular-nums">{report.totalScore}</div>
-              </div>
-
-              {/* Score bars with animation */}
               <div className="space-y-4">
                 <AnimatedScoreBar label="命（先天条件）" score={report.fate} color="#ef4444" icon={<Target className="h-3.5 w-3.5 text-red-500" />} delay={200} />
                 <AnimatedScoreBar label="运（时机环境）" score={report.fortune} color="#3b82f6" icon={<TrendingUp className="h-3.5 w-3.5 text-blue-500" />} delay={400} />
-                <AnimatedScoreBar label="努力（你可控的）" score={report.effort} color="#22c55e" icon={<Zap className="h-3.5 w-3.5 text-green-500" />} delay={600} />
-              </div>
-
-              {/* Destiny split visualization */}
-              <div className="mt-6 pt-4 border-t border-border/50">
-                <div className="text-[10px] text-muted-foreground/60 uppercase tracking-wider mb-2">命运权重分配</div>
-                <div className="h-3 rounded-full bg-muted overflow-hidden flex">
-                  {report.destinySplit.map((seg, i) => (
-                    <div
-                      key={i}
-                      className="h-full transition-all duration-1000 ease-out"
-                      style={{
-                        width: `${seg.ratio}%`,
-                        backgroundColor: seg.color,
-                        opacity: 0.7,
-                      }}
-                    />
-                  ))}
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  {report.destinySplit.map((seg, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: seg.color }} />
-                      <span className="text-[10px] text-muted-foreground">{seg.label} {seg.ratio}%</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
 
@@ -693,38 +630,19 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
               </div>
             </div>
 
-            {/* Analysis */}
+            {/* 你的底色 */}
             <div className="rounded-lg border border-border bg-card p-5 animate-fade-in-up stagger-3">
-              <h3 className="text-sm font-semibold text-foreground mb-3">命运分析</h3>
-              {report.analysis.split('\n\n').map((paragraph, i) => (
+              <h3 className="text-sm font-semibold text-foreground mb-3">你的底色</h3>
+              {report.base.map((paragraph, i) => (
                 <p key={i} className="text-sm text-muted-foreground leading-relaxed mb-2 last:mb-0">{paragraph}</p>
               ))}
             </div>
 
-            {/* Custom Insights - only show when user has filled in custom content */}
-            {report.customInsights.length > 0 && (
-              <div className="rounded-lg border border-primary/15 bg-primary/[0.02] p-5 animate-fade-in-up stagger-3">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-semibold text-foreground">个性化洞察</h3>
-                  <span className="text-[9px] text-primary/60 bg-primary/10 rounded-sm px-1.5 py-0.5">基于你的信息</span>
-                </div>
-                <ul className="space-y-2.5">
-                  {report.customInsights.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm text-primary/80 dark:text-primary/70">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                      {s}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Suggestions */}
+            {/* 你的弹性 */}
             <div className="rounded-lg border border-border bg-card p-5 animate-fade-in-up stagger-4">
-              <h3 className="text-sm font-semibold text-foreground mb-3">破局建议</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-3">你的弹性</h3>
               <ul className="space-y-2.5">
-                {report.suggestions.map((s, i) => (
+                {report.resilience.map((s, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                     <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                     {s}
@@ -733,23 +651,19 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
               </ul>
             </div>
 
-            {/* Warnings */}
-            {report.warnings.length > 0 && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-5 dark:border-amber-800/50 dark:bg-amber-950/20 animate-fade-in-up stagger-5">
-                <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-400 mb-3 flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  关键提醒
-                </h3>
-                <ul className="space-y-2">
-                  {report.warnings.map((w, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-amber-700/80 dark:text-amber-400/80">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
-                      {w}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* 你的下一步 */}
+            <div className="rounded-lg border border-border bg-card p-5 animate-fade-in-up stagger-5">
+              <h3 className="text-sm font-semibold text-foreground mb-3">你的下一步</h3>
+              <ul className="space-y-2.5">
+                {report.next.map((s, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
 
             {/* AI Deep Analysis Button */}
             <button
@@ -836,19 +750,6 @@ ${report.customInsights.length > 0 ? `\n个性化洞察：${report.customInsight
                     : '基于你的命运报告，AI将从5个维度深度分析。填写个人信息可以获得更精准的分析。'
                   }
                 </p>
-                {report && (
-                  <div className="mt-2 flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
-                      命:{report.fate}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
-                      运:{report.fortune}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
-                      努力:{report.effort}
-                    </span>
-                  </div>
-                )}
                 {customFillCount > 0 && (
                   <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                     {input.personality && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[9px] text-primary">性格</span>}

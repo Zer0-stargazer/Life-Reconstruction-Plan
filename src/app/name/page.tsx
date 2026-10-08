@@ -31,87 +31,150 @@ const nameStyles = [
   { value: 'minimal', label: '极简', desc: '一字一名', icon: '一' },
 ];
 
-const charPool: Record<string, string[]> = {
-  classic: ['之', '若', '兮', '如', '予', '亦', '尔', '以', '其', '斯', '言', '思', '雅', '清', '如', '怀', '素', '知', '言', '予'],
-  modern: ['一', '子', '可', '安', '然', '之', '若', '予', '了', '由', '也', '已', '凡', '未', '予', '初', '元', '正', '平', '和'],
-  nature: ['溪', '岚', '岳', '霖', '沐', '枫', '桐', '澜', '澄', '霜', '旭', '岚', '潮', '屿', '谷', '崖', '渊', '泉', '萤', '雁'],
-  strength: ['锋', '坚', '铭', '铮', '磊', '鹏', '啸', '凌', '毅', '刚', '威', '震', '铸', '砺', '钧', '镇', '乾', '坤', '策', '略'],
-  poetic: ['梦', '烟', '霜', '月', '云', '风', '影', '笛', '琴', '歌', '语', '诗', '画', '韵', '弦', '吟', '咏', '赋', '辞', '章'],
-  minimal: ['一', '二', '三', '白', '玄', '素', '空', '无', '真', '虚', '明', '静', '清', '远', '深', '高', '上', '下', '左', '右'],
+type Tone = '阴平' | '阳平' | '上声' | '去声';
+
+// 音：声调起伏的描述（音高走向）
+const TONE_CONTOUR: Record<Tone, string> = {
+  阴平: '高平 →',
+  阳平: '中升 ↗',
+  上声: '降升 ↘↗',
+  去声: '全降 ↘',
 };
 
-const secondCharPool = ['瑞', '泽', '晨', '曦', '岚', '瑜', '琳', '瑶', '琪', '轩', '逸', '辰', '昊', '宇', '翔', '然', '晖', '煜', '嘉', '慧', '思', '雅', '文', '博', '明', '远', '清', '晗', '妍', '欣', '悦', '宁', '和', '谦', '诚'];
+interface CharEntry {
+  ch: string;
+  tone: Tone;
+  form: string;    // 形：字的结构
+  meaning: string; // 义：字义（人工精选，不含“了、已、也、上、下、左、右、二、三、未”）
+}
 
-// 性别倾向字池：第二字优先从这里取，让性别选择真正影响生成结果
-const genderCharPool: Record<string, string[]> = {
-  male: ['轩', '宇', '辰', '昊', '翔', '煜', '博', '远', '铮', '锋', '毅', '霖', '旭', '泽', '瑞', '诚', '谦', '策', '钧', '鹏'],
-  female: ['瑶', '琳', '妍', '欣', '悦', '岚', '慧', '雅', '诗', '韵', '月', '晗', '莹', '婷', '婉', '晴', '语', '溪', '蕊', '薇'],
+// 人工精选字池：按风格分组，每个字都带声调、结构、字义
+const charPool: Record<string, CharEntry[]> = {
+  classic: [
+    { ch: '若', tone: '去声', form: '上下结构', meaning: '好像，如同' },
+    { ch: '兮', tone: '阴平', form: '独体字', meaning: '楚辞中的语气词' },
+    { ch: '雅', tone: '上声', form: '左右结构', meaning: '文雅，不俗' },
+    { ch: '清', tone: '阴平', form: '左右结构', meaning: '水澄澈，不浊' },
+    { ch: '素', tone: '去声', form: '上下结构', meaning: '本色，不加修饰' },
+    { ch: '知', tone: '阴平', form: '左右结构', meaning: '懂得，明白' },
+    { ch: '思', tone: '阴平', form: '上下结构', meaning: '思考，念想' },
+    { ch: '怀', tone: '阳平', form: '左右结构', meaning: '胸怀，心中所念' },
+  ],
+  modern: [
+    { ch: '子', tone: '上声', form: '独体字', meaning: '孩子，也指有德才的人' },
+    { ch: '安', tone: '阴平', form: '上下结构', meaning: '平静，安稳' },
+    { ch: '初', tone: '阴平', form: '左右结构', meaning: '开始，起头' },
+    { ch: '元', tone: '阳平', form: '独体字', meaning: '开始，根本' },
+    { ch: '正', tone: '去声', form: '独体字', meaning: '不偏斜，合乎标准' },
+    { ch: '平', tone: '阳平', form: '独体字', meaning: '平坦，平静' },
+    { ch: '和', tone: '阳平', form: '左右结构', meaning: '和谐，平稳' },
+  ],
+  nature: [
+    { ch: '溪', tone: '阴平', form: '左右结构', meaning: '山间的小河' },
+    { ch: '岚', tone: '阳平', form: '左右结构', meaning: '山间的雾气' },
+    { ch: '岳', tone: '去声', form: '上下结构', meaning: '高大的山' },
+    { ch: '霖', tone: '阳平', form: '上下结构', meaning: '连绵的雨' },
+    { ch: '沐', tone: '去声', form: '左右结构', meaning: '受水润泽，蒙受恩泽' },
+    { ch: '枫', tone: '阴平', form: '左右结构', meaning: '枫树，秋天叶会变红' },
+    { ch: '澄', tone: '阳平', form: '左右结构', meaning: '水清而不浑' },
+    { ch: '霜', tone: '阴平', form: '上下结构', meaning: '秋冬的白色结晶' },
+    { ch: '旭', tone: '去声', form: '左右结构', meaning: '初升的太阳' },
+    { ch: '屿', tone: '上声', form: '左右结构', meaning: '海中的小岛' },
+    { ch: '泉', tone: '阳平', form: '上下结构', meaning: '从地下涌出的水' },
+    { ch: '萤', tone: '阳平', form: '上下结构', meaning: '萤火虫，夏夜的微光' },
+  ],
+  strength: [
+    { ch: '锋', tone: '阴平', form: '左右结构', meaning: '刀剑的尖端' },
+    { ch: '坚', tone: '阴平', form: '上下结构', meaning: '结实，不易动摇' },
+    { ch: '铭', tone: '阳平', form: '左右结构', meaning: '刻在器物上，记在心里' },
+    { ch: '磊', tone: '上声', form: '品字结构', meaning: '石头堆叠，光明磊落' },
+    { ch: '鹏', tone: '阳平', form: '左右结构', meaning: '大鹏，传说中的大鸟' },
+    { ch: '凌', tone: '阳平', form: '左右结构', meaning: '升高，超越' },
+    { ch: '刚', tone: '阴平', form: '左右结构', meaning: '坚硬，有骨气' },
+    { ch: '铸', tone: '去声', form: '左右结构', meaning: '熔化金属做成器物' },
+    { ch: '镇', tone: '去声', form: '左右结构', meaning: '压住，安定' },
+    { ch: '策', tone: '阴平', form: '上下结构', meaning: '谋划，计策' },
+  ],
+  poetic: [
+    { ch: '烟', tone: '阴平', form: '左右结构', meaning: '雾气，如轻纱' },
+    { ch: '月', tone: '去声', form: '独体字', meaning: '月亮' },
+    { ch: '云', tone: '阳平', form: '独体字', meaning: '天上的云' },
+    { ch: '琴', tone: '阳平', form: '上下结构', meaning: '古琴，乐器' },
+    { ch: '歌', tone: '阴平', form: '左右结构', meaning: '唱，歌曲' },
+    { ch: '诗', tone: '阴平', form: '左右结构', meaning: '诗歌' },
+    { ch: '韵', tone: '去声', form: '左右结构', meaning: '声律悦耳，韵味' },
+  ],
+  minimal: [
+    { ch: '白', tone: '阳平', form: '独体字', meaning: '白色，纯粹' },
+    { ch: '玄', tone: '阳平', form: '独体字', meaning: '深黑色，深远' },
+    { ch: '空', tone: '阴平', form: '上下结构', meaning: '空灵，无所执' },
+    { ch: '无', tone: '阳平', form: '独体字', meaning: '没有，无所牵绊' },
+    { ch: '真', tone: '阴平', form: '上下结构', meaning: '真实，不虚假' },
+    { ch: '明', tone: '阳平', form: '左右结构', meaning: '光亮，明白' },
+    { ch: '静', tone: '去声', form: '左右结构', meaning: '安静，不躁' },
+    { ch: '远', tone: '上声', form: '半包围结构', meaning: '距离长，志向高' },
+  ],
 };
+
+// 第二字：男女倾向池（70% 概率取，兼顾性别感），另有通用池兜底
+const genderCharPool: Record<string, CharEntry[]> = {
+  male: [
+    { ch: '轩', tone: '阴平', form: '左右结构', meaning: '气宇轩昂' },
+    { ch: '宇', tone: '上声', form: '上下结构', meaning: '屋檐，天地空间' },
+    { ch: '辰', tone: '阳平', form: '独体字', meaning: '时辰，星辰' },
+    { ch: '昊', tone: '去声', form: '左右结构', meaning: '广大，天空' },
+    { ch: '翔', tone: '阳平', form: '左右结构', meaning: '盘旋飞行' },
+    { ch: '煜', tone: '去声', form: '左右结构', meaning: '明亮，光辉' },
+    { ch: '泽', tone: '阳平', form: '左右结构', meaning: '恩惠，水草丰美' },
+    { ch: '瑞', tone: '去声', form: '左右结构', meaning: '吉祥的征兆' },
+    { ch: '诚', tone: '阳平', form: '左右结构', meaning: '真诚，不欺' },
+    { ch: '钧', tone: '阴平', form: '左右结构', meaning: '分量重，有担当' },
+  ],
+  female: [
+    { ch: '瑶', tone: '阳平', form: '左右结构', meaning: '美玉' },
+    { ch: '琳', tone: '阳平', form: '左右结构', meaning: '美玉' },
+    { ch: '妍', tone: '阳平', form: '左右结构', meaning: '美丽，秀雅' },
+    { ch: '欣', tone: '阴平', form: '左右结构', meaning: '喜悦' },
+    { ch: '悦', tone: '去声', form: '左右结构', meaning: '高兴，喜欢' },
+    { ch: '慧', tone: '去声', form: '上下结构', meaning: '聪明，有智谋' },
+    { ch: '婉', tone: '上声', form: '左右结构', meaning: '柔和，委婉' },
+    { ch: '莹', tone: '阳平', form: '上下结构', meaning: '光洁明亮' },
+    { ch: '晴', tone: '阳平', form: '左右结构', meaning: '晴朗，无云' },
+    { ch: '婷', tone: '阳平', form: '左右结构', meaning: '姿态美好' },
+  ],
+};
+
+const sharedCharPool: CharEntry[] = [
+  { ch: '晨', tone: '阳平', form: '左右结构', meaning: '早晨' },
+  { ch: '曦', tone: '阴平', form: '左右结构', meaning: '阳光' },
+  { ch: '瑜', tone: '阳平', form: '左右结构', meaning: '美玉' },
+  { ch: '晖', tone: '阴平', form: '左右结构', meaning: '阳光' },
+];
 
 interface GeneratedName {
   name: string;
   surname: string;
   given: string;
   style: string;
-  analysis: string;
-  score: number;
-  dimensions: { label: string; value: number }[];
+  chars: CharEntry[];
+}
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function generateName(gender: string, style: string, fixedSurname?: string): GeneratedName {
-  const surname = fixedSurname || surnamePool[Math.floor(Math.random() * surnamePool.length)];
+  const surname = fixedSurname || pick(surnamePool);
   const isDouble = style === 'minimal' ? false : Math.random() > 0.35;
 
-  const pool = charPool[style] || charPool.classic;
-  const char1 = pool[Math.floor(Math.random() * pool.length)];
-  // 第二字：70% 概率取性别倾向池，30% 取通用池，兼顾性别感与多样性
-  const gPool = genderCharPool[gender] || secondCharPool;
-  const char2 = Math.random() < 0.7
-    ? gPool[Math.floor(Math.random() * gPool.length)]
-    : secondCharPool[Math.floor(Math.random() * secondCharPool.length)];
-  const given = isDouble ? char1 + char2 : char1;
-  const name = surname + given;
+  const char1 = pick(charPool[style] || charPool.classic);
+  const gPool = genderCharPool[gender];
+  const char2 = gPool && Math.random() < 0.7 ? pick(gPool) : pick(sharedCharPool);
 
-  const analyses: Record<string, string[]> = {
-    classic: [
-      `「${given}」取自古典雅韵，暗含文化底蕴。端庄而不失灵动，兼具书卷气与时代感。读音平仄相间，朗朗上口。`,
-      `「${given}」源出诗词意境，兼具音律之美与意蕴之深。如一盏清茶，初见平淡，细品有味。`,
-    ],
-    modern: [
-      `「${given}」极简现代，笔画利落。在信息过载的时代，简洁就是力量——3秒内被记住，10年后也不过时。`,
-      `「${given}」符合当代审美：少即是多。国际化发音友好，视觉上干净清爽。`,
-    ],
-    nature: [
-      `「${given}」融入自然意象，天人合一。自带画面感，听者如临其境，人与自然和谐共生。`,
-      `「${given}」取意山川风物，有天人感应的哲学内涵。让人联想到自然之美，宁静深远。`,
-    ],
-    strength: [
-      `「${given}」刚健有力，掷地有声。自带气场，适合需要建立权威感的场合——名字就是你给人的第一印象。`,
-      `「${given}」力量感十足，阳刚中正。在社交场合自带加分，容易获得信任与尊重。`,
-    ],
-    poetic: [
-      `「${given}」诗意盎然，如梦如幻。此名自带文学气质，适合追求精神世界丰富的人。`,
-      `「${given}」如一首小令，含蓄而优美。在平凡中见深意，在简单中见韵味。`,
-    ],
-    minimal: [
-      `「${given}」极简至一字，大道至简。单字名在视觉和听觉上都有最强的辨识度，记忆成本最低。`,
-      `「${given}」一字千钧。单字名的优势在于极简——越短的名字，传播效率越高。`,
-    ],
-  };
+  const chars = isDouble ? [char1, char2] : [char1];
+  const given = chars.map(c => c.ch).join('');
 
-  const analysisArr = analyses[style] || analyses.classic;
-  const analysis = analysisArr[Math.floor(Math.random() * analysisArr.length)];
-  const score = Math.floor(Math.random() * 20) + 78;
-
-  // Generate sub-dimensions
-  const dimensions = [
-    { label: '音律', value: Math.floor(Math.random() * 25) + 75 },
-    { label: '意境', value: Math.floor(Math.random() * 25) + 75 },
-    { label: '辨识度', value: Math.floor(Math.random() * 25) + 75 },
-    { label: '传播力', value: Math.floor(Math.random() * 25) + 75 },
-  ];
-
-  return { name, surname, given, style, analysis, score, dimensions };
+  return { name: surname + given, surname, given, style, chars };
 }
 
 export default function NamePage() {
@@ -180,18 +243,12 @@ export default function NamePage() {
     setTimeout(() => setCopiedIdx(null), 1500);
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 92) return 'text-primary';
-    if (score >= 85) return 'text-green-600 dark:text-green-400';
-    return 'text-amber-600 dark:text-amber-400';
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header —— 编号/图标/提问统一从 module-identity 取 */}
       <ModulePageHead
         href="/name"
-        title="名字：人生第一张牌"
+        title="起名灵感"
         note="GENERATOR"
         desc="名字是别人对你的第一印象，也是你对自己的第一次定义。一个好名字不是迷信——它是心理学、社会学和传播学的交叉产物。"
         width="3xl"
@@ -329,7 +386,7 @@ export default function NamePage() {
         {/* Results */}
         {displayedResults.length > 0 && (
           <div ref={resultsRef} className="space-y-4">
-            <h2 className="text-sm font-semibold text-foreground">生成结果</h2>
+            <h2 className="text-sm font-semibold text-foreground">起名灵感</h2>
             {displayedResults.map((result, idx) => (
               <div
                 key={`${result.name}-${idx}`}
@@ -347,55 +404,41 @@ export default function NamePage() {
                       {nameStyles.find(s => s.value === result.style)?.label}风格
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {/* Score display */}
-                    <div className="flex items-center gap-1.5">
-                      <Star className="h-3.5 w-3.5 text-primary/40" />
-                      <span className={cn('text-sm font-mono font-semibold tabular-nums', getScoreColor(result.score))}>
-                        {result.score}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleCopy(result.name, idx)}
-                      className={cn(
-                        'p-1.5 rounded-md transition-all',
-                        copiedIdx === idx
-                          ? 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                      )}
-                      title="复制名字"
-                    >
-                      {copiedIdx === idx ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                    </button>
+                  <button
+                    onClick={() => handleCopy(result.name, idx)}
+                    className={cn(
+                      'p-1.5 rounded-md transition-all',
+                      copiedIdx === idx
+                        ? 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    )}
+                    title="复制名字"
+                  >
+                    {copiedIdx === idx ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+
+                {/* 音 / 形 / 义：仅三行 */}
+                <div className="space-y-1.5 text-xs leading-relaxed">
+                  <div className="flex gap-3">
+                    <span className="w-4 shrink-0 font-semibold text-foreground">音</span>
+                    <span className="text-muted-foreground">
+                      {result.chars.map(c => `${c.tone}（${TONE_CONTOUR[c.tone]}）`).join(' · ')}
+                    </span>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="w-4 shrink-0 font-semibold text-foreground">形</span>
+                    <span className="text-muted-foreground">
+                      {result.chars.map(c => c.form).join(' · ')}
+                    </span>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="w-4 shrink-0 font-semibold text-foreground">义</span>
+                    <span className="text-muted-foreground">
+                      {result.chars.map(c => `${c.ch}：${c.meaning}`).join(' · ')}
+                    </span>
                   </div>
                 </div>
-
-                {/* Score bar */}
-                <div className="mb-3">
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary/40 transition-all duration-700 progress-shimmer"
-                      style={{ width: `${result.score}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Dimension scores */}
-                <div className="grid grid-cols-4 gap-2 mb-3">
-                  {result.dimensions.map((dim, di) => (
-                    <div key={di} className="text-center">
-                      <div className="text-[10px] text-muted-foreground mb-0.5">{dim.label}</div>
-                      <div className="text-xs font-mono font-semibold text-foreground tabular-nums">{dim.value}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-4 mb-3 text-xs text-muted-foreground">
-                  <span>姓：{result.surname}</span>
-                  <span>名：{result.given}</span>
-                  <span>名长：{result.given.length}字</span>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{result.analysis}</p>
               </div>
             ))}
           </div>
@@ -406,7 +449,7 @@ export default function NamePage() {
           <h2 className="text-sm font-semibold text-foreground mb-4">名字的隐性力量</h2>
           <div className="space-y-3 text-xs leading-relaxed">
             {[
-              { term: '首因效应', text: '名字是别人认识你的第一个信号。研究显示，名字的好感度会影响面试通过率、社交接受度甚至法律判决。', icon: <Zap className="h-3.5 w-3.5 text-primary" /> },
+              { term: '首因效应', text: '名字是别人认识你的第一个信号。', icon: <Zap className="h-3.5 w-3.5 text-primary" /> },
               { term: '自我实现预言', text: '名字会潜移默化地影响自我认知。叫坚强的人更容易表现出坚韧，叫雅静的人更容易内省。', icon: <Star className="h-3.5 w-3.5 text-primary" /> },
               { term: '记忆锚点', text: '在信息过载的时代，一个容易记住的名字就是竞争优势。简洁、独特、有画面感的名字，传播成本最低。', icon: <Sparkles className="h-3.5 w-3.5 text-primary" /> },
             ].map((insight, i) => (

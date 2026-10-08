@@ -9,11 +9,19 @@ import {
 import { WindowDensityChart } from '@/components/home/window-density-chart';
 import { HeroOrbit } from '@/components/home/hero-orbit';
 import { WINDOW_DENSITY_META } from '@/data/window-density';
+import { LAW_DIMENSIONS } from '@/data/laws';
+import { lifeWindows } from '@/data/windows';
+import { luckNodes } from '@/data/luck-nodes';
+import { careers } from '@/data/careers';
 import { MODULE_IDENTITIES, TIMELINE_IDENTITY } from '@/lib/module-identity';
 import { Reveal } from '@/components/shared/reveal';
 
-/** 全站数据点总数：288 规律 + 473 窗口 + 250 运气 + 757 职业 = 1,768 */
-const TOTAL_DATA_POINTS = 288 + 473 + 250 + 757;
+/** 全站数据点总数：规律 + 窗口 + 运气 + 职业，均由数据数组长度计算 */
+const TOTAL_DATA_POINTS =
+  LAW_DIMENSIONS.reduce((sum, d) => sum + d.items.length, 0) +
+  lifeWindows.length +
+  luckNodes.length +
+  careers.length;
 
 function AnimatedNumber({ target, className }: { target: number; className?: string }) {
   const [count, setCount] = useState(0);
@@ -79,7 +87,7 @@ function SectionHead({ index, title, desc }: { index: string; title: string; des
  * 模块导览卡。
  *
  * 视觉主角是「这个模块能回答什么问题」，不是数据量——
- * 用户不关心你有 288 条规律，只关心这能帮他什么。
+ * 用户不关心你有多少条规律，只关心这能帮他什么。
  */
 function ModuleCard({ m, wide = false }: { m: (typeof MODULE_IDENTITIES)[number]; wide?: boolean }) {
   const Icon = m.icon;

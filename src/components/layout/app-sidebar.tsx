@@ -27,6 +27,16 @@ import { useAuth, type UserRole } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { RoleBadge } from '@/components/auth/module-gate';
+import { LAW_DIMENSIONS } from '@/data/laws';
+import { lifeWindows } from '@/data/windows';
+import { luckNodes } from '@/data/luck-nodes';
+import { careers } from '@/data/careers';
+
+const TOTAL_DATA_POINTS =
+  LAW_DIMENSIONS.reduce((sum, d) => sum + d.items.length, 0) +
+  lifeWindows.length +
+  luckNodes.length +
+  careers.length;
 
 const navItems = [
   { href: '/', label: '首页', icon: Home, desc: '总览' },
@@ -104,7 +114,7 @@ export function AppSidebar() {
           )}
         </div>
         <div className="mt-3 flex items-center justify-between font-mono text-[9px] text-muted-foreground/40 tabular-nums">
-          <span>1,768 DATA PTS</span>
+          <span>{TOTAL_DATA_POINTS.toLocaleString('en-US')} DATA PTS</span>
           <span>07 MODULES</span>
         </div>
       </div>
