@@ -54,7 +54,7 @@ function serverError(err: unknown) {
 
 /** 可选整数字段：缺省/null 视为 null；非法返回 undefined */
 function optionalInt(v: unknown, min: number, max: number): number | null | undefined {
-  if (v === undefined || v === null) return null;
+  if (v === undefined || v === null || v === 0) return null;
   if (typeof v !== 'number' || !Number.isInteger(v) || v < min || v > max) return undefined;
   return v;
 }
@@ -270,7 +270,7 @@ export async function POST(request: NextRequest) {
       if (label !== undefined && label !== null && !(typeof label === 'string' && label.length <= 100)) {
         return badRequest('备注不能超过 100 个字符');
       }
-      const uses = maxUses === undefined || maxUses === null ? null : maxUses;
+      const uses = maxUses === undefined || maxUses === null || maxUses === 0 ? null : maxUses;
       if (uses !== null && !isPositiveInt(uses, MAX_USES)) {
         return badRequest('使用次数无效');
       }
@@ -307,7 +307,7 @@ export async function POST(request: NextRequest) {
 
     } else if (action === 'batch_invite') {
       const { count, prefix, maxUses, expiresInDays, aiCredits } = body;
-      const num = count === undefined || count === null ? 5 : count;
+      const num = count === undefined || count === null || count === 0 ? 5 : count;
       if (!isPositiveInt(num, MAX_BATCH)) {
         return badRequest(`数量需为 1–${MAX_BATCH} 的整数`);
       }
@@ -315,7 +315,7 @@ export async function POST(request: NextRequest) {
       if (typeof codePrefix !== 'string' || !/^[A-Za-z0-9]{1,10}$/.test(codePrefix)) {
         return badRequest('前缀只能是 1–10 位字母或数字');
       }
-      const uses = maxUses === undefined || maxUses === null ? null : maxUses;
+      const uses = maxUses === undefined || maxUses === null || maxUses === 0 ? null : maxUses;
       if (uses !== null && !isPositiveInt(uses, MAX_USES)) {
         return badRequest('使用次数无效');
       }

@@ -77,12 +77,8 @@ export async function* streamChat(
 
   if (!response.ok) {
     const errText = await response.text().catch(() => "");
-    let errMsg = `AI 请求失败: HTTP ${response.status}`;
-    try {
-      const errJson = JSON.parse(errText);
-      errMsg = errJson.error?.message || errJson.message || errMsg;
-    } catch {}
-    yield { error: errMsg };
+    console.error("上游 AI 返回错误:", response.status, errText.slice(0, 500));
+    yield { error: `AI 请求失败: HTTP ${response.status}` };
     return;
   }
 
