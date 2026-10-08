@@ -250,6 +250,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 | `docs/PROJECT-BRIEF.md` | ← 本文档（全景 / 评审版） |
 | `docs/00-优先阅读-项目接手.md` | 接手第一入口：现在状态、跑法、优先读什么 |
 | `docs/DEVLOG.md` | **开发日志**（2026-04 起全时间线，含每日批次与 commit 哈希） |
+| `docs/LAUNCH-CHECKLIST.md` | **上线前检查清单**：硬门槛 / 建议 / 关键路径手测 |
 | `README.md` | 快速开始 + 模块表 + 目录结构 |
 | `docs/HANDOVER.md` | 交接文档：怎么跑、从哪继续、踩坑记录 |
 | `docs/ARCHITECTURE.md` | 技术架构 + 信息架构 + 会话机制 + AI 链路 |

@@ -34,10 +34,13 @@
 10. [`DESIGN-VISITOR-PREVIEW-AND-CREDITS.md`](DESIGN-VISITOR-PREVIEW-AND-CREDITS.md)  
     商业化设计稿：访客预览模型 + AI 额度制（2026-10-03 已实施，含决策依据）。
 
-11. [`API.md`](API.md) / [`DATABASE.md`](DATABASE.md)  
+11. [`LAUNCH-CHECKLIST.md`](LAUNCH-CHECKLIST.md)  
+    上线前检查清单：硬门槛（生产环境/AI 供应商/合规）+ 建议 + 手测清单。
+
+12. [`API.md`](API.md) / [`DATABASE.md`](DATABASE.md)  
     接口和数据库契约。
 
-12. `history/`  
+13. `history/`  
     旧版参考快照：`DEVELOPER.md`、`HEALTH-REPORT.md`、`INTRODUCTION.md`。需要考古或对照历史结论时再读，不建议第一轮全读。
 
 ## 规则
