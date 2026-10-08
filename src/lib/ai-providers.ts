@@ -25,28 +25,62 @@ export interface AiSourceConfig {
   protocol?: string;
 }
 
+function isPrivateIPv4(a: number, b: number): boolean {
+  if (a === 0 || a === 10 || a === 127) return true;       // 0/8、10/8、127/8
+  if (a === 100 && b >= 64 && b <= 127) return true;       // 100.64/10（含 100.100.100.200）
+  if (a === 169 && b === 254) return true;                 // 链路本地 / 云元数据
+  if (a === 172 && b >= 16 && b <= 31) return true;        // 172.16/12
+  if (a === 192 && b === 168) return true;                 // 192.168/16
+  return false;
+}
+
+/** 把 IPv6 字面量（已去方括号）解析为 8 个 16 位组；无法解析返回 null */
+function parseIPv6(host: string): number[] | null {
+  let h = host.split('%')[0];
+  // 末尾内嵌的点分 IPv4 转成两个十六进制组
+  const tail = h.match(/^(.*:)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (tail) {
+    const o = [tail[2], tail[3], tail[4], tail[5]].map(Number);
+    if (o.some((n) => n > 255)) return null;
+    h = `${tail[1]}${((o[0] << 8) | o[1]).toString(16)}:${((o[2] << 8) | o[3]).toString(16)}`;
+  }
+  const halves = h.split('::');
+  if (halves.length > 2) return null;
+  const head = halves[0] ? halves[0].split(':') : [];
+  const rest = halves.length === 2 && halves[1] ? halves[1].split(':') : [];
+  const missing = 8 - head.length - rest.length;
+  if (halves.length === 2 ? missing < 1 : missing !== 0) return null;
+  const parts = [...head, ...Array(halves.length === 2 ? missing : 0).fill('0'), ...rest];
+  const groups = parts.map((p) => (/^[0-9a-f]{1,4}$/.test(p) ? parseInt(p, 16) : NaN));
+  return groups.length === 8 && groups.every((n) => !Number.isNaN(n)) ? groups : null;
+}
+
 /**
- * 判断主机名是否属于云元数据 / 链路本地等高危内网地址（SSRF 防护）。
- *
- * 边界说明：项目明确支持用户自建接入（本地模型 http://localhost:11434、
- * 局域网网关），因此 loopback 与私有网段（127/8、10/8、192.168/16、172.16/12）
- * 是有意放行的；这里只拦最危险的目标——云厂商元数据端点（169.254.169.254 等
- * 链路本地地址）、0.0.0.0 和元数据专用域名。
+ * 判断主机名是否属于内网 / 回环 / 链路本地 / 云元数据地址（SSRF 防护）。
+ * 自定义源只能指向公网地址；本地模型请通过公网可达的网关接入。
  * 残余风险：公网域名解析到内网 IP（DNS rebinding）无法在 URL 层面拦截。
  */
 function isDangerousHost(hostname: string): boolean {
-  const host = hostname.toLowerCase().replace(/\.$/, '');
-  if (host === 'metadata.google.internal' || host.endsWith('.internal')) return true;
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
+  if (host === 'localhost' || host.endsWith('.localhost')) return true;
+  if (host.endsWith('.local') || host.endsWith('.internal')) return true;
 
   const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4) {
-    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
-    if (a === 0) return true;                      // 0.0.0.0/8
-    if (a === 169 && b === 254) return true;       // 链路本地 / 云元数据
-    return false;
+  if (ipv4) return isPrivateIPv4(Number(ipv4[1]), Number(ipv4[2]));
+
+  if (host.includes(':')) {
+    const g = parseIPv6(host);
+    if (!g) return true;                                              // 无法解析的 IPv6 一律拒绝
+    if (g.every((n) => n === 0)) return true;                         // ::
+    if (g.slice(0, 7).every((n) => n === 0) && g[7] === 1) return true; // ::1
+    if ((g[0] & 0xfe00) === 0xfc00) return true;                      // fc00::/7
+    if ((g[0] & 0xffc0) === 0xfe80) return true;                      // fe80::/10
+    const first5Zero = g.slice(0, 5).every((n) => n === 0);
+    const mapped = first5Zero && g[5] === 0xffff;                     // ::ffff:a.b.c.d
+    const compat = g.slice(0, 6).every((n) => n === 0);               // ::a.b.c.d
+    const nat64 = g[0] === 0x64 && g[1] === 0xff9b && g.slice(2, 6).every((n) => n === 0);
+    if (mapped || compat || nat64) return isPrivateIPv4(g[6] >> 8, g[6] & 0xff);
   }
-  // IPv6 字面量：链路本地 fe80::/10
-  if (host.includes(':')) return host.startsWith('fe8') || host.startsWith('fe9') || host.startsWith('fea') || host.startsWith('feb');
   return false;
 }
 
@@ -85,7 +119,7 @@ export function isValidCustomBaseUrl(url: string): boolean {
  */
 export function resolveAiSource(cfg?: AiSourceConfig): ResolvedAiSource {
   if (!cfg || !cfg.provider || cfg.provider === "builtin") {
-    return { kind: "env", model: cfg?.model };
+    return { kind: "env" };
   }
 
   const provider = cfg.provider;

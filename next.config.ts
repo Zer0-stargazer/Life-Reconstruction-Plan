@@ -6,15 +6,6 @@ const devPort = process.env.PORT || "5000";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: [`localhost:${devPort}`, `127.0.0.1:${devPort}`],
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "*",
-        pathname: "/**",
-      },
-    ],
-  },
 };
 
 export default nextConfig;

@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { getAuthHeader } from '@/lib/client-auth';
 import {
   Plus, Trash2, Pencil, Check, X, Loader2, Download, Upload,
   Server, Zap, CircleDot, AlertCircle, Star, StarOff, Eye, EyeOff,
@@ -69,7 +70,7 @@ export function AiSourceManager({ onActiveChanged }: { onActiveChanged?: () => v
     try {
       const res = await fetch('/api/ai/test-key', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify({
           provider: 'custom',
           protocol: source.protocol,

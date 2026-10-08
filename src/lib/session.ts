@@ -1,3 +1,4 @@
+import "server-only";
 import { createHmac, timingSafeEqual } from "crypto";
 
 /**
@@ -25,19 +26,30 @@ export interface SessionPayload {
 /** 会话有效期：7 天 */
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
+const DEV_FALLBACK_SECRET = "lrs-dev-insecure-session-secret";
+let warnedDevSecret = false;
+
 /**
- * 会话签名密钥。生产环境必须显式配置 SESSION_SECRET，
- * 否则拒绝签发（避免静默使用不安全默认值）。
+ * 会话签名密钥，只读 SESSION_SECRET。生产环境必须配置且 ≥32 字符，
+ * 否则拒绝签发/校验（避免静默使用不安全默认值）。
  */
 function getSecret(): string {
-  const configured = process.env.SESSION_SECRET || process.env.DEV_PASSWORD;
-  if (configured && configured.trim().length > 0) return configured;
+  const configured = process.env.SESSION_SECRET?.trim();
 
   if (process.env.NODE_ENV === "production") {
-    throw new Error("SESSION_SECRET 未配置：生产环境必须设置会话密钥才能签发登录态");
+    if (!configured || configured.length < 32) {
+      throw new Error("SESSION_SECRET 未配置或长度不足 32 字符：生产环境必须设置会话密钥");
+    }
+    return configured;
   }
+
+  if (configured) return configured;
   // 仅开发环境兜底，方便本地起服务
-  return "lrs-dev-insecure-session-secret";
+  if (!warnedDevSecret) {
+    warnedDevSecret = true;
+    console.warn("SESSION_SECRET 未配置，开发环境使用固定的不安全密钥");
+  }
+  return DEV_FALLBACK_SECRET;
 }
 
 function b64url(input: string | Buffer): string {

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     // 防爆破：密码最短只要 4 位，不限流就能被在线暴力破解。
     // 按 IP 限流，登录和注册共用同一个桶。
     const ip = getClientIp(request);
-    const rl = rateLimit(`auth:${ip}`, 10, 5 * 60_000);
+    const rl = await rateLimit(`auth:${ip}`, 10, 5 * 60_000);
     if (!rl.ok) {
       return NextResponse.json(
         { error: `尝试过于频繁，请 ${rl.retryAfter} 秒后再试` },
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, nickname, password } = body;
 
-    if (!nickname || !password) {
+    if (typeof nickname !== "string" || typeof password !== "string" || !nickname || !password) {
       return NextResponse.json({ error: "请输入昵称和密码" }, { status: 400 });
     }
 
@@ -92,17 +92,16 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (error) throw new Error(`查询失败: ${error.message}`);
+      // 昵称不存在 / 密码错误 / 账号禁用统一返回同一提示，避免枚举账号
+      const LOGIN_FAILED = "昵称或密码错误";
       if (!user) {
-        return NextResponse.json({ error: "该昵称未注册" }, { status: 404 });
-      }
-      if (!user.is_active) {
-        return NextResponse.json({ error: "该账号已被禁用" }, { status: 403 });
+        return NextResponse.json({ error: LOGIN_FAILED }, { status: 401 });
       }
 
       // Verify password with bcrypt
       const passwordValid = await bcrypt.compare(password, user.password_hash);
-      if (!passwordValid) {
-        return NextResponse.json({ error: "密码错误" }, { status: 401 });
+      if (!passwordValid || !user.is_active) {
+        return NextResponse.json({ error: LOGIN_FAILED }, { status: 401 });
       }
 
       // Update last login
@@ -136,7 +135,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (err) {
-    const message = err instanceof Error ? err.message : "服务器内部错误";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("auth 异常:", err);
+    return NextResponse.json({ error: "服务器内部错误，请稍后重试" }, { status: 500 });
   }
 }

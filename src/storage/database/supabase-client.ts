@@ -1,4 +1,5 @@
-﻿import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import "server-only";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import { resolve } from "path";
 
@@ -49,7 +50,12 @@ function getSupabaseClient(token?: string): SupabaseClient {
     key = anonKey;
   } else {
     const serviceRoleKey = getSupabaseServiceRoleKey();
-    key = serviceRoleKey ?? anonKey;
+    if (!serviceRoleKey) {
+      throw new Error(
+        "SUPABASE_SERVICE_ROLE_KEY is not set. Please add it to .env.local"
+      );
+    }
+    key = serviceRoleKey;
   }
 
   const options: Record<string, unknown> = {

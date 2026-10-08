@@ -248,25 +248,6 @@ export default function UserPage() {
 
 
 
-  const testBuiltin = async () => {
-    setKeyStatuses(prev => ({ ...prev, builtin: { state: 'testing' } as KeyStatus }));
-    try {
-      const response = await fetch('/api/ai/test-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: 'builtin' }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setKeyStatuses(prev => ({ ...prev, builtin: { state: 'success', message: data.message || '内置 AI 正常', responseSnippet: data.responseSnippet } }));
-      } else {
-        setKeyStatuses(prev => ({ ...prev, builtin: { state: 'error', message: data.error || '内置 AI 异常' } }));
-      }
-    } catch (err) {
-      setKeyStatuses(prev => ({ ...prev, builtin: { state: 'error', message: err instanceof Error ? err.message : '请求失败' } }));
-    }
-  };
-
   const updateDefaultAge = useCallback((age: number) => {
     setDefaultAge(age);
     writeDefaultAge(age);
@@ -690,22 +671,6 @@ export default function UserPage() {
                       想换模型或换厂商，用下面的「自定义接入」。
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={testBuiltin} disabled={keyStatuses['builtin']?.state === 'testing'} className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/20 active:scale-95 transition-all">
-                      {keyStatuses['builtin']?.state === 'testing' ? (<><Loader2 className="h-3 w-3 animate-spin" />测试中...</>) : (<><Zap className="h-3 w-3" />测试连接</>)}
-                    </button>
-                  </div>
-                  {keyStatuses['builtin']?.state === 'success' && (
-                    <div className="rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 p-3 space-y-1">
-                      <div className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" /><span className="text-[11px] font-medium text-green-700 dark:text-green-300">{keyStatuses['builtin'].message}</span></div>
-                      {keyStatuses['builtin'].responseSnippet && (<p className="text-[10px] text-green-600/70 dark:text-green-400/70 ml-5 truncate">AI 回复: &quot;{keyStatuses['builtin'].responseSnippet}&quot;</p>)}
-                    </div>
-                  )}
-                  {keyStatuses['builtin']?.state === 'error' && (
-                    <div className="rounded-md bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 p-3">
-                      <div className="flex items-center gap-1.5"><XCircle className="h-3.5 w-3.5 text-red-500 dark:text-red-400 shrink-0" /><span className="text-[11px] font-medium text-red-600 dark:text-red-300">{keyStatuses['builtin'].message}</span></div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

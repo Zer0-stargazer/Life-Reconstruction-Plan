@@ -1,27 +1,12 @@
 import type { NextRequest } from 'next/server';
+import { getSupabaseClient } from '@/storage/database/supabase-client';
 
 /**
- * 轻量内存限流（滑动窗口）。
+ * 限流（固定窗口），计数存在 Supabase 的 rate_limits 表，
+ * 由 Postgres 函数 hit_rate_limit() 原子更新，多实例 / Serverless 下共享。
  *
- * 说明：进程内实现，多实例 / Serverless 冷启动下不共享计数，
- * 属于「防止单个 IP 把额度打爆」的兜底，不是精确配额。
- * 若将来部署到多实例，把 store 换成 Redis / Upstash 即可，调用方不用改。
+ * 数据库不可用时：开发环境放行并警告；生产环境拒绝（fail closed）。
  */
-
-type Bucket = { hits: number[] };
-
-const store = new Map<string, Bucket>();
-
-/** 兜底清理，避免长驻进程下 Map 无限增长 */
-let lastSweep = 0;
-function sweep(now: number, windowMs: number) {
-  if (now - lastSweep < windowMs) return;
-  lastSweep = now;
-  for (const [key, bucket] of store) {
-    bucket.hits = bucket.hits.filter((t) => now - t < windowMs);
-    if (bucket.hits.length === 0) store.delete(key);
-  }
-}
 
 /** 从常见代理头里取客户端 IP */
 export function getClientIp(request: NextRequest): string {
@@ -39,9 +24,7 @@ export function getClientIp(request: NextRequest): string {
 
 export interface RateLimitResult {
   ok: boolean;
-  /** 窗口内剩余可用次数 */
-  remaining: number;
-  /** 建议的 Retry-After（秒） */
+  /** 建议的 Retry-After（秒），放行时为 0 */
   retryAfter: number;
 }
 
@@ -50,21 +33,23 @@ export interface RateLimitResult {
  * @param limit    窗口内最大请求数
  * @param windowMs 窗口长度（毫秒）
  */
-export function rateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
-  const now = Date.now();
-  sweep(now, windowMs);
+export async function rateLimit(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
+  const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
 
-  const bucket = store.get(key) ?? { hits: [] };
-  bucket.hits = bucket.hits.filter((t) => now - t < windowMs);
-
-  if (bucket.hits.length >= limit) {
-    const oldest = bucket.hits[0];
-    const retryAfter = Math.max(1, Math.ceil((windowMs - (now - oldest)) / 1000));
-    store.set(key, bucket);
-    return { ok: false, remaining: 0, retryAfter };
+  try {
+    const { data, error } = await getSupabaseClient().rpc('hit_rate_limit', {
+      p_key: key,
+      p_limit: limit,
+      p_window_seconds: windowSeconds,
+    });
+    if (error) throw new Error(error.message);
+    return data === true ? { ok: true, retryAfter: 0 } : { ok: false, retryAfter: windowSeconds };
+  } catch (err) {
+    console.error('限流检查失败:', err instanceof Error ? err.message : err);
+    if (process.env.NODE_ENV === 'production') {
+      return { ok: false, retryAfter: 30 };
+    }
+    console.warn('开发环境：限流不可用，已放行');
+    return { ok: true, retryAfter: 0 };
   }
-
-  bucket.hits.push(now);
-  store.set(key, bucket);
-  return { ok: true, remaining: limit - bucket.hits.length, retryAfter: 0 };
 }

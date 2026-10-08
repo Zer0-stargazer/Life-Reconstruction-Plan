@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { invokeChat } from "@/lib/ai-stream";
 import { isValidCustomBaseUrl } from "@/lib/ai-providers";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { sessionFromRequest } from "@/lib/session";
 
 /** 测试连接最多等 30s，给平台留一点余量 */
 export const maxDuration = 45;
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   try {
     // 单 IP 限流：测试连接会实际发起外部请求，防止被当作探测工具滥用
     const ip = getClientIp(request);
-    const rl = rateLimit(`ai-test-key:${ip}`, 10, 60_000);
+    const rl = await rateLimit(`ai-test-key:${ip}`, 10, 60_000);
     if (!rl.ok) {
       return NextResponse.json(
         { success: false, error: `请求过于频繁，请 ${rl.retryAfter} 秒后再试` },
@@ -29,7 +29,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 注意：这里重命名，避免与下面内置厂商分支里的 `const baseUrl = config.url(...)` 冲突
+    // 需要登录：避免匿名用户把服务端当作外部请求探测工具
+    if (!sessionFromRequest(request)) {
+      return NextResponse.json({ success: false, error: "请先登录后再测试连接" }, { status: 401 });
+    }
+
     const { provider, apiKey, model, baseUrl: reqBaseUrl, protocol } = (await request.json()) as TestKeyRequest;
 
     if (!provider) {
@@ -111,29 +115,26 @@ export async function POST(request: NextRequest) {
 
       let res: Response;
       try {
-        res = await fetch(url, { method: "POST", headers, body, signal: controller.signal });
+        res = await fetch(url, { method: "POST", headers, body, signal: controller.signal, redirect: "error" });
       } catch (e) {
         clearTimeout(timer);
         if (e instanceof Error && e.name === "AbortError") {
           return NextResponse.json({ success: false, error: "请求超时（30秒），请检查地址或 Key" });
         }
-        return NextResponse.json(
-          { success: false, error: `网络请求失败: ${e instanceof Error ? e.message : "未知错误"}` }
-        );
+        return NextResponse.json({ success: false, error: "网络请求失败，请检查接口地址是否可访问" });
       }
       clearTimeout(timer);
 
-      const raw = await res.text();
-      let data: Record<string, unknown> = {};
-      try { data = JSON.parse(raw); } catch { /* 非 JSON 响应 */ }
-
+      // 不回显上游响应原文，只给状态码
       if (!res.ok) {
-        const msg = (data as { error?: { message?: string } }).error?.message
-          || (data as { message?: string }).message
-          || raw.slice(0, 120)
-          || `HTTP ${res.status}: ${res.statusText}`;
-        return NextResponse.json({ success: false, error: msg });
+        return NextResponse.json({
+          success: false,
+          error: `连接失败（HTTP ${res.status}），请检查 Key、模型名与接口地址`,
+        });
       }
+
+      let data: Record<string, unknown> = {};
+      try { data = await res.json(); } catch { /* 非 JSON 响应 */ }
 
       // OpenAI 兼容：正文可能在 content（常规模型）或 reasoning_content（推理模型）里
       const openaiSnippet = (() => {
@@ -155,32 +156,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ---- 内置 AI：走服务端 .env 的 AI_API_URL / AI_API_KEY / AI_MODEL ----
-    if (provider === "builtin") {
-      const result = await invokeChat(
-        [{ role: "user", content: "你好，用一句话回复确认你在工作" }],
-        { temperature: 0.5 }
-      );
-      if (result.error) {
-        return NextResponse.json({ success: false, error: result.error });
-      }
-      return NextResponse.json({
-        success: true,
-        message: "内置 AI 正常",
-        responseSnippet: result.content?.slice(0, 60),
-      });
-    }
-
     return NextResponse.json(
-      { success: false, error: `不支持的 AI 来源: ${provider}（仅支持 builtin 与 custom）` },
+      { success: false, error: "仅支持测试自定义接入源" },
       { status: 400 }
     );
   } catch (error) {
+    console.error("test-key 异常:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "服务器内部错误",
-      },
+      { success: false, error: "服务器内部错误，请稍后重试" },
       { status: 500 }
     );
   }

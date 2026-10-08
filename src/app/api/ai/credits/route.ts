@@ -13,14 +13,17 @@ export async function GET(request: NextRequest) {
     const client = getSupabaseClient();
     const { data, error } = await client
       .from("app_users")
-      .select("ai_credits, ai_credits_total, role")
+      .select("ai_credits, ai_credits_total, role, is_active")
       .eq("id", session.userId)
       .maybeSingle();
 
-    if (error) throw new Error(`查询失败: ${error.message}`);
+    if (error) throw new Error(error.message);
     if (!data) return NextResponse.json({ success: false, error: "用户不存在" }, { status: 404 });
+    if (!data.is_active) {
+      return NextResponse.json({ success: false, error: "该账号已被禁用" }, { status: 403 });
+    }
 
-    // 开发者不消耗额度，前端可按 role 提示"不限量"
+    // 开发者不消耗额度，前端可按 role 提示"不限量"（role 以数据库为准）
     return NextResponse.json({
       success: true,
       credits: data.ai_credits ?? 0,
@@ -28,9 +31,7 @@ export async function GET(request: NextRequest) {
       role: data.role,
     });
   } catch (err) {
-    return NextResponse.json(
-      { success: false, error: err instanceof Error ? err.message : "服务器错误" },
-      { status: 500 }
-    );
+    console.error("credits 查询失败:", err);
+    return NextResponse.json({ success: false, error: "服务器错误，请稍后重试" }, { status: 500 });
   }
 }

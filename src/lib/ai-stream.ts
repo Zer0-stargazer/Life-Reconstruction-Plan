@@ -1,4 +1,5 @@
-﻿/**
+import "server-only";
+/**
  * AI 流式客户端 — AI 流式客户端
  * 支持 OpenAI-compatible API + SSE streaming
  */
@@ -54,6 +55,7 @@ export async function* streamChat(
 
   const response = await fetch(url, {
     method: "POST",
+    redirect: "error",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
@@ -146,6 +148,7 @@ export async function invokeChat(
   try {
     const response = await fetch(url, {
       method: "POST",
+      redirect: "error",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
@@ -240,6 +243,7 @@ export async function* streamChatClaude(
     // 自定义源时地址由用户指定（自建/中转网关），否则用官方地址
     response = await fetch(`${opts.baseUrl || "https://api.anthropic.com/v1"}/messages`, {
       method: "POST",
+      redirect: "error",
       headers: {
         "Content-Type": "application/json",
         "x-api-key": opts.apiKey,
@@ -322,6 +326,7 @@ export async function* streamChatGemini(
       `${opts.baseUrl || "https://generativelanguage.googleapis.com/v1beta"}/models/${model}:streamGenerateContent?alt=sse`,
       {
         method: "POST",
+        redirect: "error",
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": opts.apiKey,

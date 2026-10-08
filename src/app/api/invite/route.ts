@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
 import { sessionFromRequest, signSession } from "@/lib/session";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 // POST /api/invite - 用户兑换邀请码升级为充电用户
 //
@@ -10,55 +11,20 @@ import { sessionFromRequest, signSession } from "@/lib/session";
 //        请求体里的 userId 不再被信任。
 //   2. 竞态超发：used_count 是先读后写（used_count + 1），并发兑换可以突破 max_uses。
 //      → 现在用乐观锁 `.eq("used_count", 读到的值)`，写不进去说明被别人抢了，直接 409。
-//   3. 无限制猜码：→ 加了按 IP 的失败计数限流。
-
-/** 兑换失败限流：同一来源 15 分钟内失败 N 次后暂时拒绝 */
-const MAX_FAILS = 10;
-const FAIL_WINDOW_MS = 15 * 60 * 1000;
-const failBuckets = new Map<string, { count: number; resetAt: number }>();
-
-function clientIp(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return request.headers.get("x-real-ip")?.trim() || "unknown";
-}
-
-function isBlocked(key: string): boolean {
-  const bucket = failBuckets.get(key);
-  if (!bucket) return false;
-  if (bucket.resetAt < Date.now()) {
-    failBuckets.delete(key);
-    return false;
-  }
-  return bucket.count >= MAX_FAILS;
-}
-
-function registerFailure(key: string): void {
-  const now = Date.now();
-  // Map 会随 IP 增多而膨胀，超过阈值时顺手清一遍过期桶
-  if (failBuckets.size > 1000) {
-    for (const [k, v] of failBuckets) {
-      if (v.resetAt < now) failBuckets.delete(k);
-    }
-  }
-  const bucket = failBuckets.get(key);
-  if (!bucket || bucket.resetAt < now) {
-    failBuckets.set(key, { count: 1, resetAt: now + FAIL_WINDOW_MS });
-    return;
-  }
-  bucket.count += 1;
-}
+//   3. 无限制猜码：→ 按 IP 限流（共享的 Supabase 限流，15 分钟 10 次尝试）。
 
 export async function POST(request: NextRequest) {
-  const ip = clientIp(request);
-  if (isBlocked(ip)) {
-    return NextResponse.json({ error: "尝试次数过多，请稍后再试" }, { status: 429 });
+  const rl = await rateLimit(`invite:${getClientIp(request)}`, 10, 15 * 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "尝试次数过多，请稍后再试" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+    );
   }
 
   // 1) 会话校验：身份只认服务端签发的令牌
   const session = sessionFromRequest(request);
   if (!session) {
-    registerFailure(ip);
     return NextResponse.json({ error: "登录态无效或已过期，请重新登录" }, { status: 401 });
   }
   const userId = session.userId;
@@ -83,7 +49,6 @@ export async function POST(request: NextRequest) {
 
     if (error) throw new Error(`查询失败: ${error.message}`);
     if (!invite) {
-      registerFailure(ip);
       return NextResponse.json({ error: "邀请码无效" }, { status: 404 });
     }
 
@@ -100,7 +65,7 @@ export async function POST(request: NextRequest) {
     // 5) 查询用户（userId 来自会话，不是请求体）
     const { data: user, error: userError } = await client
       .from("app_users")
-      .select("id, role, nickname, is_active, ai_credits")
+      .select("id, role, nickname, is_active, ai_credits, ai_credits_total")
       .eq("id", userId)
       .maybeSingle();
 
@@ -110,9 +75,6 @@ export async function POST(request: NextRequest) {
     }
     if (!user.is_active) {
       return NextResponse.json({ error: "该账号已被禁用" }, { status: 403 });
-    }
-    if (user.role === "premium" || user.role === "developer") {
-      return NextResponse.json({ error: "您已是充电用户" }, { status: 400 });
     }
 
     // 6) 先占位：乐观锁自增 used_count。
@@ -130,16 +92,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "邀请码刚刚被用完了，请换个码试试" }, { status: 409 });
     }
 
-    // 7) 再升级用户：角色 + AI 额度一并到账
+    // 7) 再升级用户：额度到账；普通用户升级为 premium，premium / developer 角色保持不变
     const grantCredits = invite.ai_credits ?? 0;
     const newBalance = (user.ai_credits ?? 0) + grantCredits;
+    const newRole = user.role === "normal" ? "premium" : user.role;
     const { error: updateError } = await client
       .from("app_users")
       .update({
-        role: "premium",
+        role: newRole,
         invite_code_used: code,
         ai_credits: newBalance,
-        ai_credits_total: (user.ai_credits ?? 0) + grantCredits,
+        ai_credits_total: (user.ai_credits_total ?? 0) + grantCredits,
       })
       .eq("id", userId);
 
@@ -167,20 +130,20 @@ export async function POST(request: NextRequest) {
     await client.from("access_logs").insert({
       user_id: userId,
       action: "redeem_code",
-      detail: `用户 ${user.nickname} 使用邀请码 ${code} 升级为充电用户`,
+      detail: `用户 ${user.nickname} 使用邀请码 ${code} 兑换（角色: ${newRole}，到账额度: ${grantCredits}）`,
     });
 
-    // 9) role 变了，重新签发令牌，让前端本地会话跟上服务端
+    // 9) role 可能变了，重新签发令牌，让前端本地会话跟上服务端
     const token = signSession({
       userId,
       nickname: user.nickname,
-      role: "premium",
+      role: newRole,
     });
 
-    return NextResponse.json({ success: true, role: "premium", credits: newBalance, token });
+    return NextResponse.json({ success: true, role: newRole, credits: newBalance, token });
 
   } catch (err) {
-    const message = err instanceof Error ? err.message : "服务器错误";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("invite 兑换失败:", err);
+    return NextResponse.json({ error: "服务器错误，请稍后重试" }, { status: 500 });
   }
 }

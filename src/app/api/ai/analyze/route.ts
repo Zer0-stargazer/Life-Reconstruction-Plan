@@ -111,10 +111,27 @@ const MAX_HISTORY_MESSAGES = 12;
 const MAX_HISTORY_MESSAGE_LENGTH = 4000;
 
 export async function POST(request: NextRequest) {
+  // 已扣额度的用户 id；refundCredit 保证每次请求最多退一次
+  let chargedUserId: number | null = null;
+  const refundCredit = async (reason: string) => {
+    if (chargedUserId === null) return;
+    const userId = chargedUserId;
+    chargedUserId = null;
+    try {
+      const { error } = await getSupabaseClient().rpc("refund_ai_credit", {
+        p_user_id: userId,
+        p_reason: reason,
+      });
+      if (error) console.error("额度退还失败:", error.message);
+    } catch (err) {
+      console.error("额度退还失败:", err);
+    }
+  };
+
   try {
     // 单 IP 限流：分析接口是流式长请求，防止被脚本刷爆额度
     const ip = getClientIp(request);
-    const rl = rateLimit(`ai-analyze:${ip}`, 15, 60_000);
+    const rl = await rateLimit(`ai-analyze:${ip}`, 15, 60_000);
     if (!rl.ok) {
       return new Response(
         JSON.stringify({ error: `请求过于频繁，请 ${rl.retryAfter} 秒后再试` }),
@@ -166,8 +183,9 @@ export async function POST(request: NextRequest) {
      * 额度门（2026-10-02 额度制）：
      * - 内置 AI（服务端 env Key）是付费资源 → 需要会话，按次扣额度（开发者不限）；
      * - 用户自带 Key（BYOK）永久免费 → 不要求登录、不扣额度。
-     * 扣减用与邀请码同款乐观锁，防并发透支；扣减失败/额度不足都在
-     * 进入流式之前返回明确错误（不是 500）。
+     * 扣减走 Postgres 原子函数 consume_ai_credit，防并发透支；额度不足在
+     * 进入流式之前返回明确错误（不是 500）。扣减后任何失败都会退还。
+     * 角色与启用状态以数据库为准，不信任令牌里的 role。
      */
     const isCustomSource = aiSource.kind !== "env";
     let session: SessionPayload | null = null;
@@ -181,49 +199,57 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (session.role !== "developer") {
-        const client = getSupabaseClient();
-        const { data: userData, error: userError } = await client
-          .from("app_users")
-          .select("ai_credits")
-          .eq("id", session.userId)
-          .maybeSingle();
-        if (userError) {
-          return new Response(JSON.stringify({ error: `额度查询失败: ${userError.message}` }), {
+      const client = getSupabaseClient();
+      const { data: userData, error: userError } = await client
+        .from("app_users")
+        .select("role, is_active")
+        .eq("id", session.userId)
+        .maybeSingle();
+      if (userError) {
+        console.error("用户查询失败:", userError.message);
+        return new Response(JSON.stringify({ error: "额度查询失败，请稍后重试" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (!userData) {
+        return new Response(JSON.stringify({ error: "登录态无效或已过期，请重新登录" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (!userData.is_active) {
+        return new Response(JSON.stringify({ error: "该账号已被禁用" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      if (userData.role !== "developer") {
+        const { data: balance, error: consumeError } = await client.rpc("consume_ai_credit", {
+          p_user_id: session.userId,
+        });
+        if (consumeError) {
+          console.error("额度扣减失败:", consumeError.message);
+          return new Response(JSON.stringify({ error: "额度扣减失败，请稍后重试" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
           });
         }
-
-        const credits = userData?.ai_credits ?? 0;
-        if (credits < 1) {
+        if (typeof balance !== "number") {
           return new Response(
             JSON.stringify({ error: "AI 额度已用完，请找开发者续码（用授权码即可到账）；或在「我的」页改用自己的 Key（不扣额度）" }),
             { status: 402, headers: { "Content-Type": "application/json" } }
           );
         }
-
-        // 乐观锁扣减：写不进去说明并发下余额已变，让用户重试
-        const { data: claimed } = await client
-          .from("app_users")
-          .update({ ai_credits: credits - 1 })
-          .eq("id", session.userId)
-          .eq("ai_credits", credits)
-          .select("ai_credits");
-
-        if (!claimed || claimed.length === 0) {
-          return new Response(JSON.stringify({ error: "额度扣减冲突，请重试" }), {
-            status: 409,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+        chargedUserId = session.userId;
 
         // 流水（失败不影响分析主流程）
         const { error: logError } = await client.from("ai_credit_logs").insert({
           user_id: session.userId,
           delta: -1,
           reason: "analyze",
-          balance: credits - 1,
+          balance,
         });
         if (logError) console.error("ai_credit_logs 写入失败:", logError.message);
       }
@@ -269,11 +295,14 @@ export async function POST(request: NextRequest) {
     const encoder = new TextEncoder();
     const stream = streamChatAuto(messages, aiSource, { temperature: 0.7 });
 
+    let cancelled = false;
     const readable = new ReadableStream({
       async start(controller) {
+        let gotContent = false;
         try {
           for await (const chunk of stream) {
             if (chunk.error) {
+              await refundCredit("analyze_refund");
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ error: chunk.error })}\n\n`)
               );
@@ -281,6 +310,7 @@ export async function POST(request: NextRequest) {
               return;
             }
             if (chunk.content) {
+              gotContent = true;
               const sseMessage = `data: ${JSON.stringify({ content: chunk.content })}\n\n`;
               controller.enqueue(encoder.encode(sseMessage));
             }
@@ -291,16 +321,23 @@ export async function POST(request: NextRequest) {
               controller.enqueue(encoder.encode(sseMessage));
             }
           }
+          if (!gotContent) await refundCredit("analyze_refund");
           // Send done signal
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (error) {
+          // 客户端主动断开不退额度（已收到部分内容），其余流异常都退
+          if (cancelled) return;
+          await refundCredit("analyze_refund");
           const errorMessage = error instanceof Error ? error.message : "Stream error";
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ error: errorMessage })}\n\n`)
           );
           controller.close();
         }
+      },
+      cancel() {
+        cancelled = true;
       },
     });
 
@@ -312,8 +349,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Internal server error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    console.error("analyze 路由异常:", error);
+    await refundCredit("analyze_refund");
+    return new Response(JSON.stringify({ error: "服务器内部错误，请稍后重试" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
