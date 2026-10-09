@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { careers, CAREER_CATEGORIES, type Career, getTutorials, getBooks, getLearningChannels, getAiAdvice } from '@/data/careers';
+import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
+import { careers, CAREER_CATEGORIES, type Career, type CareerLink, getCareerResources, getAiAdvice } from '@/data/careers';
 import { cn } from '@/lib/utils';
 import {
   Briefcase, TrendingUp, TrendingDown, Minus, Bot, Filter, X, BarChart3,
   ArrowUpRight, ArrowDownRight, MinusCircle, Sparkles, Search,
-  GraduationCap, BookOpen, Video,
-  ChevronDown, ChevronUp, MessageSquare, Star, AlertTriangle,
+  GraduationCap, BookOpen, Video, FileText, ExternalLink, type LucideIcon,
+  ChevronDown, ChevronUp, Star, AlertTriangle,
 } from 'lucide-react';
 import { AIAnalysisPanel } from '@/components/ai/ai-analysis-panel';
 import { useLockedAction } from '@/hooks/use-locked-action';
@@ -54,15 +54,78 @@ const selfStudyLabel = (score: number) => {
   return '自学较难';
 };
 
-const tutorialTypeIcon = {
-  video: Video,
-  course: GraduationCap,
-};
+function resourceCount(c: Career): number {
+  const r = getCareerResources(c);
+  return r.videos.length + r.docs.length + r.books.length;
+}
 
-const tutorialTypeLabel = {
-  video: '视频',
-  course: '课程',
-};
+function ResourceGroup({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <Icon className="h-3 w-3 text-primary/60" />
+        <span className="text-[10px] font-semibold text-foreground">{title}</span>
+      </div>
+      <div className="space-y-1.5">{children}</div>
+    </div>
+  );
+}
+
+function ResourceLinkItem({ link }: { link: CareerLink }) {
+  return (
+    <a
+      href={link.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="group flex items-start gap-2 rounded-md border border-border/50 bg-background/50 px-2.5 py-2 transition-colors hover:border-primary/30 hover:bg-primary/[0.03]"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">{link.title}</p>
+        <p className="mt-0.5 text-[10px] text-muted-foreground/60">
+          {link.source}{link.note ? ` · ${link.note}` : ''}
+        </p>
+      </div>
+      <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+    </a>
+  );
+}
+
+function CareerResourcePanel({ career }: { career: Career }) {
+  const { videos, docs, books } = getCareerResources(career);
+  if (videos.length + docs.length + books.length === 0) {
+    return (
+      <p className="rounded-md border border-dashed border-border px-3 py-2.5 text-[11px] leading-relaxed text-muted-foreground">
+        该职业的专属资源还在整理中。
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      {videos.length > 0 && (
+        <ResourceGroup icon={Video} title="视频">
+          {videos.map((l) => <ResourceLinkItem key={l.url} link={l} />)}
+        </ResourceGroup>
+      )}
+      {docs.length > 0 && (
+        <ResourceGroup icon={FileText} title="文档与论坛">
+          {docs.map((l) => <ResourceLinkItem key={l.url} link={l} />)}
+        </ResourceGroup>
+      )}
+      {books.length > 0 && (
+        <ResourceGroup icon={BookOpen} title="书籍">
+          {books.map((b) => (
+            <div key={b.title} className="rounded-md border border-border/50 bg-background/50 px-2.5 py-2">
+              <p className="text-[11px] font-medium text-foreground">{b.title}</p>
+              <p className="text-[10px] text-muted-foreground/60">{b.author}</p>
+              {b.why && <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground/70">{b.why}</p>}
+            </div>
+          ))}
+        </ResourceGroup>
+      )}
+    </div>
+  );
+}
 
 // ============================================================
 // 排序类型
@@ -528,7 +591,7 @@ export default function CareerPage() {
                         className="flex items-center gap-1 text-[10px] text-primary/60 hover:text-primary transition-colors"
                       >
                         <GraduationCap className="h-3 w-3" />
-                        <span>学习资源 · {getTutorials(career).length} 项</span>
+                        <span>学习资源 · {resourceCount(career)} 项</span>
                         {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </button>
                       <span className="text-[9px] text-muted-foreground/40">{selfStudyLabel(career.selfStudyScore)}</span>
@@ -538,52 +601,7 @@ export default function CareerPage() {
                   {/* 展开的资源面板 */}
                   {isExpanded && (
                     <div className="rounded-b-lg border border-t-0 border-border bg-card/50 px-4 pb-4 pt-2 animate-fade-in-up">
-                      <div className="space-y-2.5">
-                        {getTutorials(career).map((t, i) => {
-                          const TypeIcon = tutorialTypeIcon[t.type];
-                          return (
-                            <div key={i} className="group flex items-start gap-2.5">
-                              <div className={cn(
-                                'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-[10px]',
-                                t.type === 'course' ? 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400' :
-                                'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400'
-                              )}>
-                                <TypeIcon className="h-3 w-3" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[9px] text-muted-foreground/50 uppercase">{tutorialTypeLabel[t.type]}</span>
-                                  <span className="text-[9px] text-muted-foreground/30">·</span>
-                                  <span className="text-[9px] text-muted-foreground/50">{t.platform}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-medium text-foreground">{t.title}</span>
-                                </div>
-                                {t.note && (
-                                  <p className="text-[10px] text-muted-foreground/60 mt-0.5 leading-relaxed">{t.note}</p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {/* 书籍 */}
-                      {getBooks(career).length > 0 && (
-                        <div className="mt-3 pt-2.5 border-t border-border/30">
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <BookOpen className="h-3 w-3 text-muted-foreground/40" />
-                            <span className="text-[9px] text-muted-foreground/50 uppercase tracking-wider">推荐书籍</span>
-                          </div>
-                          <div className="space-y-1">
-                            {getBooks(career).map((b, i) => (
-                              <p key={i} className="text-[10px] text-muted-foreground">
-                                <span className="font-medium text-foreground/70">{b.title}</span>
-                                <span className="text-muted-foreground/40"> — {b.author}</span>
-                              </p>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      <CareerResourcePanel career={career} />
                     </div>
                   )}
                 </Reveal>
@@ -705,96 +723,13 @@ export default function CareerPage() {
                   </div>
                 </div>
 
-                {/* Learning Resources in Detail Panel */}
+                {/* 学习资源：视频 / 文档与论坛 / 书籍 */}
                 <div className="mt-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <GraduationCap className="h-3.5 w-3.5 text-primary/60" />
                     <h4 className="text-xs font-semibold text-foreground">推荐学习资源</h4>
-                    <span className="text-[9px] text-muted-foreground/40">{getTutorials(selected).length} 项</span>
                   </div>
-
-                  <div className="space-y-2">
-                    {getTutorials(selected).map((t, i) => {
-                      const TypeIcon = tutorialTypeIcon[t.type];
-                      return (
-                        <div key={i} className="group rounded-md border border-border/50 bg-background/50 p-2.5 hover:border-primary/20 transition-colors">
-                          <div className="flex items-start gap-2">
-                            <div className={cn(
-                              'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm',
-                              t.type === 'course' ? 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400' :
-                              'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400'
-                            )}>
-                              <TypeIcon className="h-3 w-3" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 mb-0.5">
-                                <span className="text-[10px] text-muted-foreground/40 uppercase font-medium">{tutorialTypeLabel[t.type]}</span>
-                                <span className="text-[10px] text-muted-foreground/30">·</span>
-                                <span className="text-[10px] text-muted-foreground/40">{t.platform}</span>
-                                {i === 0 && t.url && (
-                                  <span className="rounded-sm bg-primary/10 px-1 py-0.5 text-[8px] text-primary/80">专属</span>
-                                )}
-                              </div>
-                              <span className="text-xs font-medium text-foreground">{t.title}</span>
-                              {t.note && (
-                                <p className="text-[10px] text-muted-foreground/60 mt-0.5 leading-relaxed">{t.note}</p>
-                              )}
-                              {t.url && (
-                                <a
-                                  href={t.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="mt-0.5 inline-block text-[10px] text-primary/70 underline decoration-primary/30 underline-offset-2 hover:text-primary"
-                                >
-                                  打开课程页 ↗
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Books */}
-                  {getBooks(selected).length > 0 && (
-                    <div className="mt-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <BookOpen className="h-3.5 w-3.5 text-primary/60" />
-                        <h4 className="text-xs font-semibold text-foreground">推荐书籍</h4>
-                      </div>
-                      <div className="space-y-1.5">
-                        {getBooks(selected).map((b, i) => (
-                          <div key={i} className="rounded-md border border-border/50 bg-background/50 px-2.5 py-2 hover:border-primary/20 transition-colors">
-                            <p className="text-xs font-medium text-foreground">
-                              {b.title}
-                              {i === 0 && b.why && <span className="ml-1.5 rounded-sm bg-primary/10 px-1 py-0.5 text-[8px] text-primary/80">专属</span>}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground/50">{b.author}</p>
-                            {b.why && <p className="mt-0.5 text-[10px] text-muted-foreground/70 leading-relaxed">{b.why}</p>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Learning Channels */}
-                  {getLearningChannels(selected).length > 0 && (
-                    <div className="mt-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MessageSquare className="h-3 w-3 text-primary/60" />
-                        <h4 className="text-[10px] font-semibold text-foreground">学习渠道</h4>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {getLearningChannels(selected).map((ch, i) => (
-                          <span key={i} className="rounded-sm bg-muted/50 px-2 py-0.5 text-[9px] text-muted-foreground">
-                            {ch}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <CareerResourcePanel career={selected} />
                 </div>
 
                 {/* Strategic insight */}

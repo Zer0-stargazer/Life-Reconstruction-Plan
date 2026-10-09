@@ -14,47 +14,17 @@ export interface Career {
 }
 
 
-/* ============ 分类级学习资源（真实平台/书目，按职业所属分类查找） ============ */
+/* ============ 职业专属学习资源（视频 / 文档与论坛 / 书籍） ============ */
 
-import { CAREER_RESOURCES } from './career-resources';
+import { CAREER_RESOURCES, type CareerResourceBook, type CareerResourceLink } from './career-resources';
 
-export interface CareerTutorial { type: 'video' | 'course'; title: string; platform: string; note?: string; url?: string }
-export interface CareerBook { title: string; author: string; why?: string }
+export type CareerBook = CareerResourceBook;
+export type CareerLink = CareerResourceLink;
 
-const CATEGORY_CHANNELS: Record<string, string[]> = {"科技": ["GitHub 开源社区", "掘金 / V2EX 技术社区", "LeetCode / 牛客网"], "金融": ["雪球 / 集思录", "中国大学MOOC 财经课程", "CFA 协会学习平台"], "医疗": ["丁香园 / 丁香人才", "中国大学MOOC 医学课程", "国家卫生健康委官网"], "教育": ["中国大学MOOC / 学堂在线", "国家中小学智慧教育平台", "Edutopia"], "设计": ["站酷 / UI中国", "Dribbble / Behance", "优设网"], "法律": ["无讼 / 法信", "中国裁判文书网", "中国大学MOOC 法学课程"], "商业销售": ["得到 / 混沌学园", "36氪 / 虎嗅", "中国大学MOOC 管理课程"], "管理": ["得到 / 混沌学园", "哈佛商业评论中文版", "中国大学MOOC 管理课程"], "工程制造": ["中国大学MOOC 工科课程", "北极星电力/工业互联网社区", "B站 工程实操"], "服务": ["中国大学MOOC 服务管理课程", "行业头部企业公开课", "B站 服务场景案例"], "传媒": ["新榜 / 飞瓜数据", "人人都是产品经理 媒体专栏", "B站 创作学院"], "科研": ["中国大学MOOC / 学堂在线", "知网 / Google Scholar", "Coursera / edX"], "能源": ["中国大学MOOC 能源电力课程", "北极星电力网", "国际能源署（IEA）报告库"]};
-
-const CATEGORY_TUTORIALS: Record<string, CareerTutorial[]> = {"科技": [{"type": "course", "title": "CS50 计算机科学导论", "platform": "edX", "note": "哈佛公开课，零基础建立计算机全局观"}, {"type": "video", "title": "前端/后端全栈实战系列", "platform": "B站", "note": "跟练为主，边做边学"}, {"type": "course", "title": "吴恩达机器学习课程", "platform": "Coursera", "note": "AI 时代通识课，不限方向"}], "金融": [{"type": "course", "title": "金融学导论", "platform": "中国大学MOOC"}, {"type": "course", "title": "财务分析与估值实务", "platform": "Coursera"}, {"type": "video", "title": "量化投资入门系列", "platform": "B站"}], "医疗": [{"type": "course", "title": "系统解剖学", "platform": "中国大学MOOC"}, {"type": "course", "title": "临床医学概论", "platform": "Coursera"}, {"type": "video", "title": "临床思维与医患沟通系列", "platform": "B站"}], "教育": [{"type": "course", "title": "教育心理学", "platform": "中国大学MOOC"}, {"type": "course", "title": "Learning How to Learn", "platform": "Coursera", "note": "全球最受欢迎的学习方法课"}, {"type": "video", "title": "名师课堂教学实录", "platform": "B站"}], "设计": [{"type": "course", "title": "版式与视觉设计基础", "platform": "优设网"}, {"type": "course", "title": "UI/UX 设计专项课程", "platform": "Coursera"}, {"type": "video", "title": "Figma/PS 软件实操系列", "platform": "B站"}], "法律": [{"type": "course", "title": "法理学导论", "platform": "中国大学MOOC"}, {"type": "course", "title": "合同法与实务", "platform": "智拾网"}, {"type": "video", "title": "真实案例精讲系列", "platform": "B站"}], "商业销售": [{"type": "course", "title": "市场营销原理", "platform": "中国大学MOOC"}, {"type": "course", "title": "销售谈判实战", "platform": "得到"}, {"type": "video", "title": "商业案例分析系列", "platform": "B站"}], "管理": [{"type": "course", "title": "管理学原理", "platform": "中国大学MOOC"}, {"type": "course", "title": "组织行为学", "platform": "Coursera"}, {"type": "video", "title": "管理案例复盘系列", "platform": "B站"}], "工程制造": [{"type": "course", "title": "机械设计基础", "platform": "中国大学MOOC"}, {"type": "course", "title": "电路原理", "platform": "中国大学MOOC"}, {"type": "video", "title": "CAD / SolidWorks 实操系列", "platform": "B站"}], "服务": [{"type": "course", "title": "服务与酒店管理导论", "platform": "中国大学MOOC"}, {"type": "course", "title": "客户关系管理", "platform": "Coursera"}, {"type": "video", "title": "服务礼仪与场景实战", "platform": "B站"}], "传媒": [{"type": "course", "title": "新闻传播学导论", "platform": "中国大学MOOC"}, {"type": "course", "title": "内容营销与新媒体运营", "platform": "网易云课堂"}, {"type": "video", "title": "短视频拍摄与剪辑系列", "platform": "B站"}], "科研": [{"type": "course", "title": "科研写作与论文发表", "platform": "学堂在线"}, {"type": "course", "title": "学术英语", "platform": "Coursera"}, {"type": "video", "title": "文献管理工具（Zotero）教程", "platform": "B站"}], "能源": [{"type": "course", "title": "能源系统工程导论", "platform": "中国大学MOOC"}, {"type": "course", "title": "可再生能源原理", "platform": "Coursera"}, {"type": "video", "title": "电力系统仿真实操", "platform": "B站"}]};
-
-const CATEGORY_BOOKS: Record<string, CareerBook[]> = {"科技": [{"title": "深入理解计算机系统", "author": "Randal E. Bryant"}, {"title": "代码大全", "author": "Steve McConnell"}], "金融": [{"title": "聪明的投资者", "author": "本杰明·格雷厄姆"}, {"title": "经济学原理", "author": "曼昆"}], "医疗": [{"title": "默克家庭诊疗手册", "author": "默克研究实验室"}, {"title": "医学的温度", "author": "韩启德"}], "教育": [{"title": "给教师的建议", "author": "苏霍姆林斯基"}, {"title": "教育的目的", "author": "怀特海"}], "设计": [{"title": "写给大家看的设计书", "author": "罗宾·威廉姆斯"}, {"title": "设计心理学", "author": "唐纳德·诺曼"}], "法律": [{"title": "民法典及司法解释汇编", "author": "法律出版社"}, {"title": "洞穴奇案", "author": "萨伯"}], "商业销售": [{"title": "影响力", "author": "罗伯特·西奥迪尼"}, {"title": "定位", "author": "艾·里斯 / 杰克·特劳特"}], "管理": [{"title": "卓有成效的管理者", "author": "彼得·德鲁克"}, {"title": "原则", "author": "瑞·达利欧"}], "工程制造": [{"title": "机械设计手册", "author": "成大先"}, {"title": "精益思想", "author": "詹姆斯·沃麦克"}], "服务": [{"title": "服务的细节", "author": "志贺内典子"}, {"title": "海底捞你学不会", "author": "黄铁鹰"}], "传媒": [{"title": "乌合之众", "author": "古斯塔夫·勒庞"}, {"title": "从零开始做运营", "author": "张亮"}], "科研": [{"title": "如何阅读一本书", "author": "莫提默·艾德勒"}, {"title": "社会研究方法", "author": "艾尔·巴比"}], "能源": [{"title": "能源与文明", "author": "瓦茨拉夫·斯米尔"}, {"title": "电力系统分析", "author": "何仰赞"}]};
-
-const FALLBACK_CHANNELS = ['行业社区', '中国大学MOOC / 学堂在线', 'B站 优质公开课'];
-
-/** 学习渠道：职业专属参考（若有）在前，分类级通用渠道兜底 */
-export function getLearningChannels(c: Pick<Career, 'category'> & { name?: string }): string[] {
-  const own = c.name ? CAREER_RESOURCES[c.name]?.reference : undefined;
-  const cat = CATEGORY_CHANNELS[c.category] || FALLBACK_CHANNELS;
-  if (own) {
-    const label = own.url ? `${own.name}（${own.url}）` : own.name;
-    return [label, ...cat];
-  }
-  return cat;
-}
-
-/** 推荐课程：职业专属（若有）在前，分类级通用兜底 */
-export function getTutorials(c: Pick<Career, 'category'> & { name?: string }): CareerTutorial[] {
-  const own = c.name ? CAREER_RESOURCES[c.name]?.course : undefined;
-  const cat = CATEGORY_TUTORIALS[c.category] || CATEGORY_TUTORIALS['科技'];
-  if (own) {
-    return [{ type: 'course', title: own.title, platform: own.platform, note: own.note, url: own.url }, ...cat];
-  }
-  return cat;
-}
-
-/** 推荐书籍：职业专属（若有）在前，分类级通用兜底 */
-export function getBooks(c: Pick<Career, 'category'> & { name?: string }): CareerBook[] {
-  const own = c.name ? CAREER_RESOURCES[c.name]?.book : undefined;
-  const cat = CATEGORY_BOOKS[c.category] || CATEGORY_BOOKS['科技'];
-  return own ? [own, ...cat] : cat;
+/** 只返回该职业自己的资源；没有的类别为空数组，由页面如实提示，不再用分类通用内容冒充 */
+export function getCareerResources(c: Pick<Career, 'name'>): { videos: CareerLink[]; docs: CareerLink[]; books: CareerBook[] } {
+  const r = CAREER_RESOURCES[c.name];
+  return { videos: r?.videos ?? [], docs: r?.docs ?? [], books: r?.books ?? [] };
 }
 
 const AI_RISK_TEXT: Record<Career['aiRisk'], string> = {
