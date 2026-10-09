@@ -1,46 +1,30 @@
 import { cn } from '@/lib/utils';
 
 /**
- * 站点印章：朱砂方印、细内框、印文「重」留足四周白边。
+ * 站点标识：朱砂方印。内部一道未闭合的圆弧表示"重新开始"，
+ * 圆弧包住两个叠起的空心方块（抽象的「重」），圆弧起点一枚墨点。
  *
  * 入场只在整页首次加载时播放一次（CSS 关键帧 seal-stamp-in，500ms，power3.out）。
- * 不挂任何循环动画。
  */
 export function SealMark({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={cn(
-        'seal-stamp-in relative inline-flex shrink-0 items-center justify-center text-primary-foreground',
-        className
-      )}
+      className={cn('seal-stamp-in relative inline-flex shrink-0 items-center justify-center', className)}
     >
-      <svg viewBox="0 0 40 40" className="absolute inset-0 h-full w-full" focusable="false">
-        <defs>
-          {/* 刀刻边缘：轻微位移，让方印不像矢量方块 */}
-          <filter id="seal-carve" x="-5%" y="-5%" width="110%" height="110%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="noise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.5" xChannelSelector="R" yChannelSelector="G" />
-          </filter>
-        </defs>
-        <rect x="1" y="1" width="38" height="38" rx="2" className="fill-primary" filter="url(#seal-carve)" />
-        <rect
-          x="4"
-          y="4"
-          width="32"
-          height="32"
-          rx="0.8"
+      <svg viewBox="0 0 40 40" className="h-full w-full" focusable="false">
+        <rect x="0" y="0" width="40" height="40" rx="3" className="fill-primary" />
+        <path
+          d="M28.4 10.0 A13 13 0 1 1 13.5 8.7"
           fill="none"
-          stroke="currentColor"
-          strokeOpacity="0.5"
-          strokeWidth="0.6"
+          stroke="#f6efe2"
+          strokeWidth="1.5"
+          strokeLinecap="round"
         />
-        {/* 印泥磨损：几处暗斑 */}
-        <circle cx="30" cy="10" r="0.9" fill="#f6efe2" fillOpacity="0.35" />
-        <circle cx="9.5" cy="31" r="0.6" fill="#f6efe2" fillOpacity="0.3" />
-        <circle cx="33" cy="27" r="0.5" fill="#f6efe2" fillOpacity="0.25" />
+        <circle cx="28.4" cy="10.0" r="1.6" fill="#f6efe2" />
+        <rect x="15.2" y="14.2" width="9.6" height="5" fill="none" stroke="#f6efe2" strokeWidth="1.3" />
+        <rect x="13.4" y="20.6" width="13.2" height="5.4" fill="none" stroke="#f6efe2" strokeWidth="1.3" />
       </svg>
-      <span className="relative font-serif text-[0.72em] font-semibold leading-none">重</span>
     </span>
   );
 }
