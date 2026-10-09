@@ -462,8 +462,13 @@ function TimelineSlider({ age, onChange }: { age: number; onChange: (value: numb
           />
         </svg>
         <div
-          className="pointer-events-none absolute inset-y-1 z-[1] w-0.5 rounded bg-primary/80"
+          className="pointer-events-none absolute inset-y-1 z-[1] w-0.5 rounded bg-primary/80 transition-[left] duration-300 ease-out"
           style={{ left: `calc(${currentX}% - 1px)` }}
+        />
+        <div
+          className="pointer-events-none absolute top-1/2 z-[2] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-4 ring-primary/20 transition-[left] duration-300 ease-out"
+          style={{ left: `${currentX}%` }}
+          aria-hidden
         />
         <input
           type="range"

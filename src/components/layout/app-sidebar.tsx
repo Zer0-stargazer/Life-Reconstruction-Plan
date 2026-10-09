@@ -15,6 +15,7 @@ import {
   User,
   Sun,
   Moon,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth, type UserRole } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
@@ -100,18 +101,25 @@ export function AppSidebar() {
         href={item.href}
         aria-current={isActive ? 'page' : undefined}
         className={cn(
-          'relative flex items-center gap-3 py-2 pl-4 pr-3 text-sm transition-colors duration-500 ease-out',
+          'group relative flex items-center gap-3 rounded-sm py-2 pl-4 pr-3 text-sm transition-[color,background-color,transform] duration-300 ease-out hover:translate-x-0.5',
           isActive
             ? 'font-medium text-primary'
             : isLocked
-              ? 'text-muted-foreground/60 hover:text-muted-foreground'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'text-muted-foreground/60 hover:bg-foreground/[0.04] hover:text-muted-foreground'
+              : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
         )}
       >
         {isActive && <span aria-hidden className="nav-rule" />}
         <Icon className="h-5 w-5 shrink-0" strokeWidth={1.25} />
         <span className="flex-1 truncate">{item.label}</span>
         {isLocked && <Lock className="h-3 w-3 shrink-0 text-muted-foreground/60" strokeWidth={1.25} />}
+        {!isActive && !isLocked && (
+          <ChevronRight
+            className="h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity duration-300 group-hover:opacity-60"
+            strokeWidth={1.25}
+            aria-hidden
+          />
+        )}
       </Link>
     );
   };

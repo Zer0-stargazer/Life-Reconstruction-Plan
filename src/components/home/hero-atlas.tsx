@@ -110,10 +110,9 @@ export function HeroAtlas({ animated = true, withSeal = true }: { animated?: boo
         <g transform="translate(240 240) scale(3)">
           <g data-atlas="seal">
             <rect x="0" y="0" width="40" height="40" rx="3" fill="var(--primary)" stroke="none" />
-            <path d="M28.4 10.0 A13 13 0 1 1 13.5 8.7" stroke="#f6efe2" strokeWidth="0.5" strokeLinecap="round" />
-            <circle cx="28.4" cy="10.0" r="1.6" fill="#f6efe2" stroke="none" />
-            <rect x="15.2" y="14.2" width="9.6" height="5" stroke="#f6efe2" strokeWidth="0.43" />
-            <rect x="13.4" y="20.6" width="13.2" height="5.4" stroke="#f6efe2" strokeWidth="0.43" />
+            <rect x="3" y="3" width="34" height="34" rx="1.5" fill="none" stroke="#f6efe2" strokeOpacity="0.5" strokeWidth="0.35" strokeDasharray="1.2 1.4" />
+            <text x="20" y="27" textAnchor="middle" fill="#f6efe2" stroke="none" className="font-serif" fontSize="18" fontWeight="700">重</text>
+            <circle cx="31" cy="9" r="1.4" fill="#f6efe2" stroke="none" />
           </g>
         </g>
       )}

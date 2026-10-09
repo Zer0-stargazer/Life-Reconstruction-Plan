@@ -324,6 +324,24 @@ input[type="range"]::-webkit-slider-thumb:active {
   background: transparent;
 }
 
+/* 原生拇指隐身：可见的圆点由 TimelineSlider 绘制，避免与竖线错位 */
+.age-timeline-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 2px;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.age-timeline-slider::-moz-range-thumb {
+  width: 2px;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
 .age-timeline-slider::-moz-range-track {
   height: 100%;
   background: transparent;

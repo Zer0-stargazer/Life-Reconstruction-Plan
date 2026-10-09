@@ -27,7 +27,10 @@ export function WindowMarkBar({ id, className }: { id: number; className?: strin
   const cur = marks[id];
 
   return (
-    <div className={cn('flex items-center gap-1', className)} role="group" aria-label="标记这条窗口">
+    <div className={cn('flex flex-wrap items-center gap-1.5', className)} role="group" aria-label="标记这条窗口">
+      <span className="mr-1 text-[10px] uppercase tracking-[0.22em] text-muted-foreground/70" aria-hidden>
+        Status
+      </span>
       {WINDOW_MARK_ORDER.map((m) => {
         const active = cur === m;
         return (

@@ -9,6 +9,7 @@ import { SealMark } from '@/components/shared/seal-mark';
 import { HeroAtlas } from '@/components/home/hero-atlas';
 import type { ModuleIconComponent } from '@/components/shared/module-icons';
 import { WINDOW_DENSITY_META } from '@/data/window-density';
+import { careers } from '@/data/careers';
 import { CHAPTERS, MODULE_IDENTITIES, TIMELINE_IDENTITY } from '@/lib/module-identity';
 import { chapterMeta } from '@/lib/chapter-meta';
 import { MOTION, gsap, ScrollTrigger, prefersReducedMotion, registerGsap } from '@/lib/motion';
@@ -37,7 +38,13 @@ const CHAPTER_SECTIONS = CHAPTERS.map((chapter, index) => ({
   }),
 }));
 
-const MARQUEE_WORDS = ['姓名', '职业', '规律', '窗口', '努力', '运气', '命运', 'DECISION ATLAS'];
+const HERO_STATS = [
+  { en: 'Windows', value: WINDOW_DENSITY_META.total, zh: '扇人生窗口' },
+  { en: 'Dimensions', value: 7, zh: '大决策维度' },
+  { en: 'Careers', value: careers.length, zh: '个职业画像' },
+];
+
+const MARQUEE_WORDS =['姓名', '职业', '规律', '窗口', '努力', '运气', '命运', 'DECISION ATLAS'];
 
 const faqs = [
   { q: '这是算命吗？', a: '不是。这是一个基于概率和数据的决策框架。我们不预测未来，我们帮你计算概率、识别窗口。' },
@@ -224,35 +231,51 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="relative mt-16 sm:mt-24">
-          <h1 className="font-serif text-[clamp(3.6rem,10vw,9.5rem)] font-bold leading-[1.02] tracking-[-0.01em] text-foreground">
-            <span className="block overflow-hidden pb-[0.06em]">
-              <span data-hero="line" className="block">人生重构</span>
-            </span>
-            <span className="block overflow-hidden pb-[0.06em] pl-[1.1em]">
-              <span data-hero="line" className="block">计划</span>
-            </span>
-          </h1>
+        <div className="mt-16 grid items-center gap-10 sm:mt-24 lg:grid-cols-12 lg:gap-6">
+          <div className="lg:col-span-7">
+            <h1 className="font-serif text-[clamp(3.6rem,10vw,9.5rem)] font-bold leading-[1.02] tracking-[-0.01em] text-foreground">
+              <span className="block overflow-hidden pb-[0.06em]">
+                <span data-hero="line" className="block">人生重构</span>
+              </span>
+              <span className="block overflow-hidden pb-[0.06em] pl-[1.1em]">
+                <span data-hero="line" className="block">计划</span>
+              </span>
+            </h1>
+            <p className="mt-8 flex items-center gap-4 text-[11px] uppercase tracking-[0.42em] text-primary" data-hero="kicker">
+              <span className="h-px w-12 bg-primary" aria-hidden />
+              Life Reconstruction Plan
+            </p>
+          </div>
 
           {/* 扉页主视觉：装饰，不承载信息 */}
-          <div
-            className="pointer-events-none absolute right-[-7%] top-1/2 hidden aspect-square w-[min(42vw,580px)] -translate-y-1/2 lg:block"
-            aria-hidden
-          >
+          <div className="pointer-events-none relative hidden aspect-square lg:col-span-5 lg:block" aria-hidden>
             <HeroAtlas />
           </div>
         </div>
 
         <div className="mt-14 grid gap-10 lg:grid-cols-12 lg:items-end">
-          <p
-            data-hero="quote"
-            className="max-w-xl font-serif text-xl leading-[1.9] text-foreground/80 sm:text-2xl lg:col-span-7"
-          >
-            <span className="block">命是你拿到的牌，</span>
-            <span className="block">运是你出牌的时机，</span>
-            <span className="block">努力是你出牌的方式。</span>
-          </p>
-          <div data-hero="cta" className="lg:col-span-5 lg:justify-self-end">
+          <div className="lg:col-span-5">
+            <p data-hero="quote" className="font-serif text-xl leading-[1.9] text-foreground/80 sm:text-2xl">
+              <span className="block">命是你拿到的牌，</span>
+              <span className="mb-3 block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Fate is the hand you are dealt</span>
+              <span className="block">运是你出牌的时机，</span>
+              <span className="mb-3 block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Luck is when you play it</span>
+              <span className="block">努力是你出牌的方式。</span>
+              <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Effort is how you play it</span>
+            </p>
+          </div>
+
+          <dl data-hero="quote" className="grid grid-cols-3 gap-6 border-t border-border pt-6 lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+            {HERO_STATS.map((s) => (
+              <div key={s.en}>
+                <dt className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{s.en}</dt>
+                <dd className="mt-2 font-serif text-3xl font-bold tabular-nums text-foreground">{s.value}</dd>
+                <dd className="mt-1 text-xs text-muted-foreground">{s.zh}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <div data-hero="cta" className="lg:col-span-3 lg:justify-self-end">
             <StartButton />
           </div>
         </div>
