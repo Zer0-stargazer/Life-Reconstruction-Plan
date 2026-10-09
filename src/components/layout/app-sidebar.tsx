@@ -48,7 +48,7 @@ function Seal({ className }: { className?: string }) {
     <span
       aria-hidden
       className={cn(
-        'flex items-center justify-center bg-primary font-serif font-bold text-primary-foreground leading-none',
+        'seal-stamp flex items-center justify-center bg-primary font-serif font-bold text-primary-foreground leading-none',
         className
       )}
     >
@@ -106,14 +106,15 @@ export function AppSidebar() {
         key={item.href}
         href={item.href}
         className={cn(
-          'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-200',
+          'relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-200',
           isActive
-            ? 'bg-primary/10 text-primary font-medium'
+            ? 'text-primary font-medium'
             : isLocked
               ? 'text-muted-foreground/50 hover:bg-accent/30 hover:text-muted-foreground/70'
               : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
         )}
       >
+        {isActive && <span aria-hidden className="nav-rule" />}
         <Icon className="h-3.5 w-3.5 shrink-0" />
         <span className="flex-1 truncate">{item.label}</span>
         {isLocked && <Lock className="w-3 h-3 text-muted-foreground/40 shrink-0" />}
@@ -146,8 +147,8 @@ export function AppSidebar() {
 
         {CHAPTERS.map((chapter) => (
           <div key={chapter.num} className="mt-4">
-            <div className="px-3 pb-1 flex items-baseline gap-2 text-[11px] text-muted-foreground/60">
-              <span className="font-serif text-xs text-foreground/70">{chapter.num}</span>
+            <div className="px-3 pb-1 flex items-baseline gap-2 text-xs text-muted-foreground">
+              <span className="font-serif text-sm text-primary">{chapter.num}</span>
               <span className="font-serif">{chapter.title}</span>
             </div>
             <div className="space-y-0.5">

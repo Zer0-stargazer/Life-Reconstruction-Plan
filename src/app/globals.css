@@ -449,3 +449,78 @@ body, .bg-background, .bg-card, .bg-sidebar, .bg-muted {
   }
 }
 
+
+/* ========== 人生手记：扉页与导航动效 ========== */
+
+/* 扉页依次浮现：淡入 + 8px 上移，三段错开，总跨度 < 400ms */
+@keyframes rise-8 {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-rise {
+  animation: rise-8 480ms var(--ease-out-expo) both;
+}
+.hero-rise-2 { animation-delay: 140ms; }
+.hero-rise-3 { animation-delay: 280ms; }
+
+/* 侧栏「重」字印章：仅随整页加载播放一次 */
+@keyframes seal-stamp {
+  from { opacity: 0; transform: scale(1.15); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.seal-stamp {
+  animation: seal-stamp 250ms var(--ease-out-expo) both;
+}
+
+/* 侧栏当前项：朱砂竖线自上而下生长，不用实心底色 */
+@keyframes rule-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+.nav-rule {
+  position: absolute;
+  left: 0;
+  top: 22%;
+  bottom: 22%;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--primary);
+  transform-origin: center;
+  animation: rule-grow 260ms var(--ease-out-expo) both;
+}
+
+/* 标题下的墨线：hover 时从左向右铺开 */
+.ink-sweep {
+  position: relative;
+  display: inline-block;
+}
+.ink-sweep::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1.5px;
+  background: var(--primary);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 500ms var(--ease-out-expo);
+}
+.group:hover .ink-sweep::after,
+.group:focus-visible .ink-sweep::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise,
+  .seal-stamp,
+  .nav-rule {
+    animation: none;
+  }
+  .ink-sweep::after {
+    transition: none;
+  }
+}

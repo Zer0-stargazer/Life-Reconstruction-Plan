@@ -46,17 +46,18 @@ export function ModulePageHead({
       <div className={cn('mx-auto px-6 sm:px-8 pt-10 pb-8', WIDTHS[width])}>
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex-1 min-w-0 animate-fade-in-up">
-            {chapter && (
-              <p className="mb-3 font-serif text-sm text-primary">
-                {chapter.num}
-                <span className="mx-2 text-muted-foreground/60">·</span>
-                <span className="text-muted-foreground">{chapter.title}</span>
-              </p>
-            )}
-            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-tight">
+            <div className="flex items-baseline gap-3">
+              {chapter && (
+                <span className="font-serif text-3xl leading-none text-primary">{chapter.num}</span>
+              )}
+              {chapter && (
+                <span className="font-serif text-sm text-muted-foreground">{chapter.title}</span>
+              )}
+            </div>
+            <h1 className="mt-4 font-serif text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-tight">
               {title}
             </h1>
-            <p className="mt-3 text-sm font-medium text-foreground/80">{m.question}</p>
+            <p className="mt-3 text-sm font-medium text-muted-foreground">{m.question}</p>
             {desc && (
               <p className="mt-2 max-w-xl text-sm text-muted-foreground leading-relaxed">{desc}</p>
             )}
@@ -67,7 +68,15 @@ export function ModulePageHead({
           )}
         </div>
 
-        {children}
+        {/* 细线 + 起点朱砂小印：章节开篇的收束线 */}
+        <div className="relative mt-8 h-px bg-border">
+          <span
+            aria-hidden
+            className="absolute -left-px top-1/2 h-2 w-2 -translate-y-1/2 rounded-[1px] bg-primary"
+          />
+        </div>
+
+        {children && <div className="mt-6">{children}</div>}
       </div>
     </div>
   );

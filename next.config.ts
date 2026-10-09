@@ -6,6 +6,8 @@ const devPort = process.env.PORT || "5000";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: [`localhost:${devPort}`, `127.0.0.1:${devPort}`],
+  // 开发环境左下角的 N 徽标会压住侧栏底部内容
+  devIndicators: false,
 };
 
 export default nextConfig;
