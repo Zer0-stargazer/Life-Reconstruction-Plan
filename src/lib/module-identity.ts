@@ -9,6 +9,7 @@ import {
   CalendarRange,
   type LucideIcon,
 } from 'lucide-react';
+import { LAW_DIMENSIONS } from '@/data/laws';
 
 /**
  * 七个模块的「视觉身份」——全站唯一真源。
@@ -69,7 +70,7 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     title: '规律',
     question: '哪些齿轮，在你没注意的地方一直转动？',
     desc: '生物衰老、心智带宽、财富侵蚀……8 个维度里藏着人生的暗箱。',
-    metric: '288',
+    metric: String(LAW_DIMENSIONS.reduce((s, d) => s + d.items.length, 0)),
     unit: 'LAWS',
     icon: Scale,
     iconGradient: 'from-violet-500 to-purple-400',

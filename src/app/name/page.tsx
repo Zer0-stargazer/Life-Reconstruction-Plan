@@ -51,7 +51,7 @@ interface CharEntry {
 // 人工精选字池：按风格分组，每个字都带声调、结构、字义
 const charPool: Record<string, CharEntry[]> = {
   classic: [
-    { ch: '若', tone: '去声', form: '上下结构', meaning: '好像，如同' },
+    { ch: '若', tone: '阳平', form: '上下结构', meaning: '好像，如同' },
     { ch: '兮', tone: '阴平', form: '独体字', meaning: '楚辞中的语气词' },
     { ch: '雅', tone: '上声', form: '左右结构', meaning: '文雅，不俗' },
     { ch: '清', tone: '阴平', form: '左右结构', meaning: '水澄澈，不浊' },
@@ -61,7 +61,7 @@ const charPool: Record<string, CharEntry[]> = {
     { ch: '怀', tone: '阳平', form: '左右结构', meaning: '胸怀，心中所念' },
   ],
   modern: [
-    { ch: '子', tone: '上声', form: '独体字', meaning: '孩子，也指有德才的人' },
+    { ch: '子', tone: '上声', form: '独体字', meaning: '孩子，指有德才的人' },
     { ch: '安', tone: '阴平', form: '上下结构', meaning: '平静，安稳' },
     { ch: '初', tone: '阴平', form: '左右结构', meaning: '开始，起头' },
     { ch: '元', tone: '阳平', form: '独体字', meaning: '开始，根本' },
@@ -93,7 +93,7 @@ const charPool: Record<string, CharEntry[]> = {
     { ch: '刚', tone: '阴平', form: '左右结构', meaning: '坚硬，有骨气' },
     { ch: '铸', tone: '去声', form: '左右结构', meaning: '熔化金属做成器物' },
     { ch: '镇', tone: '去声', form: '左右结构', meaning: '压住，安定' },
-    { ch: '策', tone: '阴平', form: '上下结构', meaning: '谋划，计策' },
+    { ch: '策', tone: '去声', form: '上下结构', meaning: '谋划，计策' },
   ],
   poetic: [
     { ch: '烟', tone: '阴平', form: '左右结构', meaning: '雾气，如轻纱' },

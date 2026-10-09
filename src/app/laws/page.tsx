@@ -920,7 +920,7 @@ export default function LawsPage() {
       <ModulePageHead
         href="/laws"
         title="人生规律引擎"
-        note="LAW ENGINE · N=288"
+        note={`LAW ENGINE · N=${LAW_DIMENSIONS.reduce((s, d) => s + d.items.length, 0)}`}
         desc="混沌系统中的确定性规律——8个维度揭示人生暗箱里的齿轮如何转动。看清规律，才能在不确定性中找到行动的锚点。"
       >
         {/* Global stats */}
