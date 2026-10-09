@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
+  type LucideIcon,
   PenTool,
   Briefcase,
   Compass,
@@ -13,10 +14,8 @@ import {
   Dice5,
   User,
   Home,
-  Flame,
   Menu,
   X,
-  ChevronRight,
   Scale,
   Lock,
   Shield,
@@ -27,29 +26,36 @@ import { useAuth, type UserRole } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { RoleBadge } from '@/components/auth/module-gate';
-import { LAW_DIMENSIONS } from '@/data/laws';
-import { lifeWindows } from '@/data/windows';
-import { luckNodes } from '@/data/luck-nodes';
-import { careers } from '@/data/careers';
+import { CHAPTERS } from '@/lib/module-identity';
 
-const TOTAL_DATA_POINTS =
-  LAW_DIMENSIONS.reduce((sum, d) => sum + d.items.length, 0) +
-  lifeWindows.length +
-  luckNodes.length +
-  careers.length;
+const homeItem = { href: '/', label: '首页', icon: Home };
+const userItem = { href: '/user', label: '我的', icon: User };
 
-const navItems = [
-  { href: '/', label: '首页', icon: Home, desc: '总览' },
-  { href: '/me', label: '时间轴', icon: CalendarRange, tag: '★', desc: '属于你的窗口' },
-  { href: '/name', label: '名字', icon: PenTool, tag: '01', desc: '人生第一张牌' },
-  { href: '/career', label: '职业', icon: Briefcase, tag: '02', desc: '赛道决定上限' },
-  { href: '/laws', label: '规律', icon: Scale, tag: '03', desc: '人生暗箱齿轮' },
-  { href: '/windows', label: '窗口', icon: Clock, tag: '04', desc: '关键时机识别' },
-  { href: '/simulation', label: '努力', icon: SlidersHorizontal, tag: '05', desc: '命运模拟推演' },
-  { href: '/luck', label: '运气', icon: Dice5, tag: '06', desc: '概率结构拆解' },
-  { href: '/destiny', label: '命运', icon: Compass, tag: '07', desc: '命势运综合报告' },
-  { href: '/user', label: '我的', icon: User, desc: '偏好与设置' },
-];
+const chapterItems: Record<string, { href: string; label: string; icon: LucideIcon }> = {
+  '/me': { href: '/me', label: '时间轴', icon: CalendarRange },
+  '/windows': { href: '/windows', label: '窗口', icon: Clock },
+  '/name': { href: '/name', label: '名字', icon: PenTool },
+  '/career': { href: '/career', label: '职业', icon: Briefcase },
+  '/laws': { href: '/laws', label: '规律', icon: Scale },
+  '/luck': { href: '/luck', label: '运气', icon: Dice5 },
+  '/simulation': { href: '/simulation', label: '努力', icon: SlidersHorizontal },
+  '/destiny': { href: '/destiny', label: '命运', icon: Compass },
+};
+
+/** 朱砂方印，内写「重」——站点 logo */
+function Seal({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'flex items-center justify-center bg-primary font-serif font-bold text-primary-foreground leading-none',
+        className
+      )}
+    >
+      重
+    </span>
+  );
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -91,81 +97,69 @@ export function AppSidebar() {
     } catch { /* ignore */ }
   };
 
+  const renderItem = (item: { href: string; label: string; icon: LucideIcon }) => {
+    const isActive = pathname === item.href;
+    const Icon = item.icon;
+    const isLocked = user && !canAccessModule(item.href);
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn(
+          'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-200',
+          isActive
+            ? 'bg-primary/10 text-primary font-medium'
+            : isLocked
+              ? 'text-muted-foreground/50 hover:bg-accent/30 hover:text-muted-foreground/70'
+              : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
+        )}
+      >
+        <Icon className="h-3.5 w-3.5 shrink-0" />
+        <span className="flex-1 truncate">{item.label}</span>
+        {isLocked && <Lock className="w-3 h-3 text-muted-foreground/40 shrink-0" />}
+      </Link>
+    );
+  };
+
   const sidebarContent = (
     <>
-      {/* Logo + 数据读数 */}
+      {/* Logo */}
       <div className="px-5 py-5 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-            <Flame className="h-4 w-4" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground tracking-tight font-serif">人生重构计划</span>
-            <span className="text-[9px] text-muted-foreground/70 tracking-[0.2em] uppercase font-mono">LIFE REBOOT</span>
-          </div>
+          <Seal className="h-8 w-8 rounded-sm text-base" />
+          <span className="text-sm font-semibold text-foreground tracking-tight font-serif">人生重构计划</span>
           {mounted && (
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="theme-toggle ml-auto h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              className="ml-auto h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               title={theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}
             >
               {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
             </button>
           )}
         </div>
-        <div className="mt-3 flex items-center justify-between font-mono text-[9px] text-muted-foreground/40 tabular-nums">
-          <span>{TOTAL_DATA_POINTS.toLocaleString('en-US')} DATA PTS</span>
-          <span>07 MODULES</span>
-        </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          const isLocked = user && !canAccessModule(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-all duration-200',
-                isActive
-                  ? 'bg-primary/10 text-primary font-medium shadow-sm'
-                  : isLocked
-                    ? 'text-muted-foreground/50 hover:bg-accent/30 hover:text-muted-foreground/70'
-                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
-              )}
-            >
-              <div className={cn(
-                'flex h-6 w-6 items-center justify-center rounded transition-colors duration-200',
-                isActive ? 'bg-primary/15' : 'group-hover:bg-muted'
-              )}>
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="truncate">{item.label}</span>
-                  {isLocked && (
-                    <Lock className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-                  )}
-                  {item.tag && (
-                    <span className={cn(
-                      'text-[9px] font-mono tabular-nums',
-                      isActive ? 'text-primary/50' : 'text-muted-foreground/40'
-                    )}>
-                      {item.tag}
-                    </span>
-                  )}
-                </div>
-              </div>
-              {isActive && (
-                <ChevronRight className="h-3 w-3 text-primary/40 shrink-0" />
-              )}
-            </Link>
-          );
-        })}
+      {/* Navigation：首页 · 序章 … 终章 · 我的 */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3">
+        <div className="space-y-0.5">{renderItem(homeItem)}</div>
+
+        {CHAPTERS.map((chapter) => (
+          <div key={chapter.num} className="mt-4">
+            <div className="px-3 pb-1 flex items-baseline gap-2 text-[11px] text-muted-foreground/60">
+              <span className="font-serif text-xs text-foreground/70">{chapter.num}</span>
+              <span className="font-serif">{chapter.title}</span>
+            </div>
+            <div className="space-y-0.5">
+              {chapter.hrefs.map((href) => {
+                const item = chapterItems[href];
+                return item ? renderItem(item) : null;
+              })}
+            </div>
+          </div>
+        ))}
+
+        <div className="mt-4 space-y-0.5">{renderItem(userItem)}</div>
       </nav>
 
       {/* Divider */}
@@ -178,31 +172,24 @@ export function AppSidebar() {
         <Link
           href="/admin"
           className={cn(
-            'group flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all duration-200',
+            'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-200',
             pathname === '/admin'
-              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium shadow-sm'
+              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium'
               : isDeveloper
                 ? 'text-amber-600/70 dark:text-amber-400/70 hover:bg-amber-500/10 hover:text-amber-600'
                 : 'text-muted-foreground/30 hover:text-muted-foreground/60 hover:bg-muted/30'
           )}
         >
-          <div className={cn(
-            'flex h-6 w-6 items-center justify-center rounded',
-            isDeveloper ? 'bg-amber-500/10' : 'bg-transparent'
-          )}>
-            <Shield className="h-3.5 w-3.5 shrink-0" />
-          </div>
+          <Shield className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">{isDeveloper ? '开发者后台' : '管理入口'}</span>
         </Link>
         {/* Exit developer mode button */}
         {isDeveloper && (
           <button
             onClick={handleExitDeveloper}
-            className="group flex items-center gap-3 rounded-md px-3 py-2 text-sm w-full text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/30 transition-all duration-200"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm w-full text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/30 transition-colors duration-200"
           >
-            <div className="flex h-6 w-6 items-center justify-center rounded">
-              <LogOut className="h-3.5 w-3.5 shrink-0" />
-            </div>
+            <LogOut className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">退出开发者模式</span>
           </button>
         )}
@@ -210,9 +197,8 @@ export function AppSidebar() {
 
       {/* Footer Quote */}
       <div className="px-5 pb-4 pt-1">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2">
           <RoleBadge />
-          <p className="text-[9px] text-muted-foreground/30 font-mono">v1.0</p>
         </div>
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed font-serif italic">
           &ldquo;人生没有标准答案，<br />但有更好的决策框架&rdquo;
@@ -235,9 +221,7 @@ export function AppSidebar() {
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
         <div className="flex items-center gap-2 ml-3">
-          <div className="flex h-6 w-6 items-center justify-center rounded bg-primary text-primary-foreground">
-            <Flame className="h-3 w-3" />
-          </div>
+          <Seal className="h-6 w-6 rounded-sm text-xs" />
           <span className="text-sm font-semibold text-foreground font-serif">人生重构计划</span>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { ThemeProvider } from"@/components/layout/theme-provider";
@@ -7,9 +8,15 @@ import { ModuleNextNav } from "@/components/shared/module-next-nav";
 import { AuthProvider } from "@/contexts/auth-context";
 import { UnlockDialog } from "@/components/auth/unlock-dialog";
 
+const notoSerifSC = Noto_Serif_SC({
+  weight: ["400", "600", "700"],
+  preload: false,
+  variable: "--font-noto-serif-sc",
+});
+
 export const metadata: Metadata = {
   title: {
-    default: "人生重构计划 | LIFE REBOOT",
+    default: "人生重构计划",
     template: "%s | 人生重构计划",
   },
   description:
@@ -34,7 +41,7 @@ export default function RootLayout({
   const isDev = process.env.NODE_ENV === "development";
 
   return (
-    <html lang="zh-CN" className="scroll-smooth" data-scroll-behavior="smooth">
+    <html lang="zh-CN" className={`scroll-smooth ${notoSerifSC.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className="antialiased">
         {isDev && (
           <div data-dev-inspector />
@@ -46,7 +53,7 @@ export default function RootLayout({
             <ModuleVisitTracker />
             <AppSidebar />
             {/* pt-12 给移动端固定顶栏让位（顶栏 h-12，md 起隐藏），否则每页前 48px 被盖住 */}
-            <main className="flex-1 pt-12 md:pt-0 md:ml-56">
+            <main className="flex-1 min-w-0 pt-12 md:pt-0 md:ml-56">
               {children}
               <ModuleNextNav />
             </main>

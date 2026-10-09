@@ -1,66 +1,25 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import {
-  ArrowRight, Flame, ChevronDown, Hourglass
-} from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import { WindowDensityChart } from '@/components/home/window-density-chart';
-import { HeroOrbit } from '@/components/home/hero-orbit';
 import { WINDOW_DENSITY_META } from '@/data/window-density';
-import { LAW_DIMENSIONS } from '@/data/laws';
-import { lifeWindows } from '@/data/windows';
-import { luckNodes } from '@/data/luck-nodes';
-import { careers } from '@/data/careers';
-import { MODULE_IDENTITIES, TIMELINE_IDENTITY } from '@/lib/module-identity';
-import { Reveal } from '@/components/shared/reveal';
+import { CHAPTERS, MODULE_IDENTITIES, TIMELINE_IDENTITY } from '@/lib/module-identity';
 
-/** 全站数据点总数：规律 + 窗口 + 运气 + 职业，均由数据数组长度计算 */
-const TOTAL_DATA_POINTS =
-  LAW_DIMENSIONS.reduce((sum, d) => sum + d.items.length, 0) +
-  lifeWindows.length +
-  luckNodes.length +
-  careers.length;
+const ENTRIES = [TIMELINE_IDENTITY, ...MODULE_IDENTITIES];
 
-function AnimatedNumber({ target, className }: { target: number; className?: string }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  const done = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !done.current) {
-          done.current = true;
-          const start = performance.now();
-          const step = (t: number) => {
-            const p = Math.min((t - start) / 1000, 1);
-            const eased = 1 - Math.pow(1 - p, 3);
-            setCount(Math.round(target * eased));
-            if (p < 1) requestAnimationFrame(step);
-          };
-          requestAnimationFrame(step);
-        }
-      },
-      { threshold: 0.4 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [target]);
-
-  return (
-    <span ref={ref} className={cn('tabular-nums', className)}>
-      {count.toLocaleString('en-US')}
-    </span>
-  );
-}
+const DIRECTORY = CHAPTERS.map((chapter) => ({
+  ...chapter,
+  items: chapter.hrefs.flatMap((href) => {
+    const entry = ENTRIES.find((e) => e.href === href);
+    return entry ? [entry] : [];
+  }),
+}));
 
 const quotes = [
-  { text: '命是你拿到的牌，运是你出牌的时机，努力是你出牌的方式。' },
-  { text: '大多数人把所有精力花在如何更努力地出牌上，却从没看过自己手里到底有什么牌。' },
+  '大多数人把所有精力花在如何更努力地出牌上，却从没看过自己手里到底有什么牌。',
 ];
 
 const faqs = [
@@ -69,97 +28,11 @@ const faqs = [
   { q: '我应该从哪个模块开始？', a: '建议先从"序章"开始：在时间轴页（/me）告诉我们你的年龄，再看"窗口"模块了解你当前处于哪些关键时机。' },
 ];
 
-/** 小节头：编号 eyebrow + 细线 + 标题 + 描述 */
-function SectionHead({ index, title, desc }: { index: string; title: string; desc?: string }) {
+function SectionHead({ title, desc }: { title: string; desc?: string }) {
   return (
-    <div className="mb-8 animate-fade-in-up">
-      <div className="flex items-center gap-3 mb-3">
-        <span className="font-mono text-[10px] tracking-[0.2em] text-primary/60">{index}</span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
-      <h2 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">{title}</h2>
+    <div className="mb-8">
+      <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{title}</h2>
       {desc && <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{desc}</p>}
-    </div>
-  );
-}
-
-/**
- * 模块导览卡。
- *
- * 视觉主角是「这个模块能回答什么问题」，不是数据量——
- * 用户不关心你有多少条规律，只关心这能帮他什么。
- */
-function ModuleCard({ m, wide = false }: { m: (typeof MODULE_IDENTITIES)[number]; wide?: boolean }) {
-  const Icon = m.icon;
-  return (
-    <Link
-      href={m.href}
-      className={cn(
-        'group relative flex h-full flex-col rounded-xl border border-border bg-card p-5',
-        'transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.04]',
-        m.ring,
-        wide && 'sm:flex-row sm:items-center sm:gap-6'
-      )}
-    >
-      {/* 顶：图标 + 数据量 */}
-      <div className={cn('flex items-start justify-between', wide ? 'sm:w-auto' : 'mb-4')}>
-        <span
-          className={cn(
-            'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md',
-            'transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6',
-            m.iconGradient
-          )}
-        >
-          <Icon className="h-5 w-5" />
-        </span>
-        <span className={cn('text-right font-mono leading-none', wide ? 'hidden' : 'block')}>
-          <b className="block text-sm font-bold text-foreground/85">{m.metric}</b>
-          <span className="text-[9px] text-muted-foreground/50 tracking-wider">{m.unit}</span>
-        </span>
-      </div>
-
-      <div className={cn('min-w-0', wide && 'flex-1')}>
-        {/* 编号 + 名称 */}
-        <div className="flex items-baseline gap-2 mb-1.5">
-          <span className={cn('font-mono text-[10px] tracking-[0.15em]', m.tagColor)}>{m.tag}</span>
-          <h3 className="text-lg font-bold text-foreground transition-colors group-hover:text-primary">
-            {m.title}
-          </h3>
-        </div>
-
-        {/* 核心：能回答的问题 */}
-        <p className={cn(
-          'font-semibold text-foreground/90 leading-snug',
-          wide ? 'text-base sm:text-lg' : 'text-[15px]'
-        )}>
-          {m.question}
-        </p>
-
-        <p className="mt-2 text-[12px] text-muted-foreground leading-relaxed">{m.desc}</p>
-      </div>
-
-      {/* 底：进去了 */}
-      <div className={cn(
-        'flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground/50 transition-colors group-hover:text-primary',
-        wide ? 'mt-4 sm:mt-0 sm:shrink-0' : 'mt-4'
-      )}>
-        进去看看
-        <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-0.5" />
-      </div>
-    </Link>
-  );
-}
-
-/** KPI 格：数字滚动到位 */
-function Kpi({ value, label, hint }: { value: number; label: string; hint?: string }) {
-  return (
-    <div className="px-6 sm:px-8 py-5">
-      <AnimatedNumber
-        target={value}
-        className="block font-serif text-3xl sm:text-4xl font-bold text-foreground leading-none"
-      />
-      <div className="mt-2 text-xs text-muted-foreground">{label}</div>
-      {hint && <div className="mt-1 font-mono text-[10px] text-primary/60">{hint}</div>}
     </div>
   );
 }
@@ -170,159 +43,71 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ===== HUD 状态栏 ===== */}
-      <div className="border-b border-border bg-muted/30">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-2 flex items-center justify-between font-mono text-[10px] text-muted-foreground/60 tracking-wide">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-70 animate-ping" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-            </span>
-            <span className="text-foreground/70">LIFE REBOOT PLAN</span>
-          </div>
-          <div className="flex items-center gap-4 sm:gap-6">
-            <span>07 MODULES</span>
-            <span className="hidden sm:inline">{TOTAL_DATA_POINTS.toLocaleString('en-US')} DATA POINTS</span>
-            <span className="hidden md:inline">BUILD v1.0</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ===== Hero ===== */}
-      <section className="relative overflow-hidden border-b border-border grain-texture">
-        {/* 细网格 */}
-        <div className="absolute inset-0 opacity-[0.035]" style={{
-          backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
-          backgroundSize: '48px 48px',
-        }} />
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.04] via-transparent to-transparent" />
-        <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/[0.07] blur-3xl" />
-
-        <div className="relative max-w-6xl mx-auto px-6 sm:px-8 py-14 sm:py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-            {/* 左：文案 */}
-            <div className="lg:col-span-5">
-              <div className="flex items-center gap-3 mb-8 animate-fade-in-up">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                  <Flame className="h-5 w-5" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-muted-foreground/60 tracking-[0.25em] uppercase font-mono">
-                    Life Reboot Plan
-                  </span>
-                  <span className="text-[10px] text-muted-foreground/40 tracking-wide font-mono">
-                    人生作战室 · v1.0
-                  </span>
-                </div>
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold text-foreground tracking-tight leading-[1.06] mb-5 animate-fade-in-up stagger-1">
-                人生重构计划
-              </h1>
-
-              <p className="text-lg sm:text-xl text-foreground/80 max-w-md leading-snug mb-4 animate-fade-in-up stagger-2 font-serif">
-                如果人生是一场策略游戏，你是先看攻略，还是硬闯？
-              </p>
-              <p className="text-sm text-muted-foreground max-w-md leading-relaxed mb-8 animate-fade-in-up stagger-3">
-                七大维度拆解命运——从名字的隐性暗示到运气的概率结构，
-                每个模块都是一张人生作战地图。不是算命，是算概率。
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3 animate-fade-in-up stagger-4">
-                <Link
-                  href="/me"
-                  className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 btn-press"
-                >
-                  看看你的人生时间轴
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-                <Link
-                  href="/windows"
-                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-card/60 px-6 py-3 text-sm font-medium text-foreground transition-all hover:border-primary/30 hover:bg-accent/40 btn-press"
-                >
-                  浏览 473 个人生窗口
-                </Link>
-              </div>
-            </div>
-
-            {/* 右：视觉化轨道图，不再复述下方模块卡 */}
-            <div className="lg:col-span-7 animate-fade-in-up stagger-3">
-              <HeroOrbit />
-            </div>
+      {/* ===== 扉页 ===== */}
+      <section className="border-b border-border">
+        <div className="max-w-5xl mx-auto px-6 sm:px-8 pt-20 pb-16 sm:pt-28 sm:pb-20">
+          <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground tracking-tight leading-[1.1]">
+            人生重构计划
+          </h1>
+          <p className="mt-8 max-w-2xl font-serif text-xl sm:text-2xl leading-relaxed text-foreground/85">
+            命是你拿到的牌，运是你出牌的时机，努力是你出牌的方式。
+          </p>
+          <div className="mt-10">
+            <Link
+              href="/me"
+              className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              从序章开始
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ===== 七个模块导览 ===== */}
-      <section className="max-w-6xl mx-auto px-6 sm:px-8 py-16 sm:py-20">
-        <SectionHead
-          index="MODULES · 01–07"
-          title="七个模块，回答七个问题"
-          desc="从你出生时被写下的名字，到命运的综合牌面——按顺序走一遍，就是一个完整的自我盘点。"
-        />
-
-        {/* 个性化主线：排在七个模块之前——不知道从哪看起就从这开始 */}
-        <Reveal className="mb-4">
-          <Link
-            href={TIMELINE_IDENTITY.href}
-            className="group relative block overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/[0.07] via-primary/[0.03] to-transparent p-6 sm:p-7 transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
-          >
-            <span className="pointer-events-none absolute -right-2 -top-4 select-none font-mono text-[7rem] font-bold leading-none text-primary/[0.05]">
-              ★
-            </span>
-            <div className="relative flex items-center gap-5 sm:gap-6">
-              <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform duration-300 group-hover:scale-105">
-                <Hourglass className="h-6 w-6 sm:h-7 sm:w-7" />
+      {/* ===== 目录 ===== */}
+      <section className="max-w-5xl mx-auto px-6 sm:px-8 py-16 sm:py-20">
+        <SectionHead title="目录" />
+        <div className="border-t border-border">
+          {DIRECTORY.map((chapter) => (
+            <div
+              key={chapter.num}
+              className="grid gap-4 border-b border-border py-6 sm:grid-cols-[10rem_1fr] sm:gap-8"
+            >
+              <div>
+                <div className="font-serif text-2xl text-primary">{chapter.num}</div>
+                <div className="mt-1 font-serif text-sm text-muted-foreground">{chapter.title}</div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <h3 className="text-base sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                    不知道从哪看起？先看你这个年纪
-                  </h3>
-                  <span className="rounded-full bg-primary/10 border border-primary/25 px-2 py-0.5 text-[10px] font-semibold text-primary shrink-0">
-                    从这开始
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  拖一下年龄滑块——473 个人生窗口里，哪些正为你开着、哪些已经关上、哪些马上要关。
-                </p>
-              </div>
-              <ArrowRight className="h-6 w-6 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+              <ul className="divide-y divide-border">
+                {chapter.items.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className="group flex items-center justify-between gap-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-serif text-base font-semibold text-foreground transition-colors group-hover:text-primary">
+                          {item.title}
+                        </div>
+                        <div className="mt-0.5 text-sm text-muted-foreground leading-relaxed">{item.question}</div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-primary" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </Link>
-        </Reveal>
-
-        {/* 01–06：模块卡 */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {MODULE_IDENTITIES.slice(0, 6).map((m, i) => (
-            <Reveal key={m.href} delay={i * 70}>
-              <ModuleCard m={m} />
-            </Reveal>
           ))}
         </div>
-
-        {/* 07 命运：压轴全宽——它本来就是前六项的汇总 */}
-        <Reveal delay={420} className="mt-4">
-          <ModuleCard m={MODULE_IDENTITIES[6]} wide />
-        </Reveal>
-
       </section>
 
-      {/* ===== 关键发现：窗口都集中在哪 ===== */}
+      {/* ===== 机会窗口 ===== */}
       <section className="border-t border-border bg-card">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-16">
-          <SectionHead index="FIG. 01" title="机会窗口，集中在前 45 年" />
+        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-16">
+          <SectionHead title="机会窗口，集中在前 45 年" />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* 左：KPI + 结论 */}
             <div className="lg:col-span-5">
-              <div className="grid grid-cols-2 divide-x divide-y divide-border rounded-xl border border-border overflow-hidden">
-                <Kpi value={meta.total} label="个人生窗口" hint="WINDOWS" />
-                <Kpi value={meta.before45} label="45 岁前开启" hint="AGE < 45" />
-                <Kpi value={meta.after45} label="45 岁后剩余" hint="AGE ≥ 45" />
-                <Kpi value={meta.peak.count} label="单区间峰值密度" hint={`${meta.peak.from}–${meta.peak.to} 岁`} />
-              </div>
-              <p className="mt-5 text-sm text-foreground/80 leading-relaxed">
+              <p className="text-sm text-foreground/80 leading-relaxed">
                 <span className="font-semibold text-foreground">
                   45 岁之前有 {meta.before45} 扇门，45 岁之后只剩 {meta.after45} 扇。
                 </span>
@@ -340,18 +125,15 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* 右：密度图 */}
             <div className="lg:col-span-7">
               <div className="rounded-xl border border-border bg-background/40 p-4 sm:p-5">
-                <div className="flex items-baseline justify-between border-b border-border pb-2.5 mb-3">
+                <div className="flex items-baseline justify-between gap-3 border-b border-border pb-2.5 mb-3">
                   <h3 className="text-sm font-semibold text-foreground">人生窗口密度分布</h3>
-                  <span className="font-mono text-[10px] text-muted-foreground/50">
-                    N={meta.total} · 5 岁/桶
-                  </span>
+                  <span className="text-xs text-muted-foreground/70">共 {meta.total} 个 · 每 5 岁一格</span>
                 </div>
                 <WindowDensityChart />
-                <div className="mt-3 pt-2.5 border-t border-border font-mono text-[10px] text-muted-foreground/60">
-                  PEAK {meta.peak.from}–{meta.peak.to} 岁 · {meta.peak.count} 个窗口
+                <div className="mt-3 pt-2.5 border-t border-border text-xs text-muted-foreground/70">
+                  峰值区间 {meta.peak.from}–{meta.peak.to} 岁，{meta.peak.count} 个窗口
                 </div>
               </div>
             </div>
@@ -359,19 +141,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== 核心洞察 & FAQ（合并，避免两段都占满一屏） ===== */}
+      {/* ===== 核心洞察 & FAQ ===== */}
       <section className="border-t border-border bg-muted/20">
-        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-10 sm:py-12">
-          <SectionHead index="INSIGHT" title="核心洞察" />
+        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-16">
+          <SectionHead title="核心洞察" />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div className="space-y-4 rounded-xl border border-border bg-card/60 p-4">
+            <div className="space-y-4 rounded-xl border border-border bg-card/60 p-5">
               {quotes.map((q, i) => (
                 <figure key={i} className="relative pl-5">
                   <span className="absolute left-0 top-0 select-none font-serif text-3xl leading-none text-primary/30">
                     &ldquo;
                   </span>
                   <blockquote className="font-serif text-base text-foreground/85 leading-relaxed">
-                    {q.text}
+                    {q}
                   </blockquote>
                 </figure>
               ))}
@@ -410,9 +192,8 @@ export default function HomePage() {
 
       {/* ===== Footer ===== */}
       <footer className="border-t border-border bg-card">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-6 flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] text-muted-foreground/50">
-          <span className="font-serif text-xs">人生重构计划 · 不是算命，是算概率</span>
-          <span>{TOTAL_DATA_POINTS.toLocaleString('en-US')} DATA POINTS · v1.0</span>
+        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-6 text-xs text-muted-foreground/60">
+          <span className="font-serif">人生重构计划 · 不是算命，是算概率</span>
         </div>
       </footer>
     </div>

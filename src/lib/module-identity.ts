@@ -143,3 +143,17 @@ export const TIMELINE_IDENTITY = {
   icon: CalendarRange,
   iconGradient: 'bg-foreground/5 text-foreground',
 };
+
+/** 序章 + 五章 + 终章的目录结构，侧栏、首页目录、模块页头共用 */
+export const CHAPTERS: { num: string; title: string; hrefs: string[] }[] = [
+  { num: '序', title: '你现在几岁', hrefs: ['/me'] },
+  { num: '壹', title: '你在哪', hrefs: ['/windows'] },
+  { num: '贰', title: '你的底色', hrefs: ['/name', '/career'] },
+  { num: '叁', title: '看不见的齿轮', hrefs: ['/laws', '/luck'] },
+  { num: '肆', title: '你能改什么', hrefs: ['/simulation'] },
+  { num: '终', title: '一页手记', hrefs: ['/destiny'] },
+];
+
+export function chapterOf(href: string) {
+  return CHAPTERS.find((c) => c.hrefs.includes(href));
+}
