@@ -8,11 +8,15 @@ import { unlockStore } from '@/lib/unlock-store';
 /** 登录页：访客从这里登录后，待执行动作保留，回到原页面时再执行 */
 const LOGIN_PATH = '/user';
 
+/** 待执行动作的有效期：超过则丢弃，避免很久之后回到原页面时误触发 */
+const PENDING_TTL_MS = 10 * 60 * 1000;
+
 /**
  * 被拦截的待执行动作（模块级，全站一份）。
  * path 记录触发时的页面：动作闭包属于该页面，只能在该页面执行。
+ * at 记录创建时间戳（Date.now()），用于判断是否过期。
  */
-let pending: { action: () => void; path: string } | null = null;
+let pending: { action: () => void; path: string; at: number } | null = null;
 
 /**
  * 锁定动作统一入口（访客预览模型的核心钩子）。
@@ -34,7 +38,7 @@ export function useLockedAction() {
         action();
         return;
       }
-      pending = { action, path: pathname };
+      pending = { action, path: pathname, at: Date.now() };
       unlockStore.show();
     },
     [isPremium, pathname]
@@ -56,7 +60,7 @@ export function dismissUnlock() {
 
 /**
  * 解锁后执行待执行动作（UnlockDialog 内调用，全站一个实例）。
- * 条件：已持码 + 弹窗已关闭 + 当前仍在触发页（登录页期间保留）。
+ * 条件：已持码 + 弹窗已关闭 + 当前仍在触发页（登录页期间保留）+ 未超过有效期。
  * 执行前先清空 pending，保证只执行一次（StrictMode 双调用也安全）。
  */
 export function useRunPendingLockedAction() {
@@ -68,6 +72,11 @@ export function useRunPendingLockedAction() {
     if (!pending) return;
     // 离开了触发页且不是登录页：放弃，避免日后误触发
     if (pathname !== pending.path && pathname !== LOGIN_PATH) {
+      pending = null;
+      return;
+    }
+    // 超过有效期：放弃
+    if (Date.now() - pending.at >= PENDING_TTL_MS) {
       pending = null;
       return;
     }
