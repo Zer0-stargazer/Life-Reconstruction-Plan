@@ -422,8 +422,8 @@ export default function SimulationPage() {
   const dimensionLabels: Record<string, string> = {
     family: '出身', talent: '天赋', effort: '努力', choice: '选择', luck: '运气',
   };
-  const dimensionIcons: Record<string, string> = {
-    family: '🏠', talent: '🧬', effort: '💪', choice: '🧭', luck: '🍀',
+  const dimensionNumerals: Record<string, string> = {
+    family: '壹', talent: '贰', effort: '叁', choice: '肆', luck: '伍',
   };
 
   // 从问卷答案计算维度分数
@@ -637,6 +637,19 @@ ${contextStr}
         {/* ==================== 步骤1: 量化问卷 ==================== */}
         {step === 'assessment' && (
           <div className="space-y-8 animate-fade-in-up">
+            {/* 五维概览：先看清要评估什么 */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 border-t border-b border-border">
+              {dimensionOrder.map((dimKey) => (
+                <div key={dimKey} className="flex flex-col gap-2 px-4 py-5 first:pl-0 sm:first:pl-0 [&:not(:first-child)]:border-l border-border">
+                  <span className="font-serif text-2xl text-primary">{dimensionNumerals[dimKey]}</span>
+                  <span className="font-serif text-sm font-semibold text-foreground">{dimensionLabels[dimKey]}</span>
+                  <span className="text-[11px] tracking-[0.15em] tabular-nums text-muted-foreground">
+                    {(questionsByDimension[dimKey] || []).length} 题
+                  </span>
+                </div>
+              ))}
+            </div>
+
             {/* 进度条 */}
             <div className="rounded-lg border border-border bg-card p-4">
               <div className="flex items-center justify-between mb-2">
@@ -657,7 +670,7 @@ ${contextStr}
               return (
                 <div key={dimKey} className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{dimensionIcons[dimKey]}</span>
+                    <span className="font-serif text-base text-primary">{dimensionNumerals[dimKey]}</span>
                     <h2 className="text-sm font-semibold text-foreground">{dimensionLabels[dimKey]}</h2>
                     <span className="text-[10px] text-muted-foreground/50">
                       <span className="font-mono tabular-nums">{questions.filter(q => answers[q.id]).length}/{questions.length}</span> 已答

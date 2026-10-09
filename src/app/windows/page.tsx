@@ -3,6 +3,8 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { lifeWindows, WINDOW_STATUS_CONFIG, WINDOW_GROUP_LABELS, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LOCK_FORCE_LABELS, type LifeWindow, type WindowStatus } from '@/data/windows';
 import { cn } from '@/lib/utils';
+import { WindowDensityChart } from '@/components/home/window-density-chart';
+import { WINDOW_DENSITY_META } from '@/data/window-density';
 import { byWindowSeverity } from '@/lib/default-order';
 import { TickRule } from '@/components/shared/fig-kit';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
@@ -419,6 +421,21 @@ export default function WindowsPage() {
         )}
 
       </ModulePageHead>
+
+      <section className="border-b border-border bg-card">
+        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-10">
+          <div className="mb-4 flex items-baseline justify-between gap-3">
+            <h2 className="font-serif text-lg font-semibold text-foreground">人生窗口密度分布</h2>
+            <span className="text-[11px] tracking-wide text-muted-foreground">共 {WINDOW_DENSITY_META.total} 个 · 每 5 岁一格</span>
+          </div>
+          <div className="border border-border bg-background p-4 sm:p-6">
+            <WindowDensityChart />
+            <div className="mt-4 border-t border-border pt-3 text-xs leading-relaxed text-muted-foreground">
+              45 岁之前有 {WINDOW_DENSITY_META.before45} 扇门，45 岁之后只剩 {WINDOW_DENSITY_META.after45} 扇；峰值区间 {WINDOW_DENSITY_META.peak.from}–{WINDOW_DENSITY_META.peak.to} 岁，{WINDOW_DENSITY_META.peak.count} 个窗口。
+            </div>
+          </div>
+        </div>
+      </section>
 
       <PreviewBanner />
 
