@@ -316,7 +316,6 @@ export default function WindowsPage() {
       <ModulePageHead
         href="/windows"
         title="人生关键窗口"
-        note="WINDOWS · N=473"
         desc="每个人生阶段都有打开又关闭的窗口。有些错过了就永远关上了，有些只有精英才能看见。看清窗口，才知道什么时候该全力以赴。"
         aside={
           <button
@@ -554,7 +553,7 @@ export default function WindowsPage() {
                               {config.label}
                             </span>
                             {isRelevant && (
-                              <span className="flex items-center gap-0.5 rounded-md bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold text-primary animate-glow-pulse">
+                              <span className="flex items-center gap-0.5 rounded-md bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
                                 <Sparkles className="h-2.5 w-2.5" />
                                 与你相关
                               </span>
@@ -733,7 +732,6 @@ export default function WindowsPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-mono text-muted-foreground/60 tracking-wider uppercase">AI STRATEGIST</span>
                   </div>
                   <h3 className="text-sm font-semibold text-foreground truncate">长期主义深度规划</h3>
                 </div>

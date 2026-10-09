@@ -826,7 +826,6 @@ export default function LuckPage() {
       <ModulePageHead
         href="/luck"
         title="神卡与天坑"
-        note="N=250"
         desc="随机给角色匹配两种卡改变命运走向。有些在暗中吸血，有些能撬动人生——认清它们，才能在对的位置出牌。"
         width="6xl"
         aside={

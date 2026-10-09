@@ -589,7 +589,6 @@ ${contextStr}
       <ModulePageHead
         href="/simulation"
         title="命运模拟器"
-        note="5-DIM"
         desc={
           <>
             {step === 'assessment'
@@ -597,7 +596,7 @@ ${contextStr}
               : '问卷结果已出。微调滑块推演你的人生画像，或让AI给出深度分析与行动方案。'
             }
             {loaded && defaultAge !== null && defaultAge > 0 && (
-              <span className="ml-2 text-xs text-muted-foreground/50 font-mono">
+              <span className="ml-2 text-xs text-muted-foreground/50">
                 (当前年龄 {defaultAge} 岁)
               </span>
             )}
@@ -646,7 +645,7 @@ ${contextStr}
               </div>
               <div className="h-2 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-primary transition-all duration-500 progress-shimmer"
+                  className="h-full rounded-full bg-primary transition-all duration-500"
                   style={{ width: `${(answeredCount / totalQuestions) * 100}%` }}
                 />
               </div>
@@ -660,8 +659,8 @@ ${contextStr}
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{dimensionIcons[dimKey]}</span>
                     <h2 className="text-sm font-semibold text-foreground">{dimensionLabels[dimKey]}</h2>
-                    <span className="text-[10px] text-muted-foreground/50 font-mono">
-                      {questions.filter(q => answers[q.id]).length}/{questions.length} 已答
+                    <span className="text-[10px] text-muted-foreground/50">
+                      <span className="font-mono tabular-nums">{questions.filter(q => answers[q.id]).length}/{questions.length}</span> 已答
                     </span>
                     <div className="flex-1 h-px bg-border" />
                   </div>
@@ -980,7 +979,6 @@ ${contextStr}
                   <Bot className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[9px] font-mono text-muted-foreground/60 tracking-wider uppercase">AI STRATEGIST</span>
                   <h3 className="text-sm font-semibold text-foreground truncate">深度分析 + 解惑</h3>
                 </div>
               </div>
@@ -1011,7 +1009,7 @@ ${contextStr}
                 </p>
                 <div className="mt-2 flex items-center gap-2 flex-wrap">
                   {dimensions.map(d => (
-                    <span key={d.key} className="inline-flex items-center gap-1 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
+                    <span key={d.key} className="inline-flex items-center gap-1 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[9px] text-muted-foreground">
                       {d.icon} {d.label}:{d.value}
                     </span>
                   ))}

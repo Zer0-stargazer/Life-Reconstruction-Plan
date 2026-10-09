@@ -135,10 +135,9 @@ function LawsDistribution({ dims }: { dims: LawDimension[] }) {
     <div className="relative mt-6 rounded-xl border border-border bg-card/70 backdrop-blur-sm p-5 animate-fade-in-up stagger-3">
       <div className="flex items-baseline justify-between gap-3 border-b border-border pb-3 mb-4">
         <div className="flex items-baseline gap-2.5 min-w-0">
-          <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70 shrink-0">FIG. 04</span>
           <h2 className="text-sm font-semibold text-foreground truncate">维度 × 危险度分布</h2>
         </div>
-        <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">N={total} · {dims.length} 维</span>
+        <span className="text-[10px] text-muted-foreground/50 shrink-0"><span className="font-mono tabular-nums">{total}</span> 条 · {dims.length} 个维度</span>
       </div>
       <div className="space-y-2">
         {dims.map((d) => {
@@ -172,7 +171,6 @@ function LawsDistribution({ dims }: { dims: LawDimension[] }) {
             <span className="font-mono text-[10px] text-muted-foreground/70">{label}</span>
           </div>
         ))}
-        <span className="ml-auto font-mono text-[10px] text-muted-foreground/50">SRC laws-*.ts</span>
       </div>
     </div>
   );
@@ -456,7 +454,6 @@ function LawCard({ item, onClick }: { item: LawItem; dimension: LawDimension; on
 
       {/* Title */}
       <h3 className="text-sm font-semibold text-foreground mb-1.5 leading-snug">{item.name}</h3>
-      <p className="text-[11px] text-muted-foreground/60 mb-3 font-mono">{item.nameEn}</p>
 
       {/* Metric card */}
       <div className={cn('rounded-lg p-2.5 mb-3', tagConf.bgColor)}>
@@ -525,7 +522,7 @@ function FocusLawCard({ item, onClick }: { item: LawItem; onClick: () => void })
           {tagConf.icon}
           {tagConf.label}
         </span>
-        <span className="font-mono text-[10px] text-muted-foreground/50">挽回 {item.breakthrough}%</span>
+        <span className="text-[10px] text-muted-foreground/50">挽回 <span className="font-mono tabular-nums">{item.breakthrough}%</span></span>
       </div>
 
       <h3 className="text-[15px] font-semibold text-foreground leading-snug">{item.name}</h3>
@@ -668,7 +665,6 @@ function LawDetailPanel({
             <h2 className={cn('text-xl font-serif font-bold mt-3', tagConf.color)}>
               {item.name}
             </h2>
-            <p className="text-[11px] text-muted-foreground font-mono mt-1">{item.nameEn}</p>
           </div>
 
           {/* Content */}
@@ -696,7 +692,7 @@ function LawDetailPanel({
                 <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
                   <div
                     className={cn(
-                      'h-full rounded-full progress-shimmer transition-all duration-700',
+                      'h-full rounded-full transition-all duration-700',
                       item.breakthrough >= 60 ? 'bg-emerald-500' :
                       item.breakthrough >= 30 ? 'bg-amber-500' : 'bg-red-500'
                     )}
@@ -921,7 +917,6 @@ export default function LawsPage() {
       <ModulePageHead
         href="/laws"
         title="人生规律引擎"
-        note={`LAW ENGINE · N=${LAW_DIMENSIONS.reduce((s, d) => s + d.items.length, 0)}`}
         desc="混沌系统中的确定性规律——8个维度揭示人生暗箱里的齿轮如何转动。看清规律，才能在不确定性中找到行动的锚点。"
       >
         {/* Global stats */}
@@ -1059,7 +1054,7 @@ export default function LawsPage() {
                 <div className="rounded-xl border border-border bg-muted/20 p-4">
                   <div className="mb-3 flex items-baseline justify-between gap-3">
                     <h3 className="text-xs font-semibold text-foreground">这个维度里，先盯住这三条</h3>
-                    <span className="font-mono text-[10px] text-muted-foreground/50">
+                    <span className="text-[10px] text-muted-foreground/50">
                       致命优先 · 挽回概率越低越靠前
                     </span>
                   </div>

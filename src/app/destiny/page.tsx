@@ -256,7 +256,7 @@ function AnimatedScoreBar({ label, score, color, icon, delay }: { label: string;
       </div>
       <div className="h-2.5 rounded-full bg-muted overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-1000 ease-out progress-shimmer"
+          className="h-full rounded-full transition-all duration-1000 ease-out"
           style={{ width: `${width}%`, backgroundColor: color }}
         />
       </div>
@@ -441,7 +441,6 @@ ${customContext}
       <ModulePageHead
         href="/destiny"
         title="命运：命势运报告"
-        note="REPORT"
         desc="命是你拿到的牌，运是你出牌的时机，努力是你出牌的方式。输入基本信息和你自己的故事，看看你的命运基本面。"
         width="3xl"
       />
@@ -731,7 +730,6 @@ ${customContext}
                   <Bot className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[9px] font-mono text-muted-foreground/60 tracking-wider uppercase">DESTINY ANALYST</span>
                   <h3 className="text-sm font-semibold text-foreground truncate">深度分析 + 解惑</h3>
                 </div>
               </div>

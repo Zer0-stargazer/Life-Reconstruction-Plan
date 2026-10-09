@@ -321,8 +321,8 @@ function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOp
       {/* 表态条：常驻在卡片底部，不藏在展开区里——这个页面的主操作就是逐条表态 */}
       <div className="flex items-center gap-2 border-t border-border/50 bg-muted/10 px-4 py-1.5">
         <WindowMarkBar id={w.id} />
-        <span className="ml-auto font-mono text-[9px] text-muted-foreground/35 tabular-nums">
-          {marked ? 'MARKED' : '#MARK'}
+        <span className="ml-auto text-[9px] text-muted-foreground/35">
+          {marked ? '已表态' : '未表态'}
         </span>
       </div>
     </div>
@@ -502,7 +502,7 @@ function AgeOnboarding({ onSubmit }: { onSubmit: (age: number) => void }) {
     <div className="min-h-screen bg-background flex items-center justify-center px-6 py-16">
       <div className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 sm:p-8 animate-fade-in-up">
         <HudCorners />
-        <span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">
+        <span className="text-[10px] font-semibold text-muted-foreground tracking-[0.15em]">
           序章 · 你的年龄
         </span>
         <h1 className="mt-3 text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">
@@ -687,11 +687,10 @@ export default function MePage() {
           {/* HUD 行 */}
           <div className="flex items-center gap-3 mb-5 sm:mb-6 animate-fade-in-up">
             {/* ★ 不是 01–07，从 module-identity 取，别手写编号 */}
-            <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">
+            <span className="text-[10px] tracking-[0.2em] text-primary/70 shrink-0">
               {TIMELINE_IDENTITY.tag} {TIMELINE_IDENTITY.note}
             </span>
             <span className="h-px flex-1 bg-border" />
-            <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">YOUR TIMELINE · N=473</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-serif font-bold text-foreground tracking-tight leading-[1.1] mb-4 animate-fade-in-up stagger-1">
@@ -713,15 +712,14 @@ export default function MePage() {
           </p>
 
           {/* 仪表读数行（年龄在下方控制台里调，这里不重复显示） */}
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[11px] text-muted-foreground/60 animate-fade-in-up stagger-3">
-            <span>OPEN <b className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openTotal}</b></span>
-            <span>URGENT <b className="text-red-500 tabular-nums">{urgentTotal}</b></span>
-            <span>MISSED <b className="text-muted-foreground tabular-nums">{missedTotal}</b></span>
-            <span>FUTURE <b className="text-foreground/80 tabular-nums">{futureTotal}</b></span>
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-muted-foreground/60 animate-fade-in-up stagger-3">
+            <span>正在开启 <b className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openTotal}</b></span>
+            <span>即将关闭 <b className="text-red-500 tabular-nums">{urgentTotal}</b></span>
+            <span>已错过 <b className="text-muted-foreground tabular-nums">{missedTotal}</b></span>
+            <span>尚未到来 <b className="text-foreground/80 tabular-nums">{futureTotal}</b></span>
             {markedCount > 0 && (
               <span className="text-primary/80">已表态 <b className="tabular-nums">{markedCount}</b></span>
             )}
-            <span className="hidden sm:inline">SRC windows.ts · N=473</span>
           </div>
 
           {/* 年龄滑块：控制台 */}
@@ -729,18 +727,18 @@ export default function MePage() {
             <HudCorners />
 
             <div className="flex items-baseline justify-between mb-4">
-              <span id="me-age-label" className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">
-                CTRL · 01 你的年龄
+              <span id="me-age-label" className="text-[10px] font-semibold text-muted-foreground tracking-[0.15em]">
+                你的年龄
               </span>
               <div className="text-right">
                 <span className="text-3xl font-serif font-bold text-primary tabular-nums">{age}</span>
                 <span className="text-xs text-muted-foreground ml-1">岁</span>
-                <span className="text-[10px] text-muted-foreground/50 ml-2 font-mono">≈{CURRENT_YEAR - age} 年生</span>
+                <span className="text-[10px] text-muted-foreground/50 ml-2">≈<span className="font-mono tabular-nums">{CURRENT_YEAR - age}</span> 年生</span>
               </div>
             </div>
             <TimelineSlider age={age} onChange={updateAge} />
-            <p className="mt-3 pt-3 border-t border-border/60 font-mono text-[9px] text-muted-foreground/40">
-              SYNC · 此年龄全局生效：/user 偏好、/windows 年龄筛选、首页图表指针共用同一个值
+            <p className="mt-3 pt-3 border-t border-border/60 text-[9px] text-muted-foreground/40">
+              此年龄全局生效：/user 偏好、/windows 年龄筛选、首页图表指针共用同一个值
             </p>
           </div>
         </div>
@@ -751,10 +749,9 @@ export default function MePage() {
       <section className="w-full max-w-5xl mx-auto px-6 sm:px-8 py-8 sm:py-10 order-3">
         <div className="flex items-baseline justify-between border-b border-border pb-3 mb-5">
           <div className="flex items-baseline gap-2.5">
-            <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">FOCUS</span>
             <h2 className="text-sm font-semibold text-foreground">现在最该看的三类</h2>
           </div>
-          <span className="font-mono text-[10px] text-muted-foreground/50">
+          <span className="text-[10px] text-muted-foreground/50">
             错过代价最大的排在最前
           </span>
         </div>
@@ -811,9 +808,8 @@ export default function MePage() {
       <section className="w-full max-w-5xl mx-auto px-6 sm:px-8 py-10 order-2">
         <div className="rounded-xl border border-border bg-card p-5 animate-fade-in-up">
           <PanelHead
-            fig="FIG. 02"
             title="你身边 ±15 年的窗口"
-            note={`AGE ${Math.max(0, age - 8)}–${age + 15} · ${
+            note={`${Math.max(0, age - 8)}–${age + 15} 岁 · ${
               all.filter((w) => w.range.start <= age + 15 && w.range.end >= age - 8 && w.state !== 'missed').length
             } 条`}
           />

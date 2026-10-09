@@ -16,7 +16,7 @@ export function PanelHead({
   note,
   className,
 }: {
-  fig: string;
+  fig?: string;
   title: string;
   note?: string;
   className?: string;
@@ -24,10 +24,10 @@ export function PanelHead({
   return (
     <div className={cn('flex items-baseline justify-between gap-3 border-b border-border pb-3 mb-4', className)}>
       <div className="flex items-baseline gap-2.5 min-w-0">
-        <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70 shrink-0">{fig}</span>
+        {fig && <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70 shrink-0">{fig}</span>}
         <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
       </div>
-      {note && <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">{note}</span>}
+      {note && <span className="text-[10px] text-muted-foreground/50 shrink-0">{note}</span>}
     </div>
   );
 }

@@ -326,7 +326,6 @@ export default function UserPage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground shadow-sm">
                 <User className="h-4.5 w-4.5" />
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground/60 tracking-[0.2em]">MODULE 08</span>
             </div>
             <h1 className="text-2xl font-serif font-bold text-foreground mb-2 animate-fade-in-up stagger-1">用户中心</h1>
             <p className="text-sm text-muted-foreground animate-fade-in-up stagger-2">管理你的偏好和设置</p>
@@ -564,7 +563,7 @@ export default function UserPage() {
           <div className="mb-4">
             <div className="h-2 rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full bg-primary/50 transition-all duration-700 progress-shimmer"
+                className="h-full rounded-full bg-primary/50 transition-all duration-700"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -859,7 +858,6 @@ export default function UserPage() {
             计算概率、识别窗口。
           </p>
           <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between">
-            <span className="text-[9px] text-muted-foreground/40 font-mono">v1.1.0</span>
             <span className="text-[9px] text-muted-foreground/40 font-serif italic">不是算命，是算概率</span>
           </div>
         </div>

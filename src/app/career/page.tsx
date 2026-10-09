@@ -301,7 +301,6 @@ export default function CareerPage() {
       <ModulePageHead
         href="/career"
         title="职业遍历"
-        note={`N=${careers.length}`}
         desc="选对赛道比努力更重要。浏览各行各业的薪资、趋势和AI替代风险，找到你的最优职业策略。"
       >
         {/* Stats */}
@@ -469,11 +468,11 @@ export default function CareerPage() {
           {/* Career Grid */}
           <div className={cn('lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 content-start')}>
             {/* 显示进度读数 */}
-            <div className="col-span-full flex items-center justify-between font-mono text-[10px] text-muted-foreground/60 mb-1">
-              <span>SHOWING {visibleCareers.length} / {filtered.length}</span>
+            <div className="col-span-full flex items-center justify-between text-[10px] text-muted-foreground/60 mb-1">
+              <span>显示 <span className="font-mono tabular-nums">{visibleCareers.length} / {filtered.length}</span></span>
               {filtered.length !== careers.length && (
                 <span>
-                  FILTER: {searchQuery ? `"${searchQuery}"` : selectedCategory === 'all' ? 'ALL' : selectedCategory.toUpperCase()}
+                  筛选：{searchQuery ? `"${searchQuery}"` : selectedCategory === 'all' ? '全部' : selectedCategory}
                 </span>
               )}
             </div>
@@ -488,7 +487,7 @@ export default function CareerPage() {
                     onClick={() => openCareerDetail(career.id)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCareerDetail(career.id); } }}
                     className={cn(
-                      'w-full text-left rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] card-hover cursor-pointer',
+                      'w-full text-left rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer',
                       selectedCareer === career.id ? 'border-primary/30 ring-1 ring-primary/10' : 'border-border'
                     )}
                   >
@@ -597,8 +596,8 @@ export default function CareerPage() {
               </button>
             )}
             {hiddenCount === 0 && filtered.length > PAGE_SIZE && (
-              <div className="col-span-full py-2 text-center font-mono text-[10px] text-muted-foreground/40">
-                END · 已显示全部 {filtered.length} 个职业
+              <div className="col-span-full py-2 text-center text-[10px] text-muted-foreground/40">
+                已显示全部 <span className="font-mono tabular-nums">{filtered.length}</span> 个职业
               </div>
             )}
           </div>
@@ -730,7 +729,7 @@ export default function CareerPage() {
                                 <span className="text-[10px] text-muted-foreground/30">·</span>
                                 <span className="text-[10px] text-muted-foreground/40">{t.platform}</span>
                                 {i === 0 && t.url && (
-                                  <span className="rounded-sm bg-primary/10 px-1 py-0.5 text-[8px] font-mono text-primary/80">专属</span>
+                                  <span className="rounded-sm bg-primary/10 px-1 py-0.5 text-[8px] text-primary/80">专属</span>
                                 )}
                               </div>
                               <span className="text-xs font-medium text-foreground">{t.title}</span>
@@ -767,7 +766,7 @@ export default function CareerPage() {
                           <div key={i} className="rounded-md border border-border/50 bg-background/50 px-2.5 py-2 hover:border-primary/20 transition-colors">
                             <p className="text-xs font-medium text-foreground">
                               {b.title}
-                              {i === 0 && b.why && <span className="ml-1.5 rounded-sm bg-primary/10 px-1 py-0.5 text-[8px] font-mono text-primary/80">专属</span>}
+                              {i === 0 && b.why && <span className="ml-1.5 rounded-sm bg-primary/10 px-1 py-0.5 text-[8px] text-primary/80">专属</span>}
                             </p>
                             <p className="text-[10px] text-muted-foreground/50">{b.author}</p>
                             {b.why && <p className="mt-0.5 text-[10px] text-muted-foreground/70 leading-relaxed">{b.why}</p>}

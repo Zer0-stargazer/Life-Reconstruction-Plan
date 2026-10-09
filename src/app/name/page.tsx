@@ -249,7 +249,6 @@ export default function NamePage() {
       <ModulePageHead
         href="/name"
         title="起名灵感"
-        note="GENERATOR"
         desc="名字是别人对你的第一印象，也是你对自己的第一次定义。一个好名字不是迷信——它是心理学、社会学和传播学的交叉产物。"
         width="3xl"
       />
