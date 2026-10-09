@@ -3,6 +3,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'crypto';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
 import { SETTING_KEYS } from '@/lib/app-settings';
+import { sessionFromRequest } from '@/lib/session';
 
 // Developer password (stored as env var in production)
 const DEV_PASSWORD = process.env.DEV_PASSWORD;
@@ -14,22 +15,36 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(sha256(a), sha256(b));
 }
 
-// 会话令牌 = DEV_PASSWORD + UTC 日期桶的加盐哈希，避免明文密码出服务端/落 localStorage。
-// 令牌按天轮换：verify 签发今天的桶，校验接受今天与昨天两个桶——
-// 等效 24-48h 有效期，跨零点不会立刻失效；过期后 GET 返回 401，
-// 由 /admin 页回退到重新验证界面（配合 2026-10-02 的错误处理修复）。
-function devSessionToken(dayOffset = 0): string {
-  const day = new Date(Date.now() - dayOffset * 86_400_000).toISOString().slice(0, 10);
-  return createHash('sha256').update(`lrs-dev-session:${DEV_PASSWORD}:${day}`).digest('hex');
+// 开发者会话令牌：随机生成，库里只存 sha256 哈希，12 小时过期，可被注销（删除行）。
+const DEV_SESSION_TTL_MS = 12 * 3600_000;
+const sha256Hex = (value: string) => createHash('sha256').update(value).digest('hex');
+
+async function issueDevToken(): Promise<string> {
+  const client = getSupabaseClient();
+  await client.from('dev_sessions').delete().lt('expires_at', new Date().toISOString());
+  const token = randomBytes(32).toString('base64url');
+  const { error } = await client.from('dev_sessions').insert({
+    token_hash: sha256Hex(token),
+    expires_at: new Date(Date.now() + DEV_SESSION_TTL_MS).toISOString(),
+  });
+  if (error) throw new Error(`开发者会话签发失败: ${error.message}`);
+  return token;
 }
 
-function verifyDevAuth(request: NextRequest): boolean {
-  if (!DEV_PASSWORD) return false;
-  const authHeader = request.headers.get('x-dev-token');
-  if (!authHeader) return false;
-  const matchToday = safeEqual(authHeader, devSessionToken(0));
-  const matchYesterday = safeEqual(authHeader, devSessionToken(1));
-  return matchToday || matchYesterday;
+async function verifyDevAuth(request: NextRequest): Promise<boolean> {
+  const token = request.headers.get('x-dev-token');
+  if (!token) return false;
+  const { data, error } = await getSupabaseClient()
+    .from('dev_sessions')
+    .select('token_hash')
+    .eq('token_hash', sha256Hex(token))
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle();
+  if (error) {
+    console.error('开发者会话校验失败:', error.message);
+    return false;
+  }
+  return !!data;
 }
 
 const VALID_ROLES = ['normal', 'premium', 'developer'] as const;
@@ -83,7 +98,7 @@ const isUniqueViolation = (error: { code?: string } | null) => error?.code === '
 
 // GET /api/admin - List users / invite codes / logs
 export async function GET(request: NextRequest) {
-  if (!verifyDevAuth(request)) {
+  if (!(await verifyDevAuth(request))) {
     return NextResponse.json({ error: '未授权' }, { status: 401 });
   }
 
@@ -209,7 +224,9 @@ export async function POST(request: NextRequest) {
 
     // Verify dev password & auto-upgrade logged-in user to developer
     if (action === 'verify') {
-      const { password, userId } = body;
+      const { password } = body;
+      // 升级对象只认服务端会话（用户登录态），不信任请求体自报的 userId
+      const userId = sessionFromRequest(request)?.userId ?? null;
       // 关键边界：DEV_PASSWORD 未配置时绝不能通过校验。
       // 否则 password 与 DEV_PASSWORD 同为 undefined，`undefined === undefined` 为真，
       // 任何人 POST {action:'verify', userId} 就能免密把自己升级成 developer。
@@ -221,9 +238,6 @@ export async function POST(request: NextRequest) {
       const rl = await rateLimit(`admin-verify:${ip}`, 8, 5 * 60_000);
       if (!rl.ok) {
         return NextResponse.json({ error: `尝试过于频繁，请 ${rl.retryAfter} 秒后再试` }, { status: 429 });
-      }
-      if (userId !== undefined && userId !== null && !isPositiveInt(userId)) {
-        return badRequest('用户ID无效');
       }
       if (typeof password === 'string' && password.length > 0 && password.length <= 500 && safeEqual(password, DEV_PASSWORD)) {
         // If a userId is provided, auto-upgrade that user to developer
@@ -252,18 +266,31 @@ export async function POST(request: NextRequest) {
 
               userData.role = 'developer';
             }
-            return NextResponse.json({ success: true, token: devSessionToken(), user: userData });
+            return NextResponse.json({ success: true, token: await issueDevToken(), user: userData });
           }
         }
-        return NextResponse.json({ success: true, token: devSessionToken() });
+        return NextResponse.json({ success: true, token: await issueDevToken() });
       }
       return NextResponse.json({ error: '密码错误' }, { status: 401 });
+    }
+
+    // 注销当前开发者令牌（只删自己这一条）
+    if (action === 'revoke_dev_token') {
+      const token = request.headers.get('x-dev-token');
+      if (token) {
+        const { error } = await getSupabaseClient()
+          .from('dev_sessions')
+          .delete()
+          .eq('token_hash', sha256Hex(token));
+        if (error) throw new Error(`注销失败: ${error.message}`);
+      }
+      return NextResponse.json({ success: true });
     }
 
     // Exit developer mode - downgrade back to premium
     // 必须携带 x-dev-token：否则任何人可传 userId 把任意用户降级
     if (action === 'exit_developer') {
-      if (!verifyDevAuth(request)) {
+      if (!(await verifyDevAuth(request))) {
         return NextResponse.json({ error: '未授权' }, { status: 401 });
       }
       const { userId } = body;
@@ -301,7 +328,7 @@ export async function POST(request: NextRequest) {
     }
 
     // All other actions require auth
-    if (!verifyDevAuth(request)) {
+    if (!(await verifyDevAuth(request))) {
       return NextResponse.json({ error: '未授权' }, { status: 401 });
     }
 

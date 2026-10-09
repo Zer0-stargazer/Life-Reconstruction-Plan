@@ -52,3 +52,12 @@ $$;
 
 REVOKE ALL ON FUNCTION admin_adjust_credits(integer, integer, text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION admin_adjust_credits(integer, integer, text) TO service_role;
+
+-- 开发者会话：令牌库里只存 sha256 哈希，12 小时过期，注销即删行
+CREATE TABLE IF NOT EXISTS dev_sessions (
+  token_hash  varchar(64) PRIMARY KEY,
+  expires_at  timestamptz NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS dev_sessions_expires_idx ON dev_sessions (expires_at);
+ALTER TABLE dev_sessions ENABLE ROW LEVEL SECURITY;

@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 import { useAuth, type UserRole } from '@/contexts/auth-context';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { getAuthHeader } from '@/lib/client-auth';
 
 // ---- Types ----
 
@@ -206,11 +207,10 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/admin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify({
           action: 'verify',
           password: password.trim(),
-          userId: authUser?.id || null,
         }),
       });
       const data = await res.json();
@@ -245,6 +245,13 @@ export default function AdminPage() {
         }
       } catch { /* ignore */ }
     }
+    try {
+      await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-dev-token': devToken || '' },
+        body: JSON.stringify({ action: 'revoke_dev_token' }),
+      });
+    } catch { /* ignore */ }
     setDevToken(null);
     try { localStorage.removeItem(STORAGE_KEYS.devToken); } catch { /* ignore */ }
   };
