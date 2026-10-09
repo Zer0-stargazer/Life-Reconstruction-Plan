@@ -1,11 +1,10 @@
 import type { SVGProps } from 'react';
 
 /**
- * 七模块 + 时间轴的自绘图标集。
+ * 八个模块的手绘式符号。
  *
- * 统一规格：24 viewBox、单一线宽 1.25、圆头圆角、currentColor 描边。
- * 右下角一枚朱砂墨点（fill 取 --primary）作为全套共用的印记——
- * 图标不再是通用线框图标，而是这套手记的一部分。
+ * 线条带轻微的起笔与收笔偏移，像用细笔随手画在纸上；
+ * 统一 24 viewBox、线宽 1.5、圆头、currentColor 描边，右下角共用一枚朱砂墨点。
  */
 
 export type ModuleIconComponent = (props: SVGProps<SVGSVGElement>) => React.JSX.Element;
@@ -14,19 +13,17 @@ const BASE = {
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 1.25,
+  strokeWidth: 1.5,
   strokeLinecap: 'round' as const,
   strokeLinejoin: 'round' as const,
   'aria-hidden': true,
   focusable: false,
 };
 
-/** 朱砂墨点：所有图标共用的右下角印记 */
-function InkDot({ cx = 20.5, cy = 20.5, r = 1.35 }: { cx?: number; cy?: number; r?: number }) {
+function InkDot({ cx = 20.6, cy = 20.4, r = 1.3 }: { cx?: number; cy?: number; r?: number }) {
   return <circle cx={cx} cy={cy} r={r} stroke="none" style={{ fill: 'var(--primary)' }} />;
 }
 
-/** 生成一个齿轮轮廓（直线段近似，24px 尺寸下足够干净） */
 function gearPath(cx: number, cy: number, ro: number, ri: number, teeth: number) {
   const step = (Math.PI * 2) / teeth;
   const at = (r: number, a: number) => `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
@@ -35,115 +32,116 @@ function gearPath(cx: number, cy: number, ro: number, ri: number, teeth: number)
     const a = i * step;
     parts.push(
       `${i === 0 ? 'M' : 'L'}${at(ri, a - step * 0.3)}`,
-      `L${at(ro, a - step * 0.16)}`,
-      `L${at(ro, a + step * 0.16)}`,
+      `L${at(ro, a - step * 0.14)}`,
+      `L${at(ro, a + step * 0.14)}`,
       `L${at(ri, a + step * 0.3)}`,
     );
   }
   return `${parts.join(' ')} Z`;
 }
 
-const GEAR_BIG = gearPath(9, 12.5, 6.4, 4.7, 8);
-const GEAR_SMALL = gearPath(16.6, 6.6, 3.5, 2.5, 6);
+const GEAR = gearPath(12, 12.2, 8.6, 6.8, 9);
 
-/** 时间轴：表盘 + 时针分针 */
+/** 时间：沙漏，上下两枚横木，中间一小堆沙 */
 export function TimeIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...BASE} {...props}>
-      <circle cx="12" cy="12" r="8.75" />
-      <path d="M12 7.2V12l3.3 2" />
-      <path d="M3.25 12h1.1M19.65 12h1.1" opacity="0.5" />
+      <path d="M4.6 3.4Q12 2.8 19.4 3.6" />
+      <path d="M4.8 20.7Q12 21.3 19.2 20.5" />
+      <path d="M7.2 4.1C7.4 8.4 10.8 9.9 11.7 11.9C10.7 14.1 7.1 15.8 7 19.8" />
+      <path d="M16.9 4.2C16.6 8.4 13.2 9.9 12.3 11.9C13.3 14.1 16.8 15.9 17 19.9" />
+      <path d="M9.4 17.8Q12 16.3 14.7 17.7" opacity="0.6" />
       <InkDot />
     </svg>
   );
 }
 
-/** 窗口：拱形窗棂，一扇门 */
+/** 窗：拱形门窗，中间一竖一横窗棂，窗台略出头 */
 export function WindowIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...BASE} {...props}>
-      <path d="M6 21V9.5a6 6 0 0 1 12 0V21Z" />
-      <path d="M12 3.5V21M6 13.5h12" />
+      <path d="M5.8 20.9L5.5 10.4Q5.2 3.5 12.2 3.1Q19 3.4 18.7 10.6L18.4 21" />
+      <path d="M3.5 21.3H20.6" />
+      <path d="M12.3 3.6V20.8" />
+      <path d="M5.6 13.4Q12 12.7 18.6 13.6" />
       <InkDot />
     </svg>
   );
 }
 
-/** 名字：一支蘸墨的毛笔 */
+/** 名：一支蘸墨的毛笔，笔尖带一滴墨 */
 export function NameIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...BASE} {...props}>
-      <path d="M14.5 10.5 18.9 6.1l1.5 1.5L16 12Z" />
-      <path d="M13.6 9.6 15.4 11.4 11.9 14.9 10.1 13.1Z" />
-      <path d="M10.1 13.1C8.2 14.3 7.3 16.4 4 20.5c4.1-.9 6.2-2.3 7.9-5.6" />
-      <InkDot />
+      <path d="M16.6 3.9L19.9 7.2" />
+      <path d="M14.6 5.9L18 9.3" />
+      <path d="M14.3 6.9C12.7 9.4 11 11.9 9.2 14.5C8 16.3 6.6 17.9 4.4 19.9C7.1 18.7 9.2 17.1 11.1 15.1C12.9 13.2 14.9 11.1 16.9 8.4Z" />
+      <circle cx="5" cy="20.1" r="0.95" stroke="none" style={{ fill: 'var(--primary)' }} />
     </svg>
   );
 }
 
-/** 职业：罗盘与指针 */
+/** 职：阶梯向上，顶端一面小旗 */
 export function CareerIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...BASE} {...props}>
-      <circle cx="12" cy="12" r="8.75" />
-      <path d="M15.2 8.8 13.1 13.1 8.8 15.2 10.9 10.9Z" />
-      <path d="M12 3.25v1.4M20.75 12h-1.4M12 19.35v1.4M3.25 12h1.4" opacity="0.55" />
-      <InkDot />
+      <path d="M3.4 20.6H7.1V16.7H10.8V12.9H14.4V9.1H18V5.4" />
+      <path d="M18 5.4L21 4.4" />
+      <path d="M18 5.4V9.2" opacity="0.4" />
+      <path d="M3.4 20.6H20.6" opacity="0.4" />
+      <InkDot cx={20.6} cy={20.6} />
     </svg>
   );
 }
 
-/** 规律：两枚咬合的齿轮 */
+/** 规律：一枚手画的齿轮，中心留一个圆孔 */
 export function LawsIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...BASE} {...props}>
-      <path d={GEAR_BIG} />
-      <circle cx="9" cy="12.5" r="1.6" />
-      <path d={GEAR_SMALL} />
-      <circle cx="16.6" cy="6.6" r="0.9" />
+      <path d={GEAR} />
+      <circle cx="12" cy="12.2" r="2.5" />
       <InkDot />
     </svg>
   );
 }
 
-/** 运气：一枚骰子，五点 */
+/** 运：一枚方骰，角略圆，四点加中心 */
 export function LuckIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...BASE} {...props}>
-      <rect x="4" y="4" width="14" height="14" rx="3" />
-      <circle cx="8.5" cy="8.5" r="0.95" fill="currentColor" stroke="none" />
-      <circle cx="13.5" cy="8.5" r="0.95" fill="currentColor" stroke="none" />
-      <circle cx="11" cy="11" r="0.95" fill="currentColor" stroke="none" />
-      <circle cx="8.5" cy="13.5" r="0.95" fill="currentColor" stroke="none" />
-      <circle cx="13.5" cy="13.5" r="0.95" fill="currentColor" stroke="none" />
+      <path d="M5.1 4.5Q12 3.4 18.9 4.7Q20.7 12 19.3 19.5Q12 20.7 4.5 19.2Q3.3 12 5.1 4.5Z" />
+      <circle cx="8.5" cy="8.4" r="1.05" fill="currentColor" stroke="none" />
+      <circle cx="15.5" cy="8.6" r="1.05" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.05" fill="currentColor" stroke="none" />
+      <circle cx="8.4" cy="15.6" r="1.05" fill="currentColor" stroke="none" />
+      <circle cx="15.6" cy="15.5" r="1.05" fill="currentColor" stroke="none" />
       <InkDot />
     </svg>
   );
 }
 
-/** 努力：三根滑杆，旋钮留白 */
+/** 努：一株破土的幼苗，两片叶，脚下一道土线 */
 export function SimulationIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...BASE} {...props}>
-      <path d="M3 6h9.8M17.2 6H21" />
-      <circle cx="15" cy="6" r="2.2" />
-      <path d="M3 12h2.8M10.2 12H21" />
-      <circle cx="8" cy="12" r="2.2" />
-      <path d="M3 18h8.8M16.2 18H21" />
-      <circle cx="14" cy="18" r="2.2" />
+      <path d="M12.1 21V11.6" />
+      <path d="M12.1 13.2C9.7 13.6 7.7 12 7.1 9.3C9.7 8.9 11.7 10.3 12.1 13.2Z" />
+      <path d="M12.1 11.1C12.5 7.9 14.7 6.3 17.5 6.5C17.1 9.5 14.9 11.3 12.1 11.1Z" />
+      <path d="M7.4 21.3H16.9" opacity="0.5" />
+      <InkDot />
     </svg>
   );
 }
 
-/** 命运：一个节点分出三条岔路 */
+/** 命：一个节点分出三条岔路，末端各一笔收尾 */
 export function DestinyIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...BASE} {...props}>
-      <path d="M3 12h6" />
-      <path d="M9 12c4 0 4.5-6.5 11-6.5" />
-      <path d="M9 12c4 0 4.5 6.5 11 6.5" />
-      <path d="M9 12c3.2 0 4.2-1.6 5.5-3.2" opacity="0.55" />
-      <circle cx="9" cy="12" r="2" style={{ fill: 'var(--primary)' }} stroke="none" />
+      <path d="M3.2 12.2H6.4" />
+      <path d="M9.2 12.1C13.4 12 13.8 5.6 20.4 5.4" />
+      <path d="M9.2 12.1C13.4 12.2 13.8 18.6 20.4 18.8" />
+      <path d="M9.2 12.1C12 12.3 12.8 9.9 15 8.8" opacity="0.5" />
+      <circle cx="8" cy="12.2" r="1.9" style={{ fill: 'var(--primary)' }} stroke="none" />
     </svg>
   );
 }
