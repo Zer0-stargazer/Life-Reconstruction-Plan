@@ -126,7 +126,7 @@ const customFields: {
 // ============================================================
 
 function generateReport(input: DestinyInput): DestinyReport {
-  const birthYear = parseInt(input.birthYear) || 1995;
+  const birthYear = parseInt(input.birthYear);
   const currentYear = new Date().getFullYear();
   const age = currentYear - birthYear;
 
@@ -273,7 +273,7 @@ export default function DestinyPage() {
   const { guard } = useLockedAction();
   // 表单输入持久化：刷新后不再重填（原来是纯 useState，刷新即丢）
   const [input, setInput] = usePersistedState<DestinyInput>('destiny.input.v1', () => ({
-    birthYear: defaultAge !== null ? String(new Date().getFullYear() - defaultAge) : '',
+    birthYear: '',
     familyBackground: 'middle',
     educationLevel: 'good',
     location: 'tier2',
@@ -283,6 +283,7 @@ export default function DestinyPage() {
     currentChallenge: '',
     otherInfo: '',
   }));
+  const [birthYearError, setBirthYearError] = useState('');
   const [report, setReport] = useState<DestinyReport | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
@@ -304,10 +305,21 @@ export default function DestinyPage() {
   }, []);
   useEscapeKey(closeAi, aiOpen);
 
+  // 已在 /me 设置过年龄且出生年份还空着时，自动换算填入
+  useEffect(() => {
+    if (defaultAge === null) return;
+    setInput(prev => prev.birthYear ? prev : { ...prev, birthYear: String(new Date().getFullYear() - defaultAge) });
+  }, [defaultAge, setInput]);
+
   const handleGenerate = () => {
+    const year = parseInt(input.birthYear);
+    if (!Number.isInteger(year)) {
+      setBirthYearError('请先填写出生年份，或在「我的」页设置年龄');
+      return;
+    }
+    setBirthYearError('');
     // 出生年份钳制到合理区间（1950 ~ 去年），避免生成负年龄报告
     const currentYear = new Date().getFullYear();
-    const year = parseInt(input.birthYear) || 1995;
     const safeYear = Math.min(Math.max(year, 1950), currentYear - 5);
     const safeInput = { ...input, birthYear: String(safeYear) };
     const result = generateReport(safeInput);
@@ -455,9 +467,10 @@ ${customContext}
               min={1950}
               max={2010}
               value={input.birthYear}
-              onChange={(e) => setInput(prev => ({ ...prev, birthYear: e.target.value }))}
+              onChange={(e) => { setInput(prev => ({ ...prev, birthYear: e.target.value })); setBirthYearError(''); }}
               className="w-32 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
+            {birthYearError && <p role="alert" className="mt-1.5 text-xs text-red-600 dark:text-red-400">{birthYearError}</p>}
           </div>
 
           {/* Family, Education, Location - grid */}
