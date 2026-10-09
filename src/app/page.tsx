@@ -68,9 +68,13 @@ function EntryRow({ item }: { item: Entry }) {
     <Link
       href={item.href}
       data-entry
-      className="group grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-start gap-x-5 gap-y-2 border-b border-border py-7 sm:gap-x-6"
+      className="group grid grid-cols-[3.5rem_minmax(0,1fr)_auto] items-start gap-x-5 gap-y-2 border-b border-border py-7 sm:gap-x-6"
     >
-      <Icon className="mt-1 h-8 w-8 text-foreground/80 transition-colors duration-500 group-hover:text-primary" />
+      <span className="relative mt-0.5 flex h-14 w-14 items-center justify-center rounded-sm border border-border bg-card transition-colors duration-500 group-hover:border-primary/60">
+        <span aria-hidden className="absolute inset-[3px] rounded-[2px] border border-dashed border-border/80" />
+        <span aria-hidden className="absolute -left-px -top-px h-2 w-2 bg-primary" />
+        <Icon className="relative h-7 w-7 text-foreground/85 transition-colors duration-500 group-hover:text-primary" />
+      </span>
 
       <div className="min-w-0">
         <div className="flex items-baseline gap-3">
