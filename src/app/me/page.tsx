@@ -499,46 +499,85 @@ function AgeOnboarding({ onSubmit }: { onSubmit: (age: number) => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6 py-16">
-      <div className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 sm:p-8 animate-fade-in-up">
-        <HudCorners />
-        <span className="text-[10px] font-semibold text-muted-foreground tracking-[0.15em]">
-          序章 · 你的年龄
-        </span>
-        <h1 className="mt-3 text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">
-          先告诉我们你现在多大？
-        </h1>
-        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-          年龄决定时间轴上哪些人生窗口正在开启、哪些已经关上、哪些尚未到来。只保存在这台设备的浏览器里。
-        </p>
-        <form
-          onSubmit={(e) => { e.preventDefault(); submit(); }}
-          className="mt-6 flex items-center gap-3"
-        >
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={MAX_AGE}
-            value={draft}
-            onChange={(e) => { setDraft(e.target.value); setError(''); }}
-            aria-label="你的年龄"
-            aria-invalid={error !== ''}
-            autoFocus
-            className="w-24 rounded-md border border-input bg-background px-3 py-2 text-base text-foreground text-center tabular-nums focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-          <span className="text-sm text-muted-foreground">岁</span>
-          <button
-            type="submit"
-            className="ml-auto inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 btn-press"
-          >
-            看我的时间轴
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </form>
-        {error && (
-          <p role="alert" className="mt-3 text-xs text-red-600 dark:text-red-400">{error}</p>
-        )}
+    <div className="relative flex min-h-screen items-center overflow-hidden bg-background">
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-16 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16 lg:py-24">
+        <div className="relative lg:col-span-7">
+          <div className="flex items-end gap-5">
+            <span className="font-serif text-[9rem] font-bold leading-[0.8] text-primary sm:text-[11rem]">序</span>
+            <div className="pb-2">
+              <div className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">PROLOGUE</div>
+              <div className="mt-1.5 font-serif text-sm text-muted-foreground">你现在几岁</div>
+            </div>
+          </div>
+
+          <svg viewBox="0 0 600 120" className="mt-12 w-full text-foreground" fill="none" stroke="currentColor" aria-hidden focusable="false">
+            <path d="M10 60 H590" strokeWidth="1" opacity="0.35" />
+            {Array.from({ length: 41 }, (_, i) => {
+              const x = 10 + i * 14.5;
+              const major = i % 5 === 0;
+              return <line key={i} x1={x} y1={60} x2={x} y2={major ? 44 : 52} strokeWidth={major ? 1 : 0.6} opacity={major ? 0.6 : 0.3} />;
+            })}
+            <path
+              d="M10 60 H590"
+              stroke="var(--primary)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              pathLength={1}
+              strokeDasharray="1"
+              className="prologue-draw"
+            />
+            {[0, 20, 40, 60, 80].map((age, i) => (
+              <text key={age} x={10 + age * 7.25} y={100} textAnchor="middle" fill="currentColor" stroke="none" fontSize="12" opacity="0.6" className="font-serif">
+                {age}
+              </text>
+            ))}
+            <circle cx={10 + 28 * 7.25} cy={60} r="5" fill="var(--primary)" stroke="none" className="prologue-dot" />
+          </svg>
+          <p className="mt-6 max-w-md font-serif text-base leading-[1.9] text-muted-foreground">
+            每个人都站在这条线的某一格上。知道自己在哪一格，才看得清哪些窗口正在开启，哪些已经关上。
+          </p>
+        </div>
+
+        <div className="relative lg:col-span-5">
+          <div className="relative border border-border bg-card p-6 sm:p-8">
+            <span className="absolute -left-px -top-px h-2 w-2 bg-primary" aria-hidden />
+            <span className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Step 00 · 你的年龄</span>
+            <h1 className="mt-4 font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              先告诉我们你现在多大？
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              年龄决定时间轴上哪些人生窗口正在开启、哪些已经关上、哪些尚未到来。只保存在这台设备的浏览器里。
+            </p>
+            <form
+              onSubmit={(e) => { e.preventDefault(); submit(); }}
+              className="mt-8 flex flex-wrap items-center gap-3"
+            >
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={MAX_AGE}
+                value={draft}
+                onChange={(e) => { setDraft(e.target.value); setError(''); }}
+                aria-label="你的年龄"
+                aria-invalid={error !== ''}
+                autoFocus
+                className="w-24 rounded-md border border-input bg-background px-3 py-2 text-base text-foreground text-center tabular-nums focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <span className="text-sm text-muted-foreground">岁</span>
+              <button
+                type="submit"
+                className="ml-auto inline-flex items-center gap-2 bg-primary px-6 py-3 font-serif text-sm tracking-[0.12em] text-primary-foreground transition-colors duration-500 hover:bg-primary/90"
+              >
+                看我的时间轴
+                <ArrowRight className="h-4 w-4" strokeWidth={1.25} />
+              </button>
+            </form>
+            {error && (
+              <p role="alert" className="mt-3 text-xs text-red-600 dark:text-red-400">{error}</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
