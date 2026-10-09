@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { AIAnalysisPanel } from '@/components/ai/ai-analysis-panel';
 import { useLockedAction } from '@/hooks/use-locked-action';
+import { useFreeDetailGuard } from '@/lib/free-preview';
 import { PreviewBanner } from '@/components/auth/module-gate';
 import { Reveal } from '@/components/shared/reveal';
 import { ModulePageHead } from '@/components/shared/module-page-head';
@@ -154,12 +155,20 @@ export default function CareerPage() {
   const [aiPanel, setAiPanel] = useState<{ open: boolean; career: Career | null }>({ open: false, career: null });
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const { guard } = useLockedAction();
+  const guardDetail = useFreeDetailGuard('career');
 
-  /** 详情与 AI 分析是锁定点：预览态（未持码）弹解锁引导 */
-  const openCareerDetail = (id: number) => guard(() => {
-    setSelectedCareer(selectedCareer === id ? null : id);
-    setShowResources(null);
-  });
+  /** 详情是锁定点（每模块首条免费）；收起不计次 */
+  const openCareerDetail = (id: number) => {
+    if (selectedCareer === id) {
+      setSelectedCareer(null);
+      setShowResources(null);
+      return;
+    }
+    guardDetail(() => {
+      setSelectedCareer(id);
+      setShowResources(null);
+    });
+  };
 
   // 移动端（<lg 单列布局）详情面板渲染在整片卡片网格之后，
   // 选中后不滚过去的话，用户点了卡片却看不到任何反馈

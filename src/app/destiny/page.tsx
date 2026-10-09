@@ -273,7 +273,7 @@ export default function DestinyPage() {
   const { guard } = useLockedAction();
   // 表单输入持久化：刷新后不再重填（原来是纯 useState，刷新即丢）
   const [input, setInput] = usePersistedState<DestinyInput>('destiny.input.v1', () => ({
-    birthYear: String(new Date().getFullYear() - defaultAge),
+    birthYear: defaultAge !== null ? String(new Date().getFullYear() - defaultAge) : '',
     familyBackground: 'middle',
     educationLevel: 'good',
     location: 'tier2',
@@ -580,7 +580,7 @@ ${customContext}
 
           <div className="animate-fade-in-up stagger-5">
             <button
-              onClick={() => guard(handleGenerate)}
+              onClick={handleGenerate}
               className="group inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md active:scale-[0.98] btn-press"
             >
               生成命运报告
@@ -667,7 +667,7 @@ ${customContext}
 
             {/* AI Deep Analysis Button */}
             <button
-              onClick={() => { setAiOpen(true); if (aiMessages.length === 0) startAIAnalysis(); }}
+              onClick={() => guard(() => { setAiOpen(true); if (aiMessages.length === 0) startAIAnalysis(); })}
               className="w-full group rounded-lg border border-primary/20 bg-primary/[0.03] p-4 flex items-center justify-between transition-all hover:bg-primary/[0.06] hover:border-primary/30 animate-fade-in-up stagger-6"
             >
               <div className="flex items-center gap-3">

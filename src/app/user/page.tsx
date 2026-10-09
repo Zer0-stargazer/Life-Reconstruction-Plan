@@ -81,7 +81,8 @@ export default function UserPage() {
   // 用户自定义接入源（独立存储 ai-sources，供顶部"当前使用"显示）
   const [customSources, setCustomSources] = useState<AiSource[]>([]);
   const [keyStatuses, setKeyStatuses] = useState<Record<string, KeyStatus>>({});
-  const [defaultAge, setDefaultAge] = useState<number>(25);
+  /** 未设置为 null，界面显示"未设置"，不预填假年龄 */
+  const [defaultAge, setDefaultAge] = useState<number | null>(null);
   const [showAgeInput, setShowAgeInput] = useState(false);
 
   // User profile state no longer needed - authUser from AuthContext is used instead
@@ -717,14 +718,20 @@ export default function UserPage() {
             </div>
             {showAgeInput ? (
               <div className="flex items-center gap-2">
-                <input type="number" min={0} max={120} value={defaultAge} onChange={(e) => updateDefaultAge(Math.max(0, Math.min(120, parseInt(e.target.value) || 0)))} className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-ring" autoFocus />
+                <input type="number" min={0} max={120} value={defaultAge ?? ''} onChange={(e) => updateDefaultAge(Math.max(0, Math.min(120, parseInt(e.target.value) || 0)))} className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-ring" autoFocus />
                 <span className="text-[10px] text-muted-foreground">岁</span>
                 <button onClick={() => setShowAgeInput(false)} className="text-[10px] text-primary hover:underline">确定</button>
               </div>
             ) : (
               <button onClick={() => setShowAgeInput(true)} className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs text-foreground hover:bg-accent/30 transition-colors">
-                <span className="font-mono tabular-nums">{defaultAge}</span>
-                <span className="text-muted-foreground">岁</span>
+                {defaultAge === null ? (
+                  <span className="text-muted-foreground">未设置</span>
+                ) : (
+                  <>
+                    <span className="font-mono tabular-nums">{defaultAge}</span>
+                    <span className="text-muted-foreground">岁</span>
+                  </>
+                )}
               </button>
             )}
           </div>

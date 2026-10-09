@@ -506,7 +506,7 @@ export default function SimulationPage() {
     const contextStr = `综合评分：${score}分（${scoreInfo.tier}）\n${dimSummary}\n\n${scenarioText}\n${advice ? `\n策略：${advice.strategy}\n杠杆：${advice.leverage}\n短板修复：${advice.weakFix}` : ''}`;
 
     const systemContext = `你是一位人生战略顾问，专注于命运维度的深度分析与破局方案。用户刚完成了命运模拟器的量化评估。
-${defaultAge > 0 ? `\n用户当前年龄：${defaultAge}岁` : ''}
+${defaultAge !== null && defaultAge > 0 ? `\n用户当前年龄：${defaultAge}岁` : ''}
 
 ${contextStr}
 
@@ -596,7 +596,7 @@ ${contextStr}
               ? '先回答量化问卷，客观评估你的五个维度。无法评判自己？选项替你量化。'
               : '问卷结果已出。微调滑块推演你的人生画像，或让AI给出深度分析与行动方案。'
             }
-            {loaded && defaultAge > 0 && (
+            {loaded && defaultAge !== null && defaultAge > 0 && (
               <span className="ml-2 text-xs text-muted-foreground/50 font-mono">
                 (当前年龄 {defaultAge} 岁)
               </span>

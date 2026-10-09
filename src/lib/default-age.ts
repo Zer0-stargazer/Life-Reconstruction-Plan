@@ -5,12 +5,12 @@
  * （JSON.stringify 的 `"40"` 与裸字符串 `40`）和两套默认值（25/28）——
  * parseInt 读到带引号的值得 NaN，年龄跨页同步因此静默失效。
  *
- * 约定：写入一律裸数字字符串；读取兼容两种历史格式；默认值全站唯一。
+ * 约定：写入一律裸数字字符串；读取兼容两种历史格式；
+ * 没有默认年龄——未设置时返回 null，由调用方展示询问或空状态，绝不替用户假设年龄。
  */
 
 import { STORAGE_KEYS } from './storage-keys';
 
-export const DEFAULT_AGE = 28;
 /** 兼容旧引用导出；新代码一律走 STORAGE_KEYS */
 export const DEFAULT_AGE_KEY = STORAGE_KEYS.defaultAge;
 /** /me 最早用的键，只作读取迁移，不再写入 */
@@ -24,9 +24,9 @@ function parseAgeValue(raw: string): number | null {
   return n;
 }
 
-/** 读取全局默认年龄；发现旧键 me-age 时迁移到主键 */
-export function readDefaultAge(): number {
-  if (typeof window === 'undefined') return DEFAULT_AGE;
+/** 读取全局年龄；未设置时返回 null；发现旧键 me-age 时迁移到主键 */
+export function readDefaultAge(): number | null {
+  if (typeof window === 'undefined') return null;
   try {
     const primary = localStorage.getItem(DEFAULT_AGE_KEY);
     if (primary !== null) {
@@ -42,7 +42,7 @@ export function readDefaultAge(): number {
       }
     }
   } catch { /* ignore */ }
-  return DEFAULT_AGE;
+  return null;
 }
 
 export function writeDefaultAge(age: number): void {

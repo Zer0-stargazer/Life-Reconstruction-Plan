@@ -20,7 +20,7 @@ import { Reveal } from '@/components/shared/reveal';
 import { WindowMarkBar, WindowMarkChip } from '@/components/shared/window-mark-bar';
 import { useWindowMarks, type WindowMarkMap } from '@/hooks/use-window-marks';
 import { TIMELINE_IDENTITY } from '@/lib/module-identity';
-import { DEFAULT_AGE, readDefaultAge, writeDefaultAge } from '@/lib/default-age';
+import { readDefaultAge, writeDefaultAge } from '@/lib/default-age';
 import {
   Flame, Hourglass, CheckCircle2, CalendarClock, ChevronDown, ChevronRight,
   ArrowRight, Lock, AlertTriangle, Info, ListChecks,
@@ -483,12 +483,75 @@ function TimelineSlider({ age, onChange }: { age: number; onChange: (value: numb
   );
 }
 
+/* ============ 首次进入：先问年龄 ============ */
+
+function AgeOnboarding({ onSubmit }: { onSubmit: (age: number) => void }) {
+  const [draft, setDraft] = useState('');
+  const [error, setError] = useState('');
+
+  const submit = () => {
+    const n = Number(draft.trim());
+    if (draft.trim() === '' || !Number.isInteger(n) || n < 0 || n > MAX_AGE) {
+      setError(`请输入 0–${MAX_AGE} 之间的整数年龄`);
+      return;
+    }
+    onSubmit(n);
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center px-6 py-16">
+      <div className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 sm:p-8 animate-fade-in-up">
+        <HudCorners />
+        <span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">
+          序章 · 你的年龄
+        </span>
+        <h1 className="mt-3 text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">
+          先告诉我们你现在多大？
+        </h1>
+        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+          年龄决定时间轴上哪些人生窗口正在开启、哪些已经关上、哪些尚未到来。只保存在这台设备的浏览器里。
+        </p>
+        <form
+          onSubmit={(e) => { e.preventDefault(); submit(); }}
+          className="mt-6 flex items-center gap-3"
+        >
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={MAX_AGE}
+            value={draft}
+            onChange={(e) => { setDraft(e.target.value); setError(''); }}
+            aria-label="你的年龄"
+            aria-invalid={error !== ''}
+            autoFocus
+            className="w-24 rounded-md border border-input bg-background px-3 py-2 text-base text-foreground text-center tabular-nums focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+          <span className="text-sm text-muted-foreground">岁</span>
+          <button
+            type="submit"
+            className="ml-auto inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 btn-press"
+          >
+            看我的时间轴
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </form>
+        {error && (
+          <p role="alert" className="mt-3 text-xs text-red-600 dark:text-red-400">{error}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ============ 主页面 ============ */
 
 type TabKey = 'open' | 'missed' | 'future';
 
 export default function MePage() {
+  /** age 为 null 且 ageLoaded 为 true 时表示用户尚未设置年龄，显示序章询问 */
   const [age, setAge] = useState<number | null>(null);
+  const [ageLoaded, setAgeLoaded] = useState(false);
   const [tab, setTab] = useState<TabKey>('open');
   const [missedPermanentShowAll, setMissedPermanentShowAll] = useState(false);
   const [missedOtherShowAll, setMissedOtherShowAll] = useState(false);
@@ -507,6 +570,7 @@ export default function MePage() {
   // 读全局年龄（读写统一走 lib/default-age，兼容旧 me-age 键与历史 JSON 编码）
   useEffect(() => {
     setAge(readDefaultAge());
+    setAgeLoaded(true);
   }, []);
 
   const updateAge = (v: number) => {
@@ -598,8 +662,14 @@ export default function MePage() {
     { key: 'future', label: '尚未到来', count: futureListAll.length, icon: <CalendarClock className="h-3.5 w-3.5" /> },
   ];
 
-  if (age === null) {
+  // 首次进入（尚未读到本地年龄）：空白占位，避免闪现询问页
+  if (!ageLoaded) {
     return <div className="min-h-screen bg-background" />;
+  }
+
+  // 未设置年龄：先问年龄，存本地后再展示时间轴
+  if (age === null) {
+    return <AgeOnboarding onSubmit={updateAge} />;
   }
 
   return (

@@ -11,7 +11,7 @@ import { Reveal } from '@/components/shared/reveal';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
 import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
-import { useLockedAction } from '@/hooks/use-locked-action';
+import { useFreeDetailGuard } from '@/lib/free-preview';
 import {
   TrendingUp, AlertTriangle, Shield, Bot,
   ChevronLeft, ChevronRight, X, Maximize2,
@@ -832,7 +832,7 @@ function LawDetailPanel({
 /* ============ Main Page ============ */
 
 export default function LawsPage() {
-  const { guard } = useLockedAction();
+  const guardDetail = useFreeDetailGuard('laws');
   const [activeDimensionId, setActiveDimensionId] = useState<string>(LAW_DIMENSIONS[0].id);
   const [tagFilter, setTagFilter] = useState<LawTag | 'all'>('all');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -888,11 +888,12 @@ export default function LawsPage() {
     : -1;
   const selectedItem = selectedItemIndex >= 0 ? filteredItems[selectedItemIndex] : null;
 
+  // 详情内上一条/下一条也是打开另一条详情，同样计入访客免费名额
   const stepItem = useCallback((delta: number) => {
     if (selectedItemIndex < 0) return;
     const next = filteredItems[selectedItemIndex + delta];
-    if (next) setSelectedItemId(next.id);
-  }, [selectedItemIndex, filteredItems]);
+    if (next) guardDetail(() => setSelectedItemId(next.id));
+  }, [selectedItemIndex, filteredItems, guardDetail]);
 
   // Compute stats for the active dimension
   const dimensionStats = useMemo(() => {
@@ -1067,7 +1068,7 @@ export default function LawsPage() {
                       <FocusLawCard
                         key={item.id}
                         item={item}
-                        onClick={() => guard(() => setSelectedItemId(item.id))}
+                        onClick={() => guardDetail(() => setSelectedItemId(item.id))}
                       />
                     ))}
                   </div>
@@ -1092,7 +1093,7 @@ export default function LawsPage() {
                       <LawCard
                         item={item}
                         dimension={activeDimension}
-                        onClick={() => guard(() => setSelectedItemId(item.id))}
+                        onClick={() => guardDetail(() => setSelectedItemId(item.id))}
                       />
                     </Reveal>
                   ))}

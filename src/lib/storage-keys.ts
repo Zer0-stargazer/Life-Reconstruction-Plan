@@ -29,6 +29,8 @@ export const STORAGE_KEYS = {
   authUser: 'auth-user',
   /** 服务端签发的会话令牌（HMAC，7 天） */
   authToken: 'auth-token',
+  /** 访客各模块已免费展开的详情次数（JSON：{ [moduleId]: count }，见 src/lib/free-preview.ts） */
+  freePreview: 'free-preview.v1',
   /** 开发者后台会话（按 UTC 日轮换的哈希，24-48h 有效） */
   devToken: 'dev-token',
 } as const;

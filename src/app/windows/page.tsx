@@ -7,6 +7,7 @@ import { byWindowSeverity } from '@/lib/default-order';
 import { TickRule } from '@/components/shared/fig-kit';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
 import { useLockedAction } from '@/hooks/use-locked-action';
+import { useFreeDetailGuard } from '@/lib/free-preview';
 import { PreviewBanner } from '@/components/auth/module-gate';
 import { consumeAiSseStream } from '@/lib/sse-client';
 import { getAuthHeader } from '@/lib/client-auth';
@@ -93,6 +94,7 @@ function LockForceBar({ score }: { score: number }) {
 export default function WindowsPage() {
   const { defaultAge, saveDefaultAge, stages } = useAdvancedSettings();
   const { guard } = useLockedAction();
+  const guardDetail = useFreeDetailGuard('windows');
   const [filter, setFilter] = useState<WindowStatus | 'all'>('all');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['青年起步', '壮年奋斗', '中年深耕']));
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
@@ -101,7 +103,7 @@ export default function WindowsPage() {
 
   /** 每组默认预览条数 */
   const GROUP_PREVIEW = 12;
-  const [userAge, setUserAge] = useState<string>(String(defaultAge));
+  const [userAge, setUserAge] = useState<string>(defaultAge === null ? '' : String(defaultAge));
   const [ageTouched, setAgeTouched] = useState(false);
   const [showAgeInput, setShowAgeInput] = useState(false);
   const [aiPlanning, setAiPlanning] = useState(false);
@@ -127,7 +129,7 @@ export default function WindowsPage() {
 
   // 全局年龄加载完成后同步到本地输入框（用户未手动改过时）
   useEffect(() => {
-    if (!ageTouched) setUserAge(String(defaultAge));
+    if (!ageTouched) setUserAge(defaultAge === null ? '' : String(defaultAge));
   }, [defaultAge, ageTouched]);
 
   // 手动修改年龄 → 写回全局 default-age（/me、首页图表、/user 偏好共用）
@@ -388,7 +390,7 @@ export default function WindowsPage() {
                     </button>
                   </>
                 )}
-                <button onClick={() => { setShowAgeInput(false); setAgeTouched(false); setUserAge(String(defaultAge)); }} className="text-muted-foreground hover:text-foreground">
+                <button onClick={() => { setShowAgeInput(false); setAgeTouched(false); setUserAge(defaultAge === null ? '' : String(defaultAge)); }} className="text-muted-foreground hover:text-foreground">
                   <X className="h-3 w-3" />
                 </button>
               </div>
@@ -397,7 +399,11 @@ export default function WindowsPage() {
                 onClick={() => setShowAgeInput(true)}
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
               >
-                年龄已设为 <span className="font-mono text-foreground/70">{defaultAge}</span> 岁 · 点击修改
+                {defaultAge === null ? (
+                  <>尚未设置年龄 · 点击设置</>
+                ) : (
+                  <>年龄已设为 <span className="font-mono text-foreground/70">{defaultAge}</span> 岁 · 点击修改</>
+                )}
               </button>
             )}
           </div>
@@ -504,11 +510,12 @@ export default function WindowsPage() {
                         role="button"
                         tabIndex={0}
                         aria-expanded={isCardExpanded}
-                        onClick={() => guard(() => toggleCard(w.id))}
+                        onClick={() => (isCardExpanded ? toggleCard(w.id) : guardDetail(() => toggleCard(w.id)))}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            guard(() => toggleCard(w.id));
+                            if (isCardExpanded) toggleCard(w.id);
+                            else guardDetail(() => toggleCard(w.id));
                           }
                         }}
                         className={cn(

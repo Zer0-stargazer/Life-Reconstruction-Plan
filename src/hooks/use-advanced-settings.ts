@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { DEFAULT_AGE, readDefaultAge, writeDefaultAge } from '@/lib/default-age';
+import { readDefaultAge, writeDefaultAge } from '@/lib/default-age';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
 
 export interface LifeStage { id: string; label: string; range: [number, number]; }
@@ -35,7 +35,8 @@ function loadJSON<T>(key: string, fallback: T): T {
 }
 
 export function useAdvancedSettings() {
-  const [defaultAge, setDefaultAge] = useState(DEFAULT_AGE);
+  /** 全局年龄；未设置为 null，调用方须处理（不假设默认值） */
+  const [defaultAge, setDefaultAge] = useState<number | null>(null);
   const [stages, setStages] = useState<LifeStage[]>(DEFAULT_STAGES);
   const [weights, setWeights] = useState<WeightItem[]>(DEFAULT_WEIGHTS);
   const [loaded, setLoaded] = useState(false);
