@@ -9,7 +9,10 @@ const CY = 300;
 
 function polar(r: number, i: number) {
   const a = (-90 + i * 45) * (Math.PI / 180);
-  return [CX + r * Math.cos(a), CY + r * Math.sin(a)] as const;
+  return [
+    Number((CX + r * Math.cos(a)).toFixed(2)),
+    Number((CY + r * Math.sin(a)).toFixed(2)),
+  ] as const;
 }
 
 /**

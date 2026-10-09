@@ -58,8 +58,9 @@ export function ModulePageHead({
           '[data-head="rule"]',
           { scaleX: 0, transformOrigin: 'left center', duration: MOTION.slow, ease: MOTION.easeExpo },
           0.25
-        )
-        .from('[data-head="aside"]', { opacity: 0, y: 10, duration: MOTION.base }, 0.3);
+        );
+      const asideEl = rootRef.current?.querySelector('[data-head="aside"]');
+      if (asideEl) tl.from(asideEl, { opacity: 0, y: 10, duration: MOTION.base }, 0.3);
     }, rootRef);
     return () => ctx.revert();
   }, []);
