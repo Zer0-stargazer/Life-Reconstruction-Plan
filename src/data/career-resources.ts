@@ -19,6 +19,11 @@ import { salesResources } from './resources/sales';
 import { mediaResources } from './resources/media';
 import { serviceResources } from './resources/service';
 import { energyResources } from './resources/energy';
+import { gapResources00 } from './resources/gap-00';
+import { gapResources01 } from './resources/gap-01';
+import { gapResources02 } from './resources/gap-02';
+import { gapResourcesA } from './resources/gap-a';
+import { gapResourcesB } from './resources/gap-b';
 
 export interface CareerResourceLink {
   title: string;
@@ -465,4 +470,9 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
   ...mediaResources,
   ...serviceResources,
   ...energyResources,
+  ...gapResources00,
+  ...gapResources01,
+  ...gapResources02,
+  ...gapResourcesA,
+  ...gapResourcesB,
 };

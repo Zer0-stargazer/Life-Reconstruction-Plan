@@ -9,8 +9,9 @@
     "lint": "eslint",
     "ts-check": "tsc -p tsconfig.json",
     "lint:build": "eslint . --quiet",
-    "validate": "pnpm run ts-check && pnpm run lint:build",
-    "preinstall": "npx only-allow pnpm"
+    "validate": "pnpm run ts-check && pnpm run lint:build && pnpm run test",
+    "preinstall": "npx only-allow pnpm",
+    "test": "vitest run"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
@@ -45,7 +46,8 @@
     "shadcn": "latest",
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
