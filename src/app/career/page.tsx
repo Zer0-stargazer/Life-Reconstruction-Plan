@@ -487,12 +487,15 @@ export default function CareerPage() {
                     onClick={() => openCareerDetail(career.id)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCareerDetail(career.id); } }}
                     className={cn(
-                      'w-full text-left rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer',
+                      'group w-full text-left rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md cursor-pointer',
                       selectedCareer === career.id ? 'border-primary/30 ring-1 ring-primary/10' : 'border-border'
                     )}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-sm font-semibold text-foreground">{career.name}</h3>
+                      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                        {career.name}
+                        <ArrowUpRight className="h-3.5 w-3.5 text-primary opacity-0 -translate-x-1 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
+                      </h3>
                       <TrendIcon className={cn('h-4 w-4 shrink-0', trendColor[career.trend])} />
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2">{career.description}</p>
