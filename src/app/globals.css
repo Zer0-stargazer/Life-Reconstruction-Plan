@@ -514,9 +514,20 @@ body, .bg-background, .bg-card, .bg-sidebar, .bg-muted {
   transform: scaleX(1);
 }
 
+/* 印章入场：整页首次加载播放一次，500ms，power3.out 近似曲线，无回弹 */
+@keyframes seal-stamp-in {
+  from { opacity: 0; transform: scale(1.2) rotate(-4deg); }
+  to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.seal-stamp-in {
+  animation: seal-stamp-in 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-rise,
   .seal-stamp,
+  .seal-stamp-in,
   .nav-rule {
     animation: none;
   }

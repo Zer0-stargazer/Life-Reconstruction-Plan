@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowLeft, ArrowRight, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { MODULE_IDENTITIES, TIMELINE_IDENTITY } from '@/lib/module-identity';
 import { cn } from '@/lib/utils';
+import { type ModuleIconComponent } from './module-icons';
 import { Reveal } from './reveal';
 
 /**
@@ -21,9 +22,7 @@ interface TrailStep {
   tag: string;
   title: string;
   question: string;
-  icon: LucideIcon;
-  iconGradient: string;
-  tagColor: string;
+  icon: ModuleIconComponent;
 }
 
 const TRAIL: TrailStep[] = [
@@ -33,8 +32,6 @@ const TRAIL: TrailStep[] = [
     title: TIMELINE_IDENTITY.title,
     question: TIMELINE_IDENTITY.question,
     icon: TIMELINE_IDENTITY.icon,
-    iconGradient: TIMELINE_IDENTITY.iconGradient,
-    tagColor: 'text-primary/70',
   },
   ...MODULE_IDENTITIES.map((m) => ({
     href: m.href,
@@ -42,8 +39,6 @@ const TRAIL: TrailStep[] = [
     title: m.title,
     question: m.question,
     icon: m.icon,
-    iconGradient: m.iconGradient,
-    tagColor: m.tagColor,
   })),
 ];
 
@@ -59,19 +54,12 @@ function TrailCard({ step, dir }: { step: TrailStep; dir: 'prev' | 'next' }) {
         dir === 'next' && 'sm:flex-row-reverse sm:text-right'
       )}
     >
-      <span
-        className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm transition-transform duration-300 group-hover:scale-110',
-          step.iconGradient
-        )}
-      >
-        <Icon className="h-4 w-4" />
-      </span>
+      <Icon className="h-7 w-7 shrink-0 text-foreground/80 transition-colors duration-500 group-hover:text-primary" />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
-          <Arrow className="h-3 w-3" />
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <Arrow className="h-3 w-3" strokeWidth={1.25} />
           <span>{dir === 'prev' ? '上一步' : '下一步'}</span>
-          <span className={cn('font-mono font-semibold', step.tagColor)}>{step.tag}</span>
+          <span className="font-serif font-semibold text-primary">{step.tag}</span>
         </div>
         <div className="mt-0.5 truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
           {step.title}

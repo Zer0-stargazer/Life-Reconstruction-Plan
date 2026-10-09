@@ -1,11 +1,18 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
 import { MODULE_IDENTITIES, chapterOf } from '@/lib/module-identity';
+import { chapterMeta } from '@/lib/chapter-meta';
 import { cn } from '@/lib/utils';
+import { MOTION, gsap, prefersReducedMotion, registerGsap } from '@/lib/motion';
 
 /**
- * 七个模块页的统一页头：章节号 + 大标题 + 一句问题 + 细线。
+ * 七个模块页的统一页头：章节大号朱砂数字 + 英文小标 + 大标题 + 一句问题 + 细线与印点。
  *
  * 编号、问题、章节全部从 `module-identity.ts` 取，页面只提供自己特有的部分。
  * 页面仍可自定义大标题与描述——「人生规律引擎」这类产品文案不该被「规律」两个字替换掉。
+ *
+ * 入场只播放一次（GSAP，不循环）。SSR 默认可见，动效只在挂载后补起始态。
  */
 
 const WIDTHS = {
@@ -37,46 +44,84 @@ export function ModulePageHead({
   /** 页头下方内容：统计条、分布图、步骤指示器等 */
   children?: React.ReactNode;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    registerGsap();
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: MOTION.ease } });
+      tl.from('[data-head="chapter"]', { opacity: 0, y: 12, duration: MOTION.base })
+        .from('[data-head="title"]', { opacity: 0, y: 18, duration: MOTION.slow }, 0.08)
+        .from('[data-head="question"]', { opacity: 0, y: 10, duration: MOTION.base }, 0.2)
+        .from(
+          '[data-head="rule"]',
+          { scaleX: 0, transformOrigin: 'left center', duration: MOTION.slow, ease: MOTION.easeExpo },
+          0.25
+        )
+        .from('[data-head="aside"]', { opacity: 0, y: 10, duration: MOTION.base }, 0.3);
+    }, rootRef);
+    return () => ctx.revert();
+  }, []);
+
   const m = MODULE_IDENTITIES.find((x) => x.href === href);
   if (!m) return null;
   const chapter = chapterOf(href);
+  const meta = chapter ? chapterMeta(chapter.num) : null;
 
   return (
-    <div className={cn('border-b border-border bg-card', className)}>
-      <div className={cn('mx-auto px-6 sm:px-8 pt-10 pb-8', WIDTHS[width])}>
+    <div ref={rootRef} className={cn('border-b border-border bg-card', className)}>
+      <div className={cn('mx-auto px-6 pb-9 pt-12 sm:px-8', WIDTHS[width])}>
         <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="flex-1 min-w-0 animate-fade-in-up">
-            <div className="flex items-baseline gap-3">
-              {chapter && (
-                <span className="font-serif text-3xl leading-none text-primary">{chapter.num}</span>
+          <div className="min-w-0 flex-1">
+            {chapter && (
+              <div data-head="chapter" className="flex items-end gap-5">
+                <span className="font-serif text-7xl leading-[0.8] tabular-nums text-primary sm:text-8xl">
+                  {chapter.num}
+                </span>
+                <div className="pb-0.5">
+                  <div className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
+                    {meta?.en}
+                  </div>
+                  <div className="mt-1.5 font-serif text-sm text-muted-foreground">{chapter.title}</div>
+                </div>
+              </div>
+            )}
+            <h1
+              data-head="title"
+              className={cn(
+                'font-serif text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl',
+                chapter && 'mt-8'
               )}
-              {chapter && (
-                <span className="font-serif text-sm text-muted-foreground">{chapter.title}</span>
-              )}
-            </div>
-            <h1 className="mt-4 font-serif text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-tight">
+            >
               {title}
             </h1>
-            <p className="mt-3 text-sm font-medium text-muted-foreground">{m.question}</p>
-            {desc && (
-              <p className="mt-2 max-w-xl text-sm text-muted-foreground leading-relaxed">{desc}</p>
-            )}
+            <p data-head="question" className="mt-3 text-sm font-medium text-muted-foreground">
+              {m.question}
+            </p>
+            {desc && <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">{desc}</p>}
           </div>
 
           {aside && (
-            <div className="w-full shrink-0 sm:w-auto animate-fade-in-up">{aside}</div>
+            <div data-head="aside" className="w-full shrink-0 sm:w-auto">
+              {aside}
+            </div>
           )}
         </div>
 
-        {/* 细线 + 起点朱砂小印：章节开篇的收束线 */}
-        <div className="relative mt-8 h-px bg-border">
+        {/* 细线 + 朱砂印点 + 编号：章节开篇的收束线 */}
+        <div className="relative mt-10 flex items-center">
+          <span data-head="rule" className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" aria-hidden />
           <span
             aria-hidden
-            className="absolute -left-px top-1/2 h-2 w-2 -translate-y-1/2 rounded-[1px] bg-primary"
+            className="relative h-2.5 w-2.5 shrink-0 rounded-[1px] bg-primary"
           />
+          <span className="relative ml-auto bg-card pl-4 font-serif text-[11px] tabular-nums tracking-[0.2em] text-muted-foreground">
+            {m.tag} / 07
+          </span>
         </div>
 
-        {children && <div className="mt-6">{children}</div>}
+        {children && <div className="mt-8">{children}</div>}
       </div>
     </div>
   );

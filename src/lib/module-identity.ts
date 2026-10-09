@@ -1,14 +1,14 @@
 import {
-  PenTool,
-  Briefcase,
-  Scale,
-  Clock,
-  SlidersHorizontal,
-  Dice5,
-  Compass,
-  CalendarRange,
-  type LucideIcon,
-} from 'lucide-react';
+  NameIcon,
+  CareerIcon,
+  LawsIcon,
+  WindowIcon,
+  SimulationIcon,
+  LuckIcon,
+  DestinyIcon,
+  TimeIcon,
+  type ModuleIconComponent,
+} from '@/components/shared/module-icons';
 import { LAW_DIMENSIONS } from '@/data/laws';
 
 /**
@@ -28,7 +28,7 @@ export interface ModuleIdentity {
   desc: string;
   metric: string;
   unit: string;
-  icon: LucideIcon;
+  icon: ModuleIconComponent;
   /** 图标块渐变 */
   iconGradient: string;
   /** 卡片 hover 时描边色 */
@@ -46,7 +46,7 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     desc: '笔画、音律、意象——名字是你还没开口就已经发出的信号。',
     metric: '∞',
     unit: '种组合',
-    icon: PenTool,
+    icon: NameIcon,
     iconGradient: 'bg-foreground/5 text-foreground',
     ring: 'group-hover:border-foreground/30',
     tagColor: 'text-foreground/60',
@@ -59,7 +59,7 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     desc: '看薪资、趋势、被机器替代的风险，也看自学能不能进去。',
     metric: '757',
     unit: '条赛道',
-    icon: Briefcase,
+    icon: CareerIcon,
     iconGradient: 'bg-foreground/5 text-foreground',
     ring: 'group-hover:border-foreground/30',
     tagColor: 'text-foreground/60',
@@ -72,7 +72,7 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     desc: '生物衰老、心智带宽、财富侵蚀……8 个维度里藏着人生的暗箱。',
     metric: String(LAW_DIMENSIONS.reduce((s, d) => s + d.items.length, 0)),
     unit: '条规律',
-    icon: Scale,
+    icon: LawsIcon,
     iconGradient: 'bg-foreground/5 text-foreground',
     ring: 'group-hover:border-foreground/30',
     tagColor: 'text-foreground/60',
@@ -85,7 +85,7 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     desc: '每扇门都有开合的时间。错过了，代价是多少。',
     metric: '473',
     unit: '扇窗口',
-    icon: Clock,
+    icon: WindowIcon,
     iconGradient: 'bg-foreground/5 text-foreground',
     ring: 'group-hover:border-foreground/30',
     tagColor: 'text-foreground/60',
@@ -98,7 +98,7 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     desc: '出身、天赋、努力、选择、运气——拖动看结果怎么变。',
     metric: '5',
     unit: '个维度',
-    icon: SlidersHorizontal,
+    icon: SimulationIcon,
     iconGradient: 'bg-foreground/5 text-foreground',
     ring: 'group-hover:border-foreground/30',
     tagColor: 'text-foreground/60',
@@ -111,7 +111,7 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     desc: '250 个运气节点，逐个标注影响有多大、可控度有多高。',
     metric: '250',
     unit: '个节点',
-    icon: Dice5,
+    icon: LuckIcon,
     iconGradient: 'bg-foreground/5 text-foreground',
     ring: 'group-hover:border-foreground/30',
     tagColor: 'text-foreground/60',
@@ -124,7 +124,7 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     desc: '综合报告：你手里有什么牌，哪些能打，哪些该换。',
     metric: '1',
     unit: '份综合报告',
-    icon: Compass,
+    icon: DestinyIcon,
     iconGradient: 'bg-foreground/5 text-foreground',
     ring: 'group-hover:border-foreground/30',
     tagColor: 'text-foreground/60',
@@ -140,7 +140,7 @@ export const TIMELINE_IDENTITY = {
   note: '时间轴',
   title: '你的人生时间轴',
   question: '在我这个年纪，有哪些事正等着我？',
-  icon: CalendarRange,
+  icon: TimeIcon,
   iconGradient: 'bg-foreground/5 text-foreground',
 };
 

@@ -7,6 +7,7 @@ import { ModuleVisitTracker } from "@/components/layout/module-visit-tracker";
 import { ModuleNextNav } from "@/components/shared/module-next-nav";
 import { AuthProvider } from "@/contexts/auth-context";
 import { UnlockDialog } from "@/components/auth/unlock-dialog";
+import { SmoothScroll } from "@/components/shared/smooth-scroll";
 
 const notoSerifSC = Noto_Serif_SC({
   weight: ["400", "600", "700"],
@@ -41,12 +42,13 @@ export default function RootLayout({
   const isDev = process.env.NODE_ENV === "development";
 
   return (
-    <html lang="zh-CN" className={`scroll-smooth ${notoSerifSC.variable}`} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html lang="zh-CN" className={notoSerifSC.variable} suppressHydrationWarning>
       <body className="antialiased">
         {isDev && (
           <div data-dev-inspector />
         )}
         <ThemeProvider>
+        <SmoothScroll />
         <AuthProvider>
           <UnlockDialog />
           <div className="flex min-h-screen">
