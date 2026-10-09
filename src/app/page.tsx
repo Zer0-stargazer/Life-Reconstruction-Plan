@@ -183,8 +183,19 @@ export default function HomePage() {
     window.addEventListener('load', refresh, { once: true });
     document.fonts?.ready.then(refresh);
 
+    /* 兜底：视口上方或当前视口内、仍未显示的元素直接补齐，避免触发丢失时内容常驻透明 */
+    const fallback = window.setTimeout(() => {
+      const stuck = Array.from(
+        rootRef.current?.querySelectorAll<HTMLElement>('[data-reveal],[data-entry]') ?? []
+      ).filter((el) => Number(getComputedStyle(el).opacity) < 1 && el.getBoundingClientRect().top < window.innerHeight);
+      if (stuck.length) {
+        gsap.to(stuck, { opacity: 1, y: 0, duration: MOTION.base, ease: MOTION.ease, overwrite: true });
+      }
+    }, 3000);
+
     return () => {
       cancelAnimationFrame(raf);
+      window.clearTimeout(fallback);
       window.removeEventListener('load', refresh);
       ctx.revert();
     };
