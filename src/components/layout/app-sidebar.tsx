@@ -218,6 +218,10 @@ export function AppSidebar() {
         <p className="font-serif text-[12px] italic leading-relaxed text-muted-foreground">
           &ldquo;人生没有标准答案，<br />但有更好的决策框架&rdquo;
         </p>
+        <div className="mt-3 flex gap-3 text-[11px] text-muted-foreground/70">
+          <Link href="/terms" className="hover:text-foreground">用户协议</Link>
+          <Link href="/privacy" className="hover:text-foreground">隐私政策</Link>
+        </div>
       </div>
     </>
   );

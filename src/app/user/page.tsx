@@ -73,6 +73,8 @@ const DEFAULT_WEIGHTS = [
 
 // ---- Main Component ----
 
+const REGISTRATION_OPEN = process.env.NEXT_PUBLIC_REGISTRATION_OPEN !== "false";
+
 export default function UserPage() {
   const pathname = usePathname();
   const { user: authUser, login: authLogin, register: authRegister, logout: authLogout, redeemCode, isPremium, canAccessModule } = useAuth();
@@ -433,10 +435,10 @@ export default function UserPage() {
                 <p className="text-xs text-muted-foreground">注册后可保存偏好和升级权限</p>
               </div>
               <button
-                onClick={() => { setShowLoginDialog(true); setLoginMode('register'); setLoginError(''); }}
+                onClick={() => { setShowLoginDialog(true); setLoginMode(REGISTRATION_OPEN ? 'register' : 'login'); setLoginError(''); }}
                 className="rounded-md bg-primary px-4 py-1.5 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 transition-all btn-press"
               >
-                注册 / 登录
+                {REGISTRATION_OPEN ? '注册 / 登录' : '登录'}
               </button>
             </div>
           )}
@@ -536,14 +538,16 @@ export default function UserPage() {
                     {loginPending ? '处理中…' : loginMode === 'register' ? '注册' : '登录'}
                   </button>
 
-                  <div className="text-center">
-                    <button
-                      onClick={() => { setLoginMode(loginMode === 'register' ? 'login' : 'register'); setLoginError(''); }}
-                      className="text-xs text-primary hover:underline"
-                    >
-                      {loginMode === 'register' ? '已有账号？去登录' : '没有账号？去注册'}
-                    </button>
-                  </div>
+                  {(loginMode === 'login' || REGISTRATION_OPEN) && (
+                    <div className="text-center">
+                      <button
+                        onClick={() => { setLoginMode(loginMode === 'register' ? 'login' : 'register'); setLoginError(''); }}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {loginMode === 'register' ? '已有账号？去登录' : '没有账号？去注册'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

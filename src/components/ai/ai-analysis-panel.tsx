@@ -197,6 +197,9 @@ export function AIAnalysisPanel({
           </button>
           </div>
         </div>
+        <p className="border-b border-border/60 bg-muted/20 px-5 py-1.5 text-[10px] text-muted-foreground">
+          内容由 AI 生成，仅供参考，不构成人生、职业或投资建议
+        </p>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">

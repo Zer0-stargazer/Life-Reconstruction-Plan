@@ -233,7 +233,7 @@ export default function HomePage() {
 
         <div className="mt-16 grid items-center gap-10 sm:mt-24 lg:grid-cols-12 lg:gap-6">
           <div className="lg:col-span-7">
-            <h1 className="font-serif text-[clamp(3.6rem,10vw,9.5rem)] font-bold leading-[1.02] tracking-[-0.01em] text-foreground">
+            <h1 className="font-serif text-[clamp(3rem,6.5vw,6.5rem)] font-bold leading-[1.02] tracking-[-0.01em] text-foreground">
               <span className="block overflow-hidden pb-[0.06em]">
                 <span data-hero="line" className="block">人生重构</span>
               </span>
