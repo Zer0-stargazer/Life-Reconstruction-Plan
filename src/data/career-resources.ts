@@ -6,6 +6,20 @@
  * 键 = 职业名（与 careers.ts 的 name 字段精确一致）。没有对应条目的职业，页面如实显示"资源整理中"。
  */
 
+import { medicalResources } from './resources/medical';
+import { financeResources } from './resources/finance';
+import { techResources } from './resources/tech';
+import { educationResources } from './resources/education';
+import { managementResources } from './resources/management';
+import { scienceResources } from './resources/science';
+import { lawResources } from './resources/law';
+import { designResources } from './resources/design';
+import { engineeringResources } from './resources/engineering';
+import { salesResources } from './resources/sales';
+import { mediaResources } from './resources/media';
+import { serviceResources } from './resources/service';
+import { energyResources } from './resources/energy';
+
 export interface CareerResourceLink {
   title: string;
   url: string;
@@ -27,10 +41,9 @@ export interface CareerResourceSet {
   books?: CareerResourceBook[];
 }
 
-export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
+const LEGACY_RESOURCES: Record<string, CareerResourceSet> = {
   // ---- 黄金赛道 · 科技 ----
   '数据科学家': {
-    videos: [{ title: 'Machine Learning Specialization（吴恩达机器学习专项）', url: 'https://www.coursera.org/specializations/machine-learning-introduction', source: 'Coursera' }],
     docs: [
       { title: 'scikit-learn 官方文档', url: 'https://scikit-learn.org/stable/', source: '官方文档' },
       { title: 'Kaggle Learn 免费微课程', url: 'https://www.kaggle.com/learn', source: 'Kaggle', note: '边学边做数据竞赛题' },
@@ -43,17 +56,14 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
     books: [{ title: '白帽子讲Web安全', author: '吴翰清', why: '阿里安全专家经典，Web 安全知识体系完整易懂' }],
   },
   '云架构师': {
-    videos: [{ title: 'AWS Cloud Solutions Architect Professional Certificate', url: 'https://www.coursera.org/professional-certificates/aws-cloud-solutions-architect', source: 'Coursera' }],
     docs: [{ title: 'AWS Well-Architected Framework（官方架构最佳实践）', url: 'https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html', source: 'AWS 官方' }],
     books: [{ title: 'SRE：Google运维解密', author: 'Betsy Beyer 等（Google SRE 团队）', why: 'Google 官方出品，云上可靠架构设计必读' }],
   },
   '区块链开发工程师': {
-    videos: [{ title: 'Blockchain Specialization（含 Solidity 与 DApp 开发）', url: 'https://www.coursera.org/specializations/blockchain', source: 'Coursera' }],
     docs: [{ title: 'Solidity 官方文档', url: 'https://docs.soliditylang.org/en/latest/', source: '官方文档' }],
     books: [{ title: '精通以太坊（Mastering Ethereum）', author: 'Andreas M. Antonopoulos、Gavin Wood', why: '以太坊开发圣经，智能合约与 DApp 原理讲透' }],
   },
   '嵌入式系统工程师': {
-    videos: [{ title: 'Introduction to Embedded Systems Software and Development Environments', url: 'https://www.coursera.org/learn/introduction-embedded-systems', source: 'Coursera' }],
     docs: [{ title: 'FreeRTOS 官网与文档（主流嵌入式 RTOS）', url: 'https://www.freertos.org/', source: '官方文档' }],
     books: [{ title: '嵌入式Linux应用开发完全手册', author: '韦东山', why: '国内嵌入式 Linux 经典，从裸机到驱动全覆盖' }],
   },
@@ -64,14 +74,12 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
   },
   'NLP工程师': {
     videos: [
-      { title: 'Natural Language Processing Specialization', url: 'https://www.coursera.org/specializations/natural-language-processing', source: 'Coursera' },
       { title: 'CS224N 自然语言处理与深度学习（斯坦福）', url: 'https://web.stanford.edu/class/cs224n/', source: '斯坦福', note: '官方课程主页，含讲义与作业' },
     ],
     docs: [{ title: 'PyTorch 官方教程', url: 'https://pytorch.org/tutorials/', source: '官方文档' }],
     books: [{ title: '自然语言处理入门', author: '何晗', why: 'HanLP 作者亲写，理论加代码，中文 NLP 实战首选' }],
   },
   '计算机视觉工程师': {
-    videos: [{ title: 'Deep Learning Specialization（第 4 门课为 CNN）', url: 'https://www.coursera.org/specializations/deep-learning', source: 'Coursera' }],
     docs: [
       { title: 'OpenCV 官方文档', url: 'https://docs.opencv.org/4.x/', source: '官方文档' },
       { title: 'PyTorch 官方教程', url: 'https://pytorch.org/tutorials/', source: '官方文档' },
@@ -84,7 +92,6 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
     books: [{ title: '推荐系统实践', author: '项亮', why: '国内推荐系统开山经典，算法与工程思路清晰' }],
   },
   '量化交易工程师': {
-    videos: [{ title: 'Investment Management with Python and Machine Learning', url: 'https://www.coursera.org/specializations/investment-management-python-machine-learning', source: 'Coursera' }],
     docs: [{ title: 'VeighNa（vn.py）开源量化交易框架官网', url: 'https://www.vnpy.com/', source: '开源项目' }],
     books: [{ title: '量化交易：如何建立自己的算法交易事业', author: 'Ernest P. Chan（欧内斯特·陈）', why: '量化入门经典，手把手搭建个人算法交易体系' }],
   },
@@ -339,11 +346,9 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
     books: [{ title: '投资银行：估值、杠杆收购、兼并与收购', author: 'Joshua Rosenbaum、Joshua Pearl', why: '投行估值与并购建模的实操圣经' }],
   },
   '量化分析师': {
-    videos: [{ title: 'Investment Management with Python and Machine Learning', url: 'https://www.coursera.org/specializations/investment-management-python-machine-learning', source: 'Coursera' }],
     books: [{ title: '量化投资：策略与技术', author: '丁鹏', why: '国内量化投资体系化入门，策略研发思路清晰' }],
   },
   '金融分析师': {
-    videos: [{ title: 'Wharton 财务会计（Wharton Financial Accounting）', url: 'https://www.coursera.org/learn/wharton-financial-accounting', source: 'Coursera' }],
     docs: [{ title: 'CFA 协会学习平台', url: 'https://www.cfainstitute.org/', source: '行业协会' }],
     books: [{ title: '财务报表分析', author: 'K. R. Subramanyam', why: '从报表读出企业经营本质，分析师基本功' }],
   },
@@ -423,7 +428,6 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
     books: [{ title: '神经科学：探索脑（第5版）', author: 'Mark F. Bear 等', why: '神经科学本科权威教材，系统讲清脑的结构与功能' }],
   },
   'AI研究员': {
-    videos: [{ title: 'Machine Learning（斯坦福，吴恩达）', url: 'https://www.coursera.org/learn/machine-learning', source: 'Coursera' }],
     docs: [{ title: 'PyTorch 官方文档与教程', url: 'https://pytorch.org/tutorials/', source: '官方文档' }],
     books: [{ title: '深度学习', author: 'Ian Goodfellow、Yoshua Bengio、Aaron Courville', why: '深度学习理论的权威教材，研究者必读' }],
   },
@@ -444,4 +448,21 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
   '人类学家': {
     books: [{ title: '文化的解释', author: 'Clifford Geertz', why: '文化人类学“深描”方法的奠基著作' }],
   },
+};
+
+export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
+  ...LEGACY_RESOURCES,
+  ...medicalResources,
+  ...financeResources,
+  ...techResources,
+  ...educationResources,
+  ...managementResources,
+  ...scienceResources,
+  ...lawResources,
+  ...designResources,
+  ...engineeringResources,
+  ...salesResources,
+  ...mediaResources,
+  ...serviceResources,
+  ...energyResources,
 };
