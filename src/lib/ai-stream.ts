@@ -36,7 +36,7 @@ interface StreamChunk {
  */
 export async function* streamChat(
   messages: { role: string; content: string }[],
-  options?: { model?: string; temperature?: number; baseUrl?: string; apiKey?: string; path?: string }
+  options?: { model?: string; temperature?: number; baseUrl?: string; apiKey?: string; path?: string; signal?: AbortSignal }
 ): AsyncGenerator<StreamChunk> {
   const baseUrl = options?.baseUrl || ENV_BASE_URL;
   const apiKey = options?.apiKey || ENV_API_KEY;
@@ -56,6 +56,7 @@ export async function* streamChat(
   const response = await fetch(url, {
     method: "POST",
     redirect: "error",
+    signal: options?.signal,
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
@@ -220,7 +221,7 @@ async function* sseDataFrames(
  */
 export async function* streamChatClaude(
   messages: { role: string; content: string }[],
-  opts: { apiKey: string; model?: string; temperature?: number; baseUrl?: string }
+  opts: { apiKey: string; model?: string; temperature?: number; baseUrl?: string; signal?: AbortSignal }
 ): AsyncGenerator<StreamChunk> {
   // 模型名必填：内置一个"猜的模型 id"大概率不存在（旧版写死的 id 已失效），
   // 不如直接报错让用户填准确的。
@@ -240,6 +241,7 @@ export async function* streamChatClaude(
     response = await fetch(`${opts.baseUrl || "https://api.anthropic.com/v1"}/messages`, {
       method: "POST",
       redirect: "error",
+      signal: opts.signal,
       headers: {
         "Content-Type": "application/json",
         "x-api-key": opts.apiKey,
@@ -300,7 +302,7 @@ export async function* streamChatClaude(
  */
 export async function* streamChatGemini(
   messages: { role: string; content: string }[],
-  opts: { apiKey: string; model?: string; temperature?: number; baseUrl?: string }
+  opts: { apiKey: string; model?: string; temperature?: number; baseUrl?: string; signal?: AbortSignal }
 ): AsyncGenerator<StreamChunk> {
   const rawModel = opts.model?.trim();
   if (!rawModel) {
@@ -323,6 +325,7 @@ export async function* streamChatGemini(
       {
         method: "POST",
         redirect: "error",
+        signal: opts.signal,
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": opts.apiKey,
@@ -381,11 +384,11 @@ export async function* streamChatGemini(
 export async function* streamChatAuto(
   messages: { role: string; content: string }[],
   source: ResolvedAiSource,
-  options?: { temperature?: number }
+  options?: { temperature?: number; signal?: AbortSignal }
 ): AsyncGenerator<StreamChunk> {
   switch (source.kind) {
     case "env":
-      yield* streamChat(messages, { model: source.model, temperature: options?.temperature });
+      yield* streamChat(messages, { model: source.model, temperature: options?.temperature, signal: options?.signal });
       return;
     case "openai":
       yield* streamChat(messages, {
@@ -393,6 +396,7 @@ export async function* streamChatAuto(
         apiKey: source.apiKey,
         model: source.model,
         temperature: options?.temperature,
+        signal: options?.signal,
       });
       return;
     case "minimax":
@@ -404,6 +408,7 @@ export async function* streamChatAuto(
         apiKey: source.apiKey,
         model: source.model,
         temperature: options?.temperature,
+        signal: options?.signal,
       });
       return;
     case "claude":
@@ -412,6 +417,7 @@ export async function* streamChatAuto(
         apiKey: source.apiKey,
         model: source.model,
         temperature: options?.temperature,
+        signal: options?.signal,
       });
       return;
     case "gemini":
@@ -420,6 +426,7 @@ export async function* streamChatAuto(
         apiKey: source.apiKey,
         model: source.model,
         temperature: options?.temperature,
+        signal: options?.signal,
       });
       return;
     case "invalid":

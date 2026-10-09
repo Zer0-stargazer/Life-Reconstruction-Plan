@@ -111,6 +111,10 @@ const MAX_QUESTION_LENGTH = 2000;
 const MAX_HISTORY_MESSAGES = 12;
 const MAX_HISTORY_MESSAGE_LENGTH = 4000;
 
+/** 上游总耗时上限：必须早于 maxDuration，超时才能返回明确提示，而不是被平台硬切断 */
+const AI_DEADLINE_MS = 50_000;
+const AI_TIMEOUT_MESSAGE = "AI 响应超时（超过 50 秒），已退还本次额度，请稍后重试";
+
 export async function POST(request: NextRequest) {
   // 已扣额度的用户 id；refundCredit 保证每次请求最多退一次
   let chargedUserId: number | null = null;
@@ -322,19 +326,23 @@ export async function POST(request: NextRequest) {
 
     // Create SSE stream (uses user-provided AI source when available)
     const encoder = new TextEncoder();
-    const stream = streamChatAuto(messages, aiSource, { temperature: 0.7 });
+    const upstream = new AbortController();
+    const stream = streamChatAuto(messages, aiSource, { temperature: 0.7, signal: upstream.signal });
 
     let cancelled = false;
     const readable = new ReadableStream({
       async start(controller) {
         let gotContent = false;
+        const deadline = setTimeout(() => upstream.abort(), AI_DEADLINE_MS);
+        request.signal.addEventListener("abort", () => upstream.abort(), { once: true });
         try {
           for await (const chunk of stream) {
             if (chunk.error) {
+              const timedOut = upstream.signal.aborted && !cancelled;
               await refundCredit("analyze_refund");
-              await logUsage(false, "upstream");
+              await logUsage(false, timedOut ? "timeout" : "upstream");
               controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ error: chunk.error })}\n\n`)
+                encoder.encode(`data: ${JSON.stringify({ error: timedOut ? AI_TIMEOUT_MESSAGE : chunk.error })}\n\n`)
               );
               controller.close();
               return;
@@ -366,13 +374,18 @@ export async function POST(request: NextRequest) {
             await logUsage(gotContent, "aborted");
             return;
           }
+          const timedOut = upstream.signal.aborted;
           await refundCredit("analyze_refund");
-          await logUsage(false, "stream");
-          const errorMessage = error instanceof Error ? error.message : "Stream error";
+          await logUsage(false, timedOut ? "timeout" : "stream");
+          const errorMessage = timedOut
+            ? AI_TIMEOUT_MESSAGE
+            : error instanceof Error ? error.message : "Stream error";
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ error: errorMessage })}\n\n`)
           );
           controller.close();
+        } finally {
+          clearTimeout(deadline);
         }
       },
       cancel() {
