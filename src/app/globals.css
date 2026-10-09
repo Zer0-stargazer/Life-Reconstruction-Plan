@@ -524,7 +524,25 @@ body, .bg-background, .bg-card, .bg-sidebar, .bg-muted {
   animation: seal-stamp-in 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes atlas-spin {
+  to { transform: rotate(360deg); }
+}
+
+.hero-atlas-spin {
+  animation: atlas-spin 140s linear infinite;
+}
+
+@keyframes home-marquee {
+  to { transform: translateX(-50%); }
+}
+
+.home-marquee {
+  animation: home-marquee 38s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .hero-atlas-spin,
+  .home-marquee,
   .hero-rise,
   .seal-stamp,
   .seal-stamp-in,

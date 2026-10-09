@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { WindowDensityChart } from '@/components/home/window-density-chart';
 import { SealMark } from '@/components/shared/seal-mark';
+import { HeroAtlas } from '@/components/home/hero-atlas';
 import type { ModuleIconComponent } from '@/components/shared/module-icons';
 import { WINDOW_DENSITY_META } from '@/data/window-density';
 import { CHAPTERS, MODULE_IDENTITIES, TIMELINE_IDENTITY } from '@/lib/module-identity';
@@ -35,6 +36,8 @@ const CHAPTER_SECTIONS = CHAPTERS.map((chapter, index) => ({
     return entry ? [entry] : [];
   }),
 }));
+
+const MARQUEE_WORDS = ['姓名', '职业', '规律', '窗口', '努力', '运气', '命运', 'DECISION ATLAS'];
 
 const faqs = [
   { q: '这是算命吗？', a: '不是。这是一个基于概率和数据的决策框架。我们不预测未来，我们帮你计算概率、识别窗口。' },
@@ -231,9 +234,12 @@ export default function HomePage() {
             </span>
           </h1>
 
-          {/* 扉页印章：装饰，不承载信息 */}
-          <div className="absolute -top-4 right-0 hidden rotate-[-5deg] lg:block" aria-hidden>
-            <SealMark className="h-36 w-36 text-6xl" />
+          {/* 扉页主视觉：装饰，不承载信息 */}
+          <div
+            className="pointer-events-none absolute right-[-7%] top-1/2 hidden aspect-square w-[min(42vw,580px)] -translate-y-1/2 lg:block"
+            aria-hidden
+          >
+            <HeroAtlas />
           </div>
         </div>
 
@@ -269,6 +275,22 @@ export default function HomePage() {
           ))}
         </nav>
       </section>
+
+      {/* ===== 字带：八个维度循环滚动，装饰 ===== */}
+      <div className="overflow-hidden border-b border-border bg-primary py-4 text-primary-foreground" aria-hidden>
+        <div className="home-marquee flex w-max whitespace-nowrap font-serif text-lg tracking-[0.3em]">
+          {[0, 1].map((k) => (
+            <div key={k} className="flex shrink-0 items-center gap-10 pr-10">
+              {MARQUEE_WORDS.map((w) => (
+                <span key={`${k}-${w}`} className="flex items-center gap-10">
+                  {w}
+                  <span className="h-1.5 w-1.5 rotate-45 bg-primary-foreground/70" />
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ===== 手记 ===== */}
       <section className="border-b border-border bg-card">

@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { ThemeProvider } from"@/components/layout/theme-provider";
 import { ModuleVisitTracker } from "@/components/layout/module-visit-tracker";
+import { HeroAtlas } from "@/components/home/hero-atlas";
 import { ModuleNextNav } from "@/components/shared/module-next-nav";
 import { AuthProvider } from "@/contexts/auth-context";
 import { UnlockDialog } from "@/components/auth/unlock-dialog";
@@ -52,6 +53,12 @@ export default function RootLayout({
         <AuthProvider>
           <UnlockDialog />
           <div className="flex min-h-screen">
+            <div
+              aria-hidden
+              className="pointer-events-none fixed -bottom-[22vh] -right-[18vw] z-0 hidden aspect-square w-[min(72vw,1000px)] opacity-[0.06] md:block"
+            >
+              <HeroAtlas animated={false} withSeal={false} />
+            </div>
             <ModuleVisitTracker />
             <AppSidebar />
             {/* pt-12 给移动端固定顶栏让位（顶栏 h-12，md 起隐藏），否则每页前 48px 被盖住 */}
