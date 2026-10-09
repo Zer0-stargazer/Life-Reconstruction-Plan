@@ -38,6 +38,9 @@ export async function POST(request: NextRequest) {
     const client = getSupabaseClient();
 
     if (action === "register") {
+      if (process.env.REGISTRATION_OPEN === "false") {
+        return NextResponse.json({ error: "当前暂停新用户注册，已有账号可直接登录" }, { status: 403 });
+      }
       // Check if nickname taken
       const { data: existing, error: checkError } = await client
         .from("app_users")
