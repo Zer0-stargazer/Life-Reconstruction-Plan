@@ -300,4 +300,148 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
     ],
     books: [{ title: '白帽子讲Web安全', author: '吴翰清', why: 'Web 安全漏洞原理的国内经典，代码审计入门首选' }],
   },
+  // ---- 第二批：法律 / 金融 / 医疗 / 教育 / 管理 / 科研（2026-10-09 curl 实测） ----
+  '律师': {
+    docs: [{ title: '中国裁判文书网（公开的真实判决书）', url: 'https://wenshu.court.gov.cn/', source: '官方平台', note: '读真实判例是入门最快的方式' }],
+    books: [
+      { title: '法律的道路', author: '小奥利弗·温德尔·霍姆斯', why: '美国法学的奠基文章，讲清法律实际如何运作' },
+      { title: '正义的理念', author: '阿马蒂亚·森', why: '从公平出发理解法律与正义，拓宽法律思维' },
+    ],
+  },
+  '合规师': {
+    docs: [
+      { title: '中国证监会官网（监管规则与规范性文件）', url: 'https://www.csrc.gov.cn/', source: '监管机构' },
+      { title: '中国人民银行官网（金融监管规则）', url: 'https://www.pbc.gov.cn/', source: '监管机构' },
+    ],
+  },
+  '专利代理人': {
+    docs: [{ title: '世界知识产权组织（WIPO）官网', url: 'https://www.wipo.int/', source: '国际组织' }],
+  },
+  '劳动法律师': {
+    docs: [{ title: '国际劳工组织（ILO）官网', url: 'https://www.ilo.org/', source: '国际组织' }],
+  },
+  '国际法律师': {
+    docs: [{ title: '世界贸易组织（WTO）官网与法律文件', url: 'https://www.wto.org/', source: '国际组织' }],
+  },
+  '公证员': {
+    docs: [{ title: '中国政府网（法规库入口）', url: 'https://www.gov.cn/', source: '官方平台' }],
+  },
+  '基金经理': {
+    videos: [{ title: 'Financial Markets（耶鲁大学，Robert Shiller）', url: 'https://www.coursera.org/learn/financial-markets-global', source: 'Coursera' }],
+    docs: [{ title: 'CFA 协会学习平台', url: 'https://www.cfainstitute.org/', source: '行业协会' }],
+    books: [{ title: '漫步华尔街', author: '伯顿·马尔基尔', why: '资产配置与指数投资的经典入门，基金经理必读' }],
+  },
+  '风险分析师': {
+    books: [{ title: '风险管理与金融机构（第5版）', author: 'John C. Hull', why: '金融风险度量与管理的标准教材' }],
+  },
+  '投资银行家': {
+    docs: [{ title: '中国证监会官网（证券发行与并购监管）', url: 'https://www.csrc.gov.cn/', source: '监管机构' }],
+    books: [{ title: '投资银行：估值、杠杆收购、兼并与收购', author: 'Joshua Rosenbaum、Joshua Pearl', why: '投行估值与并购建模的实操圣经' }],
+  },
+  '量化分析师': {
+    videos: [{ title: 'Investment Management with Python and Machine Learning', url: 'https://www.coursera.org/specializations/investment-management-python-machine-learning', source: 'Coursera' }],
+    books: [{ title: '量化投资：策略与技术', author: '丁鹏', why: '国内量化投资体系化入门，策略研发思路清晰' }],
+  },
+  '金融分析师': {
+    videos: [{ title: 'Wharton 财务会计（Wharton Financial Accounting）', url: 'https://www.coursera.org/learn/wharton-financial-accounting', source: 'Coursera' }],
+    docs: [{ title: 'CFA 协会学习平台', url: 'https://www.cfainstitute.org/', source: '行业协会' }],
+    books: [{ title: '财务报表分析', author: 'K. R. Subramanyam', why: '从报表读出企业经营本质，分析师基本功' }],
+  },
+  '理财规划师': {
+    docs: [{ title: '中国人民银行官网（个人金融消费政策）', url: 'https://www.pbc.gov.cn/', source: '监管机构' }],
+    books: [{ title: '穷爸爸富爸爸', author: '罗伯特·清崎', why: '用资产与负债视角理解个人理财，入门读物' }],
+  },
+  '金融合规官': {
+    docs: [{ title: '中国证监会官网（监管规则）', url: 'https://www.csrc.gov.cn/', source: '监管机构' }],
+  },
+  '反洗钱分析师': {
+    docs: [{ title: '中国人民银行官网（反洗钱规定）', url: 'https://www.pbc.gov.cn/', source: '监管机构' }],
+  },
+  '临床医生': {
+    docs: [{ title: '世界卫生组织（WHO）官网与指南', url: 'https://www.who.int/', source: '国际组织' }],
+    books: [{ title: '希氏内科学（Harrison 内科学）', author: 'Dennis L. Kasper 等', why: '内科学最权威的参考教材' }],
+  },
+  '护士': {
+    docs: [{ title: '世界卫生组织（WHO）官网', url: 'https://www.who.int/', source: '国际组织' }],
+  },
+  '药剂师': {
+    docs: [{ title: '世界卫生组织（WHO）官网（药品与基本药物）', url: 'https://www.who.int/', source: '国际组织' }],
+    books: [{ title: 'Rang & Dale 药理学（第8版）', author: 'H. P. Rang 等', why: '药理学机制讲解清晰，药剂工作的理论底座' }],
+  },
+  '营养师': {
+    docs: [{ title: '世界卫生组织（WHO）官网（营养与饮食）', url: 'https://www.who.int/', source: '国际组织' }],
+  },
+  '心理咨询师': {
+    docs: [{ title: '美国心理学会（APA）官网', url: 'https://www.apa.org/', source: '行业协会' }],
+    books: [{ title: '存在主义心理治疗', author: 'Irvin D. Yalom', why: '心理治疗理论与咨询关系的经典读物' }],
+  },
+  '公共卫生专家': {
+    docs: [{ title: '世界卫生组织（WHO）官网', url: 'https://www.who.int/', source: '国际组织' }],
+  },
+  '医学研究员': {
+    docs: [{ title: 'Nature 期刊官网（前沿研究）', url: 'https://www.nature.com/', source: '学术期刊' }],
+  },
+  '大学教授': {
+    docs: [{ title: '中华人民共和国教育部官网', url: 'https://www.moe.gov.cn/', source: '官方平台' }],
+    books: [{ title: '大学之用', author: 'Clark Kerr', why: '大学的使命与治理的经典思考' }],
+  },
+  '幼儿教师': {
+    docs: [{ title: '中华人民共和国教育部官网（幼儿园工作规程等）', url: 'https://www.moe.gov.cn/', source: '官方平台' }],
+    books: [{ title: '童年的秘密', author: '玛利亚·蒙台梭利', why: '儿童发展与教育观察的经典，幼教入门读物' }],
+  },
+  '课程设计师': {
+    docs: [{ title: '中华人民共和国教育部官网（课程标准）', url: 'https://www.moe.gov.cn/', source: '官方平台' }],
+    books: [{ title: '理解力的培养：逆向课程设计', author: 'Grant Wiggins、Jay McTighe', why: '从目标倒推课程设计，课程设计师的核心方法' }],
+  },
+  '企业培训师': {
+    docs: [{ title: 'SHRM 美国人力资源管理协会官网', url: 'https://www.shrm.org/', source: '行业协会' }],
+  },
+  '心理测评专家': {
+    docs: [{ title: '美国心理学会（APA）官网', url: 'https://www.apa.org/', source: '行业协会' }],
+  },
+  '教育技术专家': {
+    docs: [{ title: '中华人民共和国教育部官网（教育信息化）', url: 'https://www.moe.gov.cn/', source: '官方平台' }],
+  },
+  '人力资源总监': {
+    docs: [{ title: 'SHRM 美国人力资源管理协会官网', url: 'https://www.shrm.org/', source: '行业协会' }],
+  },
+  '财务总监': {
+    docs: [{ title: 'IFRS 国际财务报告准则官网', url: 'https://www.ifrs.org/', source: '国际组织' }],
+    books: [{ title: '公司理财（原书第11版）', author: 'Stephen A. Ross 等', why: '公司财务决策的标准教材，财务总监的理论底座' }],
+  },
+  '战略顾问': {
+    books: [{ title: '竞争战略', author: 'Michael E. Porter', why: '行业竞争与战略定位的奠基之作' }],
+  },
+  'ESG总监': {
+    docs: [{ title: '联合国官网（可持续发展目标）', url: 'https://www.un.org/', source: '国际组织' }],
+  },
+  '气候科学家': {
+    docs: [{ title: 'IPCC 政府间气候变化专门委员会官网', url: 'https://www.ipcc.ch/', source: '国际组织' }],
+  },
+  '神经科学家': {
+    docs: [{ title: 'Khan Academy 生物学课程', url: 'https://www.khanacademy.org/science/biology', source: 'Khan Academy', note: '免费基础生物学，打牢神经科学前置知识' }],
+    books: [{ title: '神经科学：探索脑（第5版）', author: 'Mark F. Bear 等', why: '神经科学本科权威教材，系统讲清脑的结构与功能' }],
+  },
+  'AI研究员': {
+    videos: [{ title: 'Machine Learning（斯坦福，吴恩达）', url: 'https://www.coursera.org/learn/machine-learning', source: 'Coursera' }],
+    docs: [{ title: 'PyTorch 官方文档与教程', url: 'https://pytorch.org/tutorials/', source: '官方文档' }],
+    books: [{ title: '深度学习', author: 'Ian Goodfellow、Yoshua Bengio、Aaron Courville', why: '深度学习理论的权威教材，研究者必读' }],
+  },
+  '天体物理学家': {
+    docs: [{ title: 'NASA 官网（天文与航天数据）', url: 'https://www.nasa.gov/', source: '官方机构' }],
+    books: [{ title: '时间简史', author: 'Stephen Hawking', why: '天体物理与宇宙学的通俗入门' }],
+  },
+  '量子物理学家': {
+    docs: [{ title: 'NSF 美国国家科学基金会官网', url: 'https://www.nsf.gov/', source: '官方机构' }],
+    books: [{ title: '量子力学导论（第4版）', author: 'David J. Griffiths', why: '本科量子力学标准教材，推导清晰' }],
+  },
+  '生态学家': {
+    books: [{ title: '寂静的春天', author: '蕾切尔·卡森', why: '现代生态学与环境保护的开端之作' }],
+  },
+  '社会学家': {
+    books: [{ title: '社会学的想象力', author: 'C. Wright Mills', why: '把个人困扰与社会结构连起来的经典方法论' }],
+  },
+  '人类学家': {
+    books: [{ title: '文化的解释', author: 'Clifford Geertz', why: '文化人类学“深描”方法的奠基著作' }],
+  },
 };
