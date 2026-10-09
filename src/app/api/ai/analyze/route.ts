@@ -1,6 +1,7 @@
 ﻿import { NextRequest } from "next/server";
 import { streamChatAuto } from "@/lib/ai-stream";
 import { resolveAiSource, type AiSourceConfig } from "@/lib/ai-providers";
+import { getSetting } from "@/lib/app-settings";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { sessionFromRequest, type SessionPayload } from "@/lib/session";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
@@ -128,6 +129,25 @@ export async function POST(request: NextRequest) {
     }
   };
 
+  // 内置 AI 调用计量：仅在通过鉴权后登记，终态时写一次（重复调用为空操作）
+  let usage: { userId: number; module: string } | null = null;
+  const logUsage = async (success: boolean, errorKind: string | null) => {
+    if (usage === null) return;
+    const current = usage;
+    usage = null;
+    try {
+      const { error } = await getSupabaseClient().from("ai_usage_logs").insert({
+        user_id: current.userId,
+        module: current.module,
+        success,
+        error_kind: errorKind,
+      });
+      if (error) console.error("ai_usage_logs 写入失败:", error.message);
+    } catch (err) {
+      console.error("ai_usage_logs 写入失败:", err);
+    }
+  };
+
   try {
     // 单 IP 限流：分析接口是流式长请求，防止被脚本刷爆额度
     const ip = getClientIp(request);
@@ -191,6 +211,13 @@ export async function POST(request: NextRequest) {
     let session: SessionPayload | null = null;
 
     if (!isCustomSource) {
+      if (!(await getSetting("builtin_ai_enabled"))) {
+        return new Response(
+          JSON.stringify({ error: "内置 AI 已暂停服务，可在「我的」页填入自己的 Key 继续使用（不扣额度）" }),
+          { status: 503, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
       session = sessionFromRequest(request);
       if (!session) {
         return new Response(
@@ -224,6 +251,8 @@ export async function POST(request: NextRequest) {
           headers: { "Content-Type": "application/json" },
         });
       }
+
+      usage = { userId: session.userId, module };
 
       if (userData.role !== "developer") {
         const { data: balance, error: consumeError } = await client.rpc("consume_ai_credit", {
@@ -303,6 +332,7 @@ export async function POST(request: NextRequest) {
           for await (const chunk of stream) {
             if (chunk.error) {
               await refundCredit("analyze_refund");
+              await logUsage(false, "upstream");
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ error: chunk.error })}\n\n`)
               );
@@ -321,14 +351,23 @@ export async function POST(request: NextRequest) {
               controller.enqueue(encoder.encode(sseMessage));
             }
           }
-          if (!gotContent) await refundCredit("analyze_refund");
+          if (!gotContent) {
+            await refundCredit("analyze_refund");
+            await logUsage(false, "empty");
+          } else {
+            await logUsage(true, null);
+          }
           // Send done signal
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (error) {
           // 客户端主动断开不退额度（已收到部分内容），其余流异常都退
-          if (cancelled) return;
+          if (cancelled) {
+            await logUsage(gotContent, "aborted");
+            return;
+          }
           await refundCredit("analyze_refund");
+          await logUsage(false, "stream");
           const errorMessage = error instanceof Error ? error.message : "Stream error";
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ error: errorMessage })}\n\n`)
@@ -351,6 +390,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("analyze 路由异常:", error);
     await refundCredit("analyze_refund");
+    await logUsage(false, "server");
     return new Response(JSON.stringify({ error: "服务器内部错误，请稍后重试" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

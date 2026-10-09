@@ -6,7 +6,7 @@ import {
   Shield, Users, Ticket, BarChart3, Plus, Trash2,
   Copy, RefreshCw,
   XCircle, Eye, EyeOff, LogOut, ChevronDown, ChevronRight,
-  Zap, Crown, UserX, UserCheck, ArrowLeft,
+  Zap, Crown, UserX, UserCheck, ArrowLeft, Coins, Activity, SlidersHorizontal,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth, type UserRole } from '@/contexts/auth-context';
@@ -45,7 +45,32 @@ interface AdminStats {
   activeUsers: number;
 }
 
-type Tab = 'stats' | 'users' | 'invites';
+interface CreditLog {
+  id: number;
+  delta: number;
+  reason: string;
+  balance: number;
+  created_at: string;
+}
+
+interface UsageStat {
+  total: number;
+  ok: number;
+}
+
+interface UsageData {
+  sampleSize: number;
+  uniqueUsers: number;
+  byModule: Record<string, UsageStat>;
+  byDay: Record<string, UsageStat>;
+}
+
+const SWITCHES = [
+  { key: 'builtin_ai_enabled', label: '内置 AI', desc: '关闭后，使用服务端 Key 的分析返回 503；用户自带 Key 不受影响' },
+  { key: 'redeem_enabled', label: '邀请码兑换', desc: '关闭后兑换接口暂停服务，已兑换的额度不受影响' },
+] as const;
+
+type Tab = 'stats' | 'users' | 'invites' | 'usage' | 'settings';
 
 // ---- Component ----
 
@@ -73,6 +98,18 @@ export default function AdminPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [invites, setInvites] = useState<AdminInvite[]>([]);
+  const [usage, setUsage] = useState<UsageData | null>(null);
+  const [settings, setSettings] = useState<Record<string, boolean>>({});
+  /** 用量与开关来自较新的迁移，失败时只影响对应标签页，不拖垮主数据 */
+  const [extraError, setExtraError] = useState<string | null>(null);
+
+  // Credit adjust panel (one user at a time)
+  const [creditUserId, setCreditUserId] = useState<number | null>(null);
+  const [creditDelta, setCreditDelta] = useState('');
+  const [creditReason, setCreditReason] = useState('');
+  const [creditLogs, setCreditLogs] = useState<CreditLog[]>([]);
+  const [creditError, setCreditError] = useState('');
+  const [creditBusy, setCreditBusy] = useState(false);
 
   // Create invite form
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -118,6 +155,21 @@ export default function AdminPage() {
     return data;
   }, [devToken]);
 
+  const fetchExtras = useCallback(async () => {
+    try {
+      const [usageRes, settingsRes] = await Promise.all([api('usage'), api('settings')]);
+      if (usageRes.success) setUsage(usageRes.data);
+      if (settingsRes.success) {
+        const rows = (settingsRes.data || []) as { key: string; value: boolean }[];
+        setSettings(Object.fromEntries(rows.map(r => [r.key, r.value])));
+      }
+      setExtraError(null);
+    } catch (err) {
+      if (err instanceof AdminApiError && err.status === 401) return;
+      setExtraError(err instanceof Error ? err.message : '扩展数据加载失败');
+    }
+  }, [api]);
+
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     setDataError(null);
@@ -130,6 +182,7 @@ export default function AdminPage() {
       if (statsRes.success) setStats(statsRes.data);
       if (usersRes.success) setUsers(usersRes.data || []);
       if (invitesRes.success) setInvites(invitesRes.data || []);
+      await fetchExtras();
     } catch (err) {
       if (err instanceof AdminApiError && err.status === 401) {
         // token 失效：回验证界面并说明原因，而不是静默显示空数据
@@ -141,7 +194,7 @@ export default function AdminPage() {
       }
     }
     setLoading(false);
-  }, [api]);
+  }, [api, fetchExtras]);
 
   // ---- Dev Login ----
 
@@ -297,6 +350,75 @@ export default function AdminPage() {
     }
   };
 
+  const handleSetSetting = async (key: string, value: boolean) => {
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-dev-token': devToken || '' },
+        body: JSON.stringify({ action: 'set_setting', key, value }),
+      });
+      const data = await res.json();
+      if (data.success) fetchExtras();
+      else alert(data.error || '更新失败');
+    } catch {
+      alert('网络错误');
+    }
+  };
+
+  const loadCreditLogs = async (userId: number) => {
+    try {
+      const data = await api(`credit_logs&userId=${userId}`);
+      if (data.success) setCreditLogs(data.data || []);
+    } catch (err) {
+      setCreditError(err instanceof Error ? err.message : '流水加载失败');
+    }
+  };
+
+  const openCreditPanel = async (userId: number) => {
+    if (creditUserId === userId) {
+      setCreditUserId(null);
+      return;
+    }
+    setCreditUserId(userId);
+    setCreditDelta('');
+    setCreditReason('');
+    setCreditError('');
+    setCreditLogs([]);
+    await loadCreditLogs(userId);
+  };
+
+  const handleAdjustCredits = async () => {
+    if (creditUserId === null) return;
+    setCreditBusy(true);
+    setCreditError('');
+    try {
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-dev-token': devToken || '' },
+        body: JSON.stringify({
+          action: 'adjust_credits',
+          userId: creditUserId,
+          delta: Number(creditDelta),
+          reason: creditReason,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setCreditError(data.error || '调整失败');
+        return;
+      }
+      const userId = creditUserId;
+      setUsers(prev => prev.map(u => (u.id === userId ? { ...u, ai_credits: data.balance } : u)));
+      setCreditDelta('');
+      setCreditReason('');
+      await loadCreditLogs(userId);
+    } catch {
+      setCreditError('网络错误');
+    } finally {
+      setCreditBusy(false);
+    }
+  };
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard?.writeText(text);
   };
@@ -366,10 +488,19 @@ export default function AdminPage() {
 
   // ---- Admin Dashboard ----
 
+  const usageView = usage && {
+    okTotal: Object.values(usage.byModule).reduce((s, m) => s + m.ok, 0),
+    days: Object.entries(usage.byDay).sort(([a], [b]) => a.localeCompare(b)).slice(-14),
+    modules: Object.entries(usage.byModule).sort(([, a], [, b]) => b.total - a.total),
+  };
+  const maxDayTotal = Math.max(1, ...(usageView?.days.map(([, d]) => d.total) ?? [0]));
+
   const tabs: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
     { id: 'stats', label: '数据概览', icon: BarChart3 },
     { id: 'users', label: '用户管理', icon: Users },
     { id: 'invites', label: '邀请码', icon: Ticket },
+    { id: 'usage', label: '调用看板', icon: Activity },
+    { id: 'settings', label: '功能开关', icon: SlidersHorizontal },
   ];
 
   return (
@@ -496,7 +627,7 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map(user => (
+                    {users.flatMap(user => [
                       <tr key={user.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
@@ -542,6 +673,16 @@ export default function AdminPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => openCreditPanel(user.id)}
+                              className={cn(
+                                "p-1.5 rounded text-primary hover:bg-primary/10 transition-colors",
+                                creditUserId === user.id && "bg-primary/10"
+                              )}
+                              title="调整 AI 额度"
+                            >
+                              <Coins className="w-3.5 h-3.5" />
+                            </button>
                             {user.role !== 'premium' && (
                               <button
                                 onClick={() => handleUpdateUser(user.id, { role: 'premium' })}
@@ -562,8 +703,77 @@ export default function AdminPage() {
                             )}
                           </div>
                         </td>
-                      </tr>
-                    ))}
+                      </tr>,
+                      creditUserId === user.id && (
+                        <tr key={`${user.id}-credit`} className="border-b border-border/50 bg-muted/20">
+                          <td colSpan={7} className="px-4 py-4">
+                            <div className="space-y-4">
+                              <div className="flex flex-wrap items-end gap-3">
+                                <label className="space-y-1">
+                                  <span className="block text-xs text-muted-foreground">变动额度（±1–10000）</span>
+                                  <input
+                                    type="number"
+                                    value={creditDelta}
+                                    onChange={(e) => setCreditDelta(e.target.value)}
+                                    placeholder="如 50 或 -20"
+                                    className="w-36 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                  />
+                                </label>
+                                <label className="flex-1 min-w-48 space-y-1">
+                                  <span className="block text-xs text-muted-foreground">调整原因（必填，2–100 字）</span>
+                                  <input
+                                    value={creditReason}
+                                    onChange={(e) => setCreditReason(e.target.value)}
+                                    placeholder="如 活动补偿 / 误扣退还"
+                                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                  />
+                                </label>
+                                <button
+                                  onClick={handleAdjustCredits}
+                                  disabled={creditBusy || !creditDelta || creditReason.trim().length < 2}
+                                  className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                >
+                                  {creditBusy ? '提交中…' : '确认调整'}
+                                </button>
+                              </div>
+                              {creditError && (
+                                <p className="text-xs text-destructive flex items-center gap-1">
+                                  <XCircle className="w-3.5 h-3.5" /> {creditError}
+                                </p>
+                              )}
+                              <div className="max-h-56 overflow-y-auto rounded-lg border border-border bg-background">
+                                {creditLogs.length === 0 ? (
+                                  <p className="px-4 py-6 text-center text-xs text-muted-foreground">暂无额度流水</p>
+                                ) : (
+                                  <table className="w-full text-xs">
+                                    <thead>
+                                      <tr className="border-b border-border bg-muted/30">
+                                        <th className="text-left px-3 py-2 font-medium text-muted-foreground">时间</th>
+                                        <th className="text-right px-3 py-2 font-medium text-muted-foreground">变动</th>
+                                        <th className="text-right px-3 py-2 font-medium text-muted-foreground">余额</th>
+                                        <th className="text-left px-3 py-2 font-medium text-muted-foreground">原因</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {creditLogs.map(log => (
+                                        <tr key={log.id} className="border-b border-border/50">
+                                          <td className="px-3 py-2 text-muted-foreground">{formatDate(log.created_at)}</td>
+                                          <td className={cn("px-3 py-2 text-right font-mono", log.delta > 0 ? 'text-green-600' : 'text-red-600')}>
+                                            {log.delta > 0 ? `+${log.delta}` : log.delta}
+                                          </td>
+                                          <td className="px-3 py-2 text-right font-mono text-foreground">{log.balance}</td>
+                                          <td className="px-3 py-2 text-muted-foreground">{log.reason}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ),
+                    ])}
                   </tbody>
                 </table>
               </div>
@@ -736,6 +946,120 @@ export default function AdminPage() {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Usage Tab */}
+        {activeTab === 'usage' && (
+          <div className="space-y-6 animate-[fade-in-up_0.3s_ease-out]">
+            {extraError && (
+              <p className="text-sm text-destructive">{extraError}（首次使用请先在 Supabase 执行 2026-10-10-batch5-admin.sql）</p>
+            )}
+            {usage && usageView && (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { label: '近 30 天内置 AI 调用', value: usage.sampleSize, hint: usage.sampleSize >= 5000 ? '已截断至最近 5000 条' : undefined },
+                    { label: '成功率', value: `${usage.sampleSize ? Math.round(usageView.okTotal / usage.sampleSize * 100) : 0}%`, hint: undefined },
+                    { label: '调用用户数', value: usage.uniqueUsers, hint: undefined },
+                    { label: '失败次数', value: usage.sampleSize - usageView.okTotal, hint: undefined },
+                  ].map(item => (
+                    <div key={item.label} className="p-4 rounded-xl border border-border bg-card">
+                      <div className="text-xs text-muted-foreground mb-2">{item.label}</div>
+                      <div className="text-2xl font-bold text-foreground font-mono">{item.value}</div>
+                      {item.hint && <div className="text-[11px] text-muted-foreground mt-1">{item.hint}</div>}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-4 rounded-xl border border-border bg-card">
+                  <h3 className="text-sm font-medium text-foreground mb-4">近 14 天调用量</h3>
+                  {usageView.days.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-6 text-center">暂无调用记录</p>
+                  ) : (
+                    <div className="flex items-end gap-2 h-40">
+                      {usageView.days.map(([day, d]) => (
+                        <div
+                          key={day}
+                          className="flex-1 flex flex-col items-center justify-end h-full gap-1"
+                          title={`${day}：${d.total} 次，成功 ${d.ok} 次`}
+                        >
+                          <span className="text-[10px] font-mono text-muted-foreground">{d.total}</span>
+                          <div
+                            className="w-full rounded-t bg-primary/70"
+                            style={{ height: `${Math.max(3, Math.round(d.total / maxDayTotal * 96))}px` }}
+                          />
+                          <span className="text-[10px] text-muted-foreground">{day.slice(5)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-xl border border-border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30">
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">模块</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">调用</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">成功</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">成功率</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usageView.modules.length === 0 && (
+                        <tr><td colSpan={4} className="px-4 py-6 text-center text-xs text-muted-foreground">暂无数据</td></tr>
+                      )}
+                      {usageView.modules.map(([m, s]) => (
+                        <tr key={m} className="border-b border-border/50">
+                          <td className="px-4 py-3 font-mono text-xs text-foreground">{m}</td>
+                          <td className="px-4 py-3 text-right font-mono">{s.total}</td>
+                          <td className="px-4 py-3 text-right font-mono">{s.ok}</td>
+                          <td className="px-4 py-3 text-right font-mono">{s.total ? Math.round(s.ok / s.total * 100) : 0}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="space-y-4 animate-[fade-in-up_0.3s_ease-out]">
+            {extraError && (
+              <p className="text-sm text-destructive">{extraError}（首次使用请先在 Supabase 执行 2026-10-10-batch5-admin.sql）</p>
+            )}
+            {SWITCHES.map(sw => {
+              const on = settings[sw.key] !== false;
+              return (
+                <div key={sw.key} className="flex items-center justify-between gap-4 p-4 rounded-xl border border-border bg-card">
+                  <div>
+                    <div className="text-sm font-medium text-foreground">{sw.label}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{sw.desc}</div>
+                  </div>
+                  <button
+                    role="switch"
+                    aria-checked={on}
+                    aria-label={sw.label}
+                    onClick={() => handleSetSetting(sw.key, !on)}
+                    className={cn(
+                      "relative w-11 h-6 rounded-full transition-colors shrink-0",
+                      on ? "bg-primary" : "bg-muted"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow transition-transform",
+                        on && "translate-x-5"
+                      )}
+                    />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

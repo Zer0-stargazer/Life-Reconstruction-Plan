@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHash, randomBytes, timingSafeEqual } from 'crypto';
 import { getSupabaseClient } from '@/storage/database/supabase-client';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
+import { SETTING_KEYS } from '@/lib/app-settings';
 
 // Developer password (stored as env var in production)
 const DEV_PASSWORD = process.env.DEV_PASSWORD;
@@ -139,6 +140,50 @@ export async function GET(request: NextRequest) {
           activeUsers: activeRes.count || 0,
         },
       });
+
+    } else if (type === 'usage') {
+      const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+      const { data, error } = await client
+        .from('ai_usage_logs')
+        .select('user_id, module, success, created_at')
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(5000);
+
+      if (error) throw new Error(`查询失败: ${error.message}`);
+      const rows = data ?? [];
+      const byModule: Record<string, { total: number; ok: number }> = {};
+      const byDay: Record<string, { total: number; ok: number }> = {};
+      const users = new Set<number>();
+      for (const r of rows) {
+        const m = (byModule[r.module] ??= { total: 0, ok: 0 });
+        const d = (byDay[r.created_at.slice(0, 10)] ??= { total: 0, ok: 0 });
+        m.total++; d.total++;
+        if (r.success) { m.ok++; d.ok++; }
+        users.add(r.user_id);
+      }
+      return NextResponse.json({
+        success: true,
+        data: { sampleSize: rows.length, uniqueUsers: users.size, byModule, byDay },
+      });
+
+    } else if (type === 'credit_logs') {
+      const userId = Number(searchParams.get('userId'));
+      if (!isPositiveInt(userId)) return badRequest('缺少用户ID');
+      const { data, error } = await client
+        .from('ai_credit_logs')
+        .select('id, delta, reason, balance, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw new Error(`查询失败: ${error.message}`);
+      return NextResponse.json({ success: true, data });
+
+    } else if (type === 'settings') {
+      const { data, error } = await client.from('app_settings').select('key, value');
+      if (error) throw new Error(`查询失败: ${error.message}`);
+      return NextResponse.json({ success: true, data });
 
     } else {
       return NextResponse.json({ error: '无效类型' }, { status: 400 });
@@ -409,6 +454,46 @@ export async function POST(request: NextRequest) {
 
       if (error) throw new Error(`更新失败: ${error.message}`);
 
+      return NextResponse.json({ success: true });
+
+    } else if (action === 'adjust_credits') {
+      const { userId, delta, reason } = body;
+      if (!isPositiveInt(userId)) {
+        return badRequest('缺少用户ID');
+      }
+      if (typeof delta !== 'number' || !Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 10000) {
+        return badRequest('额度变动须为 ±10000 以内的非零整数');
+      }
+      if (typeof reason !== 'string' || reason.trim().length < 2 || reason.trim().length > 100) {
+        return badRequest('调整原因必填，2–100 字');
+      }
+
+      const { data, error } = await client.rpc('admin_adjust_credits', {
+        p_user_id: userId,
+        p_delta: delta,
+        p_reason: `admin:${reason.trim()}`,
+      });
+
+      if (error) {
+        if (error.message.includes('insufficient')) return badRequest('调整后额度不能为负');
+        throw new Error(`调整失败: ${error.message}`);
+      }
+      return NextResponse.json({ success: true, balance: data });
+
+    } else if (action === 'set_setting') {
+      const { key, value } = body;
+      if (!(SETTING_KEYS as readonly string[]).includes(key as string)) {
+        return badRequest('未知开关');
+      }
+      if (typeof value !== 'boolean') {
+        return badRequest('开关值须为布尔');
+      }
+
+      const { error } = await client
+        .from('app_settings')
+        .upsert({ key, value, updated_at: new Date().toISOString() });
+
+      if (error) throw new Error(`更新失败: ${error.message}`);
       return NextResponse.json({ success: true });
 
     } else {

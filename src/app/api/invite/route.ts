@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
 import { sessionFromRequest, signSession } from "@/lib/session";
+import { getSetting } from "@/lib/app-settings";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 // POST /api/invite - 用户兑换邀请码升级为充电用户
@@ -30,6 +31,10 @@ export async function POST(request: NextRequest) {
   const userId = session.userId;
 
   try {
+    if (!(await getSetting("redeem_enabled"))) {
+      return NextResponse.json({ error: "兑换功能已暂停，请稍后再试" }, { status: 503 });
+    }
+
     const body = await request.json();
     const { code } = body as { code?: string; userId?: number };
 
