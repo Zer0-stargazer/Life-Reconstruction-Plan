@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Zap, LogIn, X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import {
@@ -18,7 +18,7 @@ const CONTACT = (process.env.NEXT_PUBLIC_CONTACT ?? '').trim();
 /**
  * 全局解锁引导弹窗（挂在 root layout，全站一个实例）。
  *
- * 基于 Radix Dialog：Esc 关闭、焦点陷阱、遮罩点击关闭。
+ * 手写弹窗：Esc 关闭、Tab 焦点循环、遮罩点击关闭。
  * 访客 → 引导去 /user 登录/注册；
  * 已登录未持码 → 就地输入授权码兑换，成功即全站解锁。
  * 解锁后自动执行被拦截的原动作（见 use-locked-action.ts）。
@@ -33,13 +33,36 @@ export function UnlockDialog() {
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const titleId = useId();
+  const descId = useId();
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const prevFocus = document.activeElement as HTMLElement | null;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    (inputRef.current ?? panelRef.current)?.focus();
+
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') handleDismiss();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+      prevFocus?.focus?.();
+    };
+    // handleDismiss 每次渲染都重建，这里只在 open 变化时绑定一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const resetForm = () => {
     setCode('');
@@ -83,26 +106,42 @@ export function UnlockDialog() {
     }
   };
 
-  return (
-    <DialogPrimitive.Root
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) handleDismiss();
-      }}
-    >
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-fade-in" />
-        <DialogPrimitive.Content
-          aria-describedby={undefined}
-          onOpenAutoFocus={(e) => {
-            // 有输入框时优先聚焦输入框（保持原先 autoFocus 行为）
-            if (inputRef.current) {
-              e.preventDefault();
-              inputRef.current.focus();
-            }
-          }}
-          className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-primary/25 bg-background shadow-2xl p-6 animate-scale-in outline-none"
-        >
+  if (!open || typeof document === 'undefined') return null;
+
+  const handleTrapTab = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab' || !panelRef.current) return;
+    const focusables = panelRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), a[href], input:not([disabled])'
+    );
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
+  return createPortal(
+    <>
+      <div
+        className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-fade-in"
+        onClick={handleDismiss}
+        aria-hidden="true"
+      />
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        tabIndex={-1}
+        onKeyDown={handleTrapTab}
+        className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-primary/25 bg-background shadow-2xl p-6 animate-scale-in outline-none"
+      >
           <button
             type="button"
             onClick={handleDismiss}
@@ -118,21 +157,21 @@ export function UnlockDialog() {
 
           {done ? (
             <>
-              <DialogPrimitive.Title className="text-lg font-serif font-bold text-foreground mb-2">
+              <h2 id={titleId} className="text-lg font-serif font-bold text-foreground mb-2">
                 解锁成功
-              </DialogPrimitive.Title>
-              <DialogPrimitive.Description className="text-sm text-muted-foreground">
+              </h2>
+              <p id={descId} className="text-sm text-muted-foreground">
                 全部模块与 AI 分析已对您开放。
-              </DialogPrimitive.Description>
+              </p>
             </>
           ) : (
             <>
-              <DialogPrimitive.Title className="text-lg font-serif font-bold text-foreground mb-1.5">
+              <h2 id={titleId} className="text-lg font-serif font-bold text-foreground mb-1.5">
                 解锁全部内容
-              </DialogPrimitive.Title>
-              <DialogPrimitive.Description className="text-xs text-muted-foreground leading-relaxed mb-5">
+              </h2>
+              <p id={descId} className="text-xs text-muted-foreground leading-relaxed mb-5">
                 输入授权码后解锁全部模块详情与 AI 分析；授权码向开发者索取（加好友或邮件）。
-              </DialogPrimitive.Description>
+              </p>
 
               {CONTACT && !isPremium && (
                 <p className="text-xs text-muted-foreground mb-5">
@@ -180,8 +219,8 @@ export function UnlockDialog() {
               )}
             </>
           )}
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+      </div>
+    </>,
+    document.body
   );
 }
