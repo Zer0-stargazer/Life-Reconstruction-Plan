@@ -1,6 +1,6 @@
 import type { CareerResourceSet } from '../career-resources';
 
-export const gapResourcesB: Record<string, CareerResourceSet> = {
+export const supplementResources05: Record<string, CareerResourceSet> = {
   '初级口腔医生': {
     videos: [
       { title: '口腔解剖生理学（慕课）', url: 'https://mooc.yinghuaonline.com/mo_course/detail/1001995', source: '慕课', note: '牙体形态、牙列、咬合与咀嚼肌基础' },

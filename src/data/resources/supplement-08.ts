@@ -1,6 +1,6 @@
 import type { CareerResourceSet } from '../career-resources';
 
-export const gapResourcesE: Record<string, CareerResourceSet> = {
+export const supplementResources08: Record<string, CareerResourceSet> = {
   '婚礼策划师': {
     videos: [
       { title: 'Introduction to Events Management（活动管理入门）', url: 'https://www.coursera.org/learn/introduction-to-events-management', source: 'Coursera', note: '英文，场地评估、营销与执行流程，婚礼策划的通用方法论' },

@@ -1,6 +1,6 @@
 import type { CareerResourceSet } from '../career-resources';
 
-export const gapResourcesC: Record<string, CareerResourceSet> = {
+export const supplementResources06: Record<string, CareerResourceSet> = {
   '绘本阅读指导师': {
     videos: [
       { title: 'edX: Storytelling（故事讲述）', url: 'https://www.edx.org/learn/storytelling', source: 'edX', note: '英文，故事结构与讲述技巧，可迁移到绘本导读' },

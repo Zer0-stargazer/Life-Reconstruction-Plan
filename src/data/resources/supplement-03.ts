@@ -1,6 +1,6 @@
 import type { CareerResourceSet } from '../career-resources';
 
-export const gapResources02: Record<string, CareerResourceSet> = {
+export const supplementResources03: Record<string, CareerResourceSet> = {
   '远程办公管理专家': {
     videos: [
       { title: 'Project Management Principles and Practices（项目管理原理与实践）', url: 'https://www.edx.org/learn/project-management', source: 'edX', note: '英文，项目管理基础，适用于分布式团队协作' },

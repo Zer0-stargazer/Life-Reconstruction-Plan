@@ -19,14 +19,15 @@ import { salesResources } from './resources/sales';
 import { mediaResources } from './resources/media';
 import { serviceResources } from './resources/service';
 import { energyResources } from './resources/energy';
-import { gapResources00 } from './resources/gap-00';
-import { gapResources01 } from './resources/gap-01';
-import { gapResources02 } from './resources/gap-02';
-import { gapResourcesA } from './resources/gap-a';
-import { gapResourcesB } from './resources/gap-b';
-import { gapResourcesC } from './resources/gap-c';
-import { gapResourcesD } from './resources/gap-d';
-import { gapResourcesE } from './resources/gap-e';
+import { supplementResources01 } from './resources/supplement-01';
+import { supplementResources02 } from './resources/supplement-02';
+import { supplementResources03 } from './resources/supplement-03';
+import { supplementResources04 } from './resources/supplement-04';
+import { supplementResources05 } from './resources/supplement-05';
+import { supplementResources06 } from './resources/supplement-06';
+import { supplementResources07 } from './resources/supplement-07';
+import { supplementResources08 } from './resources/supplement-08';
+import { supplementResources09 } from './resources/supplement-09';
 
 export interface CareerResourceLink {
   title: string;
@@ -473,12 +474,13 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
   ...mediaResources,
   ...serviceResources,
   ...energyResources,
-  ...gapResources00,
-  ...gapResources01,
-  ...gapResources02,
-  ...gapResourcesA,
-  ...gapResourcesB,
-  ...gapResourcesC,
-  ...gapResourcesD,
-  ...gapResourcesE,
+  ...supplementResources01,
+  ...supplementResources02,
+  ...supplementResources03,
+  ...supplementResources04,
+  ...supplementResources05,
+  ...supplementResources06,
+  ...supplementResources07,
+  ...supplementResources08,
+  ...supplementResources09,
 };

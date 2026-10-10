@@ -1,6 +1,6 @@
 import type { CareerResourceSet } from '../career-resources';
 
-export const gapResourcesD: Record<string, CareerResourceSet> = {
+export const supplementResources07: Record<string, CareerResourceSet> = {
   'CDN工程师': {
     docs: [
       { title: 'Cloudflare 缓存文档（Cache）', url: 'https://developers.cloudflare.com/cache/', source: '官方文档', note: '边缘缓存规则、缓存键与失效策略的官方说明' },

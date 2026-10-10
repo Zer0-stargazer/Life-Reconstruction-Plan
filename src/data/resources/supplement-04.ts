@@ -1,6 +1,6 @@
 import type { CareerResourceSet } from '../career-resources';
 
-export const gapResourcesA: Record<string, CareerResourceSet> = {
+export const supplementResources04: Record<string, CareerResourceSet> = {
   '流媒体工程师': {
     docs: [
       { title: 'FFmpeg 官方文档', url: 'https://ffmpeg.org/documentation.html', source: '官方文档', note: '音视频编解码、转封装与流处理的权威工具手册' },

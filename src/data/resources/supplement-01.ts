@@ -1,6 +1,6 @@
 import type { CareerResourceSet } from '../career-resources';
 
-export const gapResources00: Record<string, CareerResourceSet> = {
+export const supplementResources01: Record<string, CareerResourceSet> = {
   '数字化转型顾问': {
     videos: [
       { title: 'edX: Digital Transformation（数字化转型专题）', url: 'https://www.edx.org/learn/digital-transformation', source: 'edX', note: '英文，企业数字化转型课程合集' },

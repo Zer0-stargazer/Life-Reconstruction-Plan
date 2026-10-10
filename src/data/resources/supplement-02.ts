@@ -1,6 +1,6 @@
 import type { CareerResourceSet } from '../career-resources';
 
-export const gapResources01: Record<string, CareerResourceSet> = {
+export const supplementResources02: Record<string, CareerResourceSet> = {
   '商务洽谈翻译': {
     docs: [
       { title: '中国国际贸易促进委员会', url: 'https://www.ccpit.org', source: '官方文档', note: '国际商务活动与展会信息' },
