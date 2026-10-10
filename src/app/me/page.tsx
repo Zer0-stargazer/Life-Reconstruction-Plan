@@ -503,19 +503,26 @@ function AgeOnboarding({ onSubmit }: { onSubmit: (age: number) => void }) {
     onSubmit(n);
   };
 
+  /** 底部提示带：先让首访者知道输完年龄会得到什么，再让他输 */
+  const promises = [
+    { dot: 'bg-emerald-500/80', label: '正在开启', en: 'OPENING', desc: '当下正敞开，按紧急度排序' },
+    { dot: 'bg-red-500/80', label: '即将关闭', en: 'CLOSING', desc: '五年内关上的门，别错过' },
+    { dot: 'bg-amber-400/70', label: '尚未到来', en: 'UPCOMING', desc: '按年龄排好的未来节点' },
+  ];
+
   return (
-    <div className="relative flex min-h-screen items-center overflow-hidden bg-background">
-      <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-16 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16 lg:py-24">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
+      <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 py-14 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16 lg:py-16">
         <div className="relative lg:col-span-7">
           <div className="flex items-end gap-5">
-            <span className="font-serif text-[9rem] font-bold leading-[0.8] text-primary sm:text-[11rem]">序</span>
-            <div className="pb-2">
+            <span className="font-serif text-[10rem] font-bold leading-[0.78] text-primary sm:text-[13rem]">序</span>
+            <div className="pb-3">
               <div className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">PROLOGUE</div>
               <div className="mt-1.5 font-serif text-sm text-muted-foreground">你现在几岁</div>
             </div>
           </div>
 
-          <svg viewBox="0 0 600 120" className="mt-12 w-full text-foreground" fill="none" stroke="currentColor" aria-hidden focusable="false">
+          <svg viewBox="0 0 600 120" className="mt-10 w-full text-foreground" fill="none" stroke="currentColor" aria-hidden focusable="false">
             <path d="M10 60 H590" strokeWidth="1" opacity="0.35" />
             {Array.from({ length: 41 }, (_, i) => {
               const x = 10 + i * 14.5;
@@ -582,6 +589,33 @@ function AgeOnboarding({ onSubmit }: { onSubmit: (age: number) => void }) {
               <p role="alert" className="mt-3 text-xs text-red-600 dark:text-red-400">{error}</p>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* 底部：先交代输完年龄会得到什么，首访者不用猜 */}
+      <div className="border-t border-border bg-card">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-7 sm:px-10 lg:flex-row lg:items-end lg:justify-between lg:px-16">
+          <div className="flex items-start gap-6">
+            <span aria-hidden className="mt-1 h-2.5 w-2.5 shrink-0 rounded-[1px] bg-primary" />
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">What you get</div>
+              <p className="mt-2 font-serif text-lg text-foreground">473 扇门，先分成三堆。</p>
+            </div>
+          </div>
+          <dl className="grid gap-4 sm:grid-cols-3 lg:w-[46rem] lg:gap-8">
+            {promises.map((p) => (
+              <div key={p.label} className="flex gap-3 border-l border-border pl-4">
+                <span aria-hidden className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', p.dot)} />
+                <div>
+                  <dt className="flex items-baseline gap-2 font-serif text-sm text-foreground">
+                    {p.label}
+                    <span className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">{p.en}</span>
+                  </dt>
+                  <dd className="mt-1 text-xs leading-relaxed text-muted-foreground">{p.desc}</dd>
+                </div>
+              </div>
+            ))}
+          </dl>
         </div>
       </div>
     </div>
