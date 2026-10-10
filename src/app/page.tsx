@@ -187,6 +187,33 @@ export default function HomePage() {
         });
       });
 
+      /* 章节标题组随滚动进场：序号之后的 eyebrow/title/lede 依次淡入（大数字本身另有视差） */
+      gsap.utils.toArray<HTMLElement>('[data-chapter-head]').forEach((head) => {
+        const parts = head.querySelectorAll<HTMLElement>(':scope > *:not([data-numeral])');
+        if (!parts.length) return;
+        gsap.from(parts, {
+          opacity: 0,
+          y: 16,
+          duration: MOTION.base,
+          ease: MOTION.ease,
+          stagger: 0.08,
+          scrollTrigger: { trigger: head, start: 'top 82%', once: true },
+        });
+      });
+
+      /* 三条原则卡：整组一次触发，卡片之间错开浮现 */
+      const principles = gsap.utils.toArray<HTMLElement>('[data-principle]');
+      if (principles.length) {
+        gsap.from(principles, {
+          opacity: 0,
+          y: 18,
+          duration: MOTION.base,
+          ease: MOTION.ease,
+          stagger: 0.12,
+          scrollTrigger: { trigger: principles[0].parentElement, start: 'top 88%', once: true },
+        });
+      }
+
       /* 章节大数字随滚动微微上移，制造纵深，幅度很小 */
       gsap.utils.toArray<HTMLElement>('[data-numeral]').forEach((el) => {
         gsap.fromTo(
@@ -210,7 +237,9 @@ export default function HomePage() {
     /* 兜底：视口上方或当前视口内、仍未显示的元素直接补齐，避免触发丢失时内容常驻透明 */
     const fallback = window.setTimeout(() => {
       const stuck = Array.from(
-        rootRef.current?.querySelectorAll<HTMLElement>('[data-reveal],[data-entry]') ?? []
+        rootRef.current?.querySelectorAll<HTMLElement>(
+          '[data-reveal],[data-entry],[data-principle],[data-chapter-head] > *:not([data-numeral])'
+        ) ?? []
       ).filter((el) => Number(getComputedStyle(el).opacity) < 1 && el.getBoundingClientRect().top < window.innerHeight);
       if (stuck.length) {
         gsap.to(stuck, { opacity: 1, y: 0, duration: MOTION.base, ease: MOTION.ease, overwrite: true });
@@ -361,7 +390,7 @@ export default function HomePage() {
                 { zh: '窗口', en: 'WINDOWS', text: '标出哪些机会正开着、何时会关上。', tone: 'border-ink-accent/30 bg-ink-accent/[0.06] text-ink-accent' },
                 { zh: '框架', en: 'FRAMEWORK', text: '把判断拆成可以反复使用的步骤。', tone: 'border-amber-500/25 bg-amber-500/[0.05] text-amber-700 dark:text-amber-400' },
               ].map((p) => (
-                <div key={p.en} className={cn('rounded-lg border p-4', p.tone)}>
+                <div key={p.en} data-principle className={cn('rounded-lg border p-4', p.tone)}>
                   <div className="flex items-baseline justify-between">
                     <span className="font-serif text-xl font-semibold">{p.zh}</span>
                     <span className="text-[10px] tracking-[0.2em] opacity-70">{p.en}</span>
@@ -381,7 +410,7 @@ export default function HomePage() {
           id={`chapter-${chapter.index}`}
           className="relative mx-auto grid max-w-6xl scroll-mt-10 gap-12 border-b border-border px-6 py-24 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16"
         >
-          <header className="lg:sticky lg:top-24 lg:col-span-5 lg:self-start">
+          <header data-chapter-head className="lg:sticky lg:top-24 lg:col-span-5 lg:self-start">
             <div
               data-numeral
               className={cn('font-serif text-[9rem] font-bold leading-[0.8] tabular-nums sm:text-[11rem]', chapter.index % 2 ? 'text-ink-accent' : 'text-primary')}
