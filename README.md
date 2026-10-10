@@ -113,7 +113,7 @@ src/
 ├── contexts/auth-context.tsx # 全局认证（角色/权限/授权码；canAccessModule / canPreviewModule）
 ├── data/                     # 静态数据
 │   ├── careers.ts            # 757 个职业（192KB）
-│   ├── career-resources.ts   # ★ 职业级专属学习资源（首批 27 个职业，联网调研）
+│   ├── career-resources.ts   # ★ 职业级专属学习资源（748/757 个职业；分类文件在 data/resources/，联网调研 + curl 实测）
 │   ├── windows.ts            # 473 个人生窗口
 │   ├── window-density.ts     # 窗口密度预聚合（首页/时间轴用）
 │   ├── luck-nodes.ts         # 250 个运气节点

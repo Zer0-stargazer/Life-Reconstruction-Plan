@@ -100,3 +100,14 @@ AI 额度流水：每一笔增减都留痕，供审计与对账。
 > `app_users.ai_credits(_total)`、`invite_codes.ai_credits` 三列与
 > `ai_credit_logs` 表；脚本含 `ADD COLUMN IF NOT EXISTS`，可安全重复执行、不动已有数据。
 > 未执行前：后台建码/兑换/内置 AI 扣次会因缺列报错。
+
+## 批次 5 迁移（2026-10-10）
+
+文件：`supabase/migrations/2026-10-10-batch5-admin.sql`，SQL Editor 整段执行一次，幂等。
+
+- **ai_usage_logs**：每次内置 AI 调用一条（user_id、module、success、error_kind、created_at），供后台调用量看板。
+- **app_settings**：全局开关 `builtin_ai_enabled`、`redeem_enabled`，默认 true。
+- **admin_adjust_credits(user_id, delta, reason)**：后台加减额度，行锁 + 余额不得为负 + 写 `ai_credit_logs`，仅 service_role 可执行。
+- **dev_sessions**：开发者会话令牌库，仅存 sha256 哈希，12 小时过期。
+
+> 未执行前：后台调用量看板、开关与开发者会话会报错。

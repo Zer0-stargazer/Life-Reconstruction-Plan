@@ -82,7 +82,7 @@ src/
 │   ├── window-density.ts       # 窗口密度预聚合（首页/时间轴共用）
 │   ├── luck-nodes.ts           # 250个运气节点
 │   ├── careers.ts              # 757个职业（2026-09-26 去重 → 09-28 移除 778 条机器生成模板条目）
-│   ├── career-resources.ts     # ★ 职业级专属学习资源（首批 27 个，联网调研，URL 实测才入库）
+│   ├── career-resources.ts     # ★ 职业级专属学习资源（748/757 个职业，分类文件在 data/resources/，URL 实测才入库）
 │   └── laws*.ts                # 8维度规律（各36条，共288条）
 ├── hooks/
 │   ├── use-locked-action.ts    # ★ 预览态锁定动作统一入口（guard + useUnlockOpen）
@@ -124,7 +124,7 @@ src/
 3. **角色升级**: normal → premium 通过授权码；developer 通过 admin 页面密码验证（x-dev-token，按 UTC 日轮换）
 4. **AI能力**: 两种来源——内置 AI（服务端 env）+ 自定义接入源（localStorage `ai-sources`，已接入 analyze）。
    2026-09-28 已删除原先写死的 8 家厂商预设
-5. **职业数据**: 757个职业；学习资源**三级查找**：`data/career-resources.ts` 职业专属（首批 27 个）
+5. **职业数据**: 757个职业；学习资源**三级查找**：`data/career-resources.ts` 职业专属（748/757 个）
    → 分类级通用兜底（getBooks/getTutorials/getLearningChannels 已封装，页面无感知）；
    资源纪律：URL 必须实测可达才入库，验证不过置空，**绝不编造**
 6. **规律引擎**: 8维度(laws-*.ts)聚合到laws.ts，4类标签(critical/danger/opportunity/neutral)

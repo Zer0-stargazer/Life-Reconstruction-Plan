@@ -121,7 +121,7 @@ pnpm dev
 │   │   ├── windows.ts       # 473 窗口（注意：单行+多行两种格式批次，正则易漏计）
 │   │   ├── window-density.ts# 窗口密度预聚合（首页/时间轴共用）
 │   │   ├── careers.ts       # 757 职业（192KB）
-│   │   ├── career-resources.ts # ★ 职业级专属学习资源（2026-10-02 起分批联网调研填充）
+│   │   ├── career-resources.ts # ★ 职业级专属学习资源（2026-10-02 起分批联网调研填充；分类资源见 resources/*.ts）
 │   │   ├── luck-nodes.ts    # 250 节点
 │   │   └── laws*.ts         # 8 维度 × 36 条
 │   ├── hooks/

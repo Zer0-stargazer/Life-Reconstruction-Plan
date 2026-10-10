@@ -8,6 +8,8 @@
 
 注册或登录。服务端 bcrypt(cost=10) 校验，写 `access_logs`。
 
+`NEXT_PUBLIC_REGISTRATION_OPEN=false` 时 `action: register` 返回 403，登录不受影响。
+
 ```jsonc
 // 请求
 { "action": "register" | "login", "nickname": "string(≤50)", "password": "string(≥4)" }
