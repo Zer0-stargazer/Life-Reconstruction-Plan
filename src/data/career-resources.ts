@@ -26,6 +26,7 @@ import { gapResourcesA } from './resources/gap-a';
 import { gapResourcesB } from './resources/gap-b';
 import { gapResourcesC } from './resources/gap-c';
 import { gapResourcesD } from './resources/gap-d';
+import { gapResourcesE } from './resources/gap-e';
 
 export interface CareerResourceLink {
   title: string;
@@ -479,4 +480,5 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
   ...gapResourcesB,
   ...gapResourcesC,
   ...gapResourcesD,
+  ...gapResourcesE,
 };
