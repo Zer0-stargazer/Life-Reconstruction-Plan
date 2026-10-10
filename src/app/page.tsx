@@ -228,7 +228,7 @@ export default function HomePage() {
   return (
     <div ref={rootRef} className="min-h-screen overflow-x-hidden bg-background">
       {/* ===== 扉页 ===== */}
-      <section className="relative flex flex-col justify-between border-b border-border px-6 pb-8 pt-10 sm:px-10 lg:px-16">
+      <section className="relative flex flex-col justify-between border-b border-border px-6 pb-6 pt-8 sm:px-10 lg:px-16">
         <div data-hero="kicker" className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <span className="h-px w-10 bg-primary" aria-hidden />
@@ -241,7 +241,7 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="mt-10 grid items-center gap-8 sm:mt-14 lg:grid-cols-12 lg:gap-6">
+        <div className="mt-6 grid items-center gap-8 sm:mt-9 lg:grid-cols-12 lg:gap-6">
           <div className="lg:col-span-7">
             <h1 className="font-serif text-[clamp(3rem,6.5vw,6.5rem)] font-bold leading-[1.02] tracking-[-0.01em] text-foreground">
               <span className="block overflow-hidden pb-[0.06em]">
@@ -251,19 +251,19 @@ export default function HomePage() {
                 <span data-hero="line" className="block">计划</span>
               </span>
             </h1>
-            <p className="mt-8 flex items-center gap-4 text-[11px] uppercase tracking-[0.42em] text-primary" data-hero="kicker">
+            <p className="mt-6 flex items-center gap-4 text-[11px] uppercase tracking-[0.42em] text-primary" data-hero="kicker">
               <span className="h-px w-12 bg-primary" aria-hidden />
               Life Reconstruction Plan
             </p>
           </div>
 
           {/* 扉页主视觉：装饰，不承载信息 */}
-          <div className="pointer-events-none relative hidden aspect-square lg:col-span-5 lg:block" aria-hidden>
+          <div className="pointer-events-none relative mx-auto hidden aspect-square w-full max-w-[22rem] lg:col-span-5 lg:block" aria-hidden>
             <HeroAtlas />
           </div>
         </div>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-12 lg:items-end">
+        <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-5">
             <p data-hero="quote" className="font-serif text-xl leading-[1.9] text-foreground/80 sm:text-2xl">
               <span className="block">命是你拿到的牌，</span>
@@ -291,13 +291,13 @@ export default function HomePage() {
         </div>
 
         {/* 目录：六章一览，锚点直达 */}
-        <nav aria-label="章节目录" className="mt-8 grid grid-cols-2 border-t border-border sm:grid-cols-6">
+        <nav aria-label="章节目录" className="mt-6 grid grid-cols-2 border-t border-border sm:grid-cols-6">
           {CHAPTER_SECTIONS.map((chapter) => (
             <a
               key={chapter.num}
               href={`#chapter-${chapter.index}`}
               data-hero="index"
-              className="group flex min-w-0 flex-col gap-1 border-b border-border px-3 py-4 transition-colors duration-500 first:pl-0 hover:text-primary sm:border-b-0 sm:border-r sm:px-4 sm:first:pl-0 sm:last:border-r-0"
+              className="group flex min-w-0 flex-col gap-1 border-b border-border px-3 py-3 transition-colors duration-500 first:pl-0 hover:text-primary sm:border-b-0 sm:border-r sm:px-4 sm:first:pl-0 sm:last:border-r-0"
             >
               <span className="font-serif text-lg text-primary">{chapter.num}</span>
               <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors duration-500 group-hover:text-primary">
