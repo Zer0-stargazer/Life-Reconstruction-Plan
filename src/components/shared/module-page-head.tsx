@@ -17,6 +17,7 @@ import { MOTION, gsap, prefersReducedMotion, registerGsap } from '@/lib/motion';
 
 const WIDTHS = {
   '3xl': 'max-w-3xl',
+  '4xl': 'max-w-4xl',
   '5xl': 'max-w-5xl',
   '6xl': 'max-w-6xl',
 } as const;
@@ -26,7 +27,7 @@ export function ModulePageHead({
   title,
   desc,
   aside,
-  width = '5xl',
+  width = '6xl',
   className,
   children,
 }: {
@@ -72,7 +73,7 @@ export function ModulePageHead({
 
   return (
     <div ref={rootRef} className={cn('border-b border-border bg-card', className)}>
-      <div className={cn('mx-auto px-6 pb-9 pt-12 sm:px-8', WIDTHS[width])}>
+      <div className={cn('mx-auto px-6 pb-7 pt-9 sm:px-8', WIDTHS[width])}>
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="min-w-0 flex-1">
             {chapter && (

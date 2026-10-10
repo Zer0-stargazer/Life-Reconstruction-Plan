@@ -442,10 +442,10 @@ ${customContext}
         href="/destiny"
         title="命运：命势运报告"
         desc="命是你拿到的牌，运是你出牌的时机，努力是你出牌的方式。输入基本信息和你自己的故事，看看你的命运基本面。"
-        width="3xl"
+        width="4xl"
       />
 
-      <div className="max-w-3xl mx-auto px-6 sm:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-6 sm:px-8 py-8">
         {/* Input Form */}
         <div className="space-y-6">
           {/* === 基础信息区 === */}

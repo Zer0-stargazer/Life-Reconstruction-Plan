@@ -633,7 +633,7 @@ ${contextStr}
 
       </ModulePageHead>
 
-      <div className="max-w-5xl mx-auto px-6 sm:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-6 sm:px-8 py-8">
         {/* ==================== 步骤1: 量化问卷 ==================== */}
         {step === 'assessment' && (
           <div className="space-y-8 animate-fade-in-up">

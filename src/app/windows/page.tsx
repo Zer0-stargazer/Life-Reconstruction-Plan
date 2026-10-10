@@ -423,7 +423,7 @@ export default function WindowsPage() {
       </ModulePageHead>
 
       <section className="border-b border-border bg-card">
-        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-10">
+        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-10">
           <div className="mb-4 flex items-baseline justify-between gap-3">
             <h2 className="font-serif text-lg font-semibold text-foreground">人生窗口密度分布</h2>
             <span className="text-[11px] tracking-wide text-muted-foreground">共 {WINDOW_DENSITY_META.total} 个 · 每 5 岁一格</span>
@@ -446,7 +446,7 @@ export default function WindowsPage() {
         小屏横向滚动，别把按钮挤出屏幕外。
       */}
       <div className="sticky top-12 md:top-0 z-20 border-b border-border bg-background/90 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-8 pt-2.5 pb-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-2.5 pb-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
           <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1 shrink-0" />
           {statusOptions.map(opt => (
             <button
@@ -466,7 +466,7 @@ export default function WindowsPage() {
         </div>
 
         {/* 分段跳转：小屏才知道自己在哪一段 */}
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <SectionJumper
             sections={groupOrder
               .filter(g => groups[g] && groups[g].length > 0)
@@ -477,7 +477,7 @@ export default function WindowsPage() {
       </div>
 
       {/* Window Cards by Group */}
-      <div className="max-w-5xl mx-auto px-8 py-8">
+      <div className="max-w-6xl mx-auto px-8 py-8">
         {groupOrder.map(groupName => {
           const items = groups[groupName];
           if (!items || items.length === 0) return null;
@@ -696,7 +696,7 @@ export default function WindowsPage() {
 
       {/* Bottom context */}
       <div className="border-t border-border bg-muted/10">
-        <div className="max-w-5xl mx-auto px-8 py-8">
+        <div className="max-w-6xl mx-auto px-8 py-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="rounded-lg border border-border bg-card p-5">
               <h3 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">

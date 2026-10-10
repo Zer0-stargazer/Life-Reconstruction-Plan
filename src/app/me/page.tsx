@@ -727,7 +727,7 @@ export default function MePage() {
         }} />
         <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/[0.07] blur-3xl" />
 
-        <div className="relative w-full max-w-5xl mx-auto px-6 sm:px-8 pt-5 sm:pt-6 pb-8 sm:pb-10">
+        <div className="relative w-full max-w-6xl mx-auto px-6 sm:px-8 pt-5 sm:pt-6 pb-8 sm:pb-10">
           {/* HUD 行 */}
           <div className="flex items-center gap-3 mb-5 sm:mb-6 animate-fade-in-up">
             {/* ★ 不是 01–07，从 module-identity 取，别手写编号 */}
@@ -790,7 +790,7 @@ export default function MePage() {
 
       {/* 概览直方图 + 聚焦轨道 */}
       {/* ===== 现在最该看的三类：聚焦，不把几十张卡平铺 ===== */}
-      <section className="w-full max-w-5xl mx-auto px-6 sm:px-8 py-8 sm:py-10 order-3">
+      <section className="w-full max-w-6xl mx-auto px-6 sm:px-8 py-8 sm:py-10 order-3">
         <div className="flex items-baseline justify-between border-b border-border pb-3 mb-5">
           <div className="flex items-baseline gap-2.5">
             <h2 className="text-sm font-semibold text-foreground">现在最该看的三类</h2>
@@ -849,7 +849,7 @@ export default function MePage() {
         </div>
       </section>
 
-      <section className="w-full max-w-5xl mx-auto px-6 sm:px-8 py-10 order-2">
+      <section className="w-full max-w-6xl mx-auto px-6 sm:px-8 py-10 order-2">
         <div className="rounded-xl border border-border bg-card p-5 animate-fade-in-up">
           <PanelHead
             title="你身边 ±15 年的窗口"
@@ -862,7 +862,7 @@ export default function MePage() {
       </section>
 
       {/* 三档清单 */}
-      <section className="w-full max-w-5xl mx-auto px-6 sm:px-8 pb-16 order-4" ref={listRef}>
+      <section className="w-full max-w-6xl mx-auto px-6 sm:px-8 pb-16 order-4" ref={listRef}>
         {/* Tabs */}
         <div className="flex items-center gap-2 mb-5 animate-fade-in-up">
           {tabs.map((t) => (
@@ -1038,7 +1038,7 @@ export default function MePage() {
 
       {/* 底部：一句收束 */}
       <section className="border-t border-border bg-muted/15">
-        <div className="w-full max-w-5xl mx-auto px-6 sm:px-8 py-3 sm:py-4">
+        <div className="w-full max-w-6xl mx-auto px-6 sm:px-8 py-3 sm:py-4">
           <div className="flex items-start gap-2.5 max-w-3xl">
             <Lock className="h-3.5 w-3.5 text-primary/60 mt-0.5 shrink-0" />
             <p className="text-xs sm:text-sm text-foreground/80 leading-snug font-serif">

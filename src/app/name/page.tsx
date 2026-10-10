@@ -250,10 +250,10 @@ export default function NamePage() {
         href="/name"
         title="起名灵感"
         desc="名字是别人对你的第一印象，也是你对自己的第一次定义。一个好名字不是迷信——它是心理学、社会学和传播学的交叉产物。"
-        width="3xl"
+        width="4xl"
       />
 
-      <div className="max-w-3xl mx-auto px-6 sm:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-6 sm:px-8 py-8">
         {/* Configuration */}
         <div className="space-y-6 mb-8">
           {/* Gender */}

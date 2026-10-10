@@ -390,7 +390,7 @@ export default function CareerPage() {
 
       {/* Salary Distribution */}
       <div className="border-b border-border bg-muted/10">
-        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-5">
+        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-5">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">薪资分布</span>
@@ -415,7 +415,7 @@ export default function CareerPage() {
       {/* Filters
           top-12：移动端有一条 fixed 的 h-12 顶栏，写 top-0 会被它盖住（见 app-sidebar） */}
       <div className="sticky top-12 md:top-0 z-10 border-b border-border bg-background/90 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-8 py-3">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-3">
           {/* 分类多，小屏一行放不下：横向滚动而不是挤成一团 */}
           <div className="flex items-center gap-2 mb-2 overflow-x-auto scrollbar-hide sm:flex-wrap sm:overflow-visible">
             <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1 shrink-0" />
@@ -496,7 +496,7 @@ export default function CareerPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-6 sm:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-6 sm:px-8 py-8">
         {/* 快看：757 条里先看两极 */}
         {(goldenCareers.length > 0 || riskyCareers.length > 0) && (
           <Reveal className="mb-6">
@@ -756,7 +756,7 @@ export default function CareerPage() {
 
       {/* Bottom context */}
       <div className="border-t border-border bg-muted/10">
-        <div className="max-w-5xl mx-auto px-6 sm:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Reveal delay={0}>
             <div className="rounded-lg border border-border bg-card p-4">

@@ -257,85 +257,87 @@ export default function HomePage() {
   return (
     <div ref={rootRef} className="min-h-screen overflow-x-hidden bg-background">
       {/* ===== 扉页 ===== */}
-      <section className="relative flex min-h-[calc(100svh-3.75rem)] flex-col justify-between border-b border-border px-6 pb-6 pt-8 sm:px-10 lg:px-16">
-        <div data-hero="kicker" className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <span className="h-px w-10 bg-primary" aria-hidden />
-            <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
-              A Personal Decision Atlas
+      <section className="relative border-b border-border">
+        <div className="mx-auto flex min-h-[calc(100svh-3.75rem)] w-full max-w-[88rem] flex-col justify-between px-6 pb-6 pt-6 sm:px-10 lg:px-16">
+          <div data-hero="kicker" className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <span className="h-px w-10 bg-primary" aria-hidden />
+              <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">
+                A Personal Decision Atlas
+              </span>
+            </div>
+            <span className="hidden text-[11px] uppercase tracking-[0.32em] text-muted-foreground sm:inline">
+              Vol. 01
             </span>
           </div>
-          <span className="hidden text-[11px] uppercase tracking-[0.32em] text-muted-foreground sm:inline">
-            Vol. 01
-          </span>
-        </div>
 
-        <div className="mt-6 grid items-center gap-8 sm:mt-8 lg:grid-cols-12 lg:gap-6">
-          <div className="lg:col-span-7">
-            <h1 className="font-serif text-[clamp(3rem,6.5vw,6.5rem)] font-bold leading-[1.02] tracking-[-0.01em] text-foreground">
-              <span className="block overflow-hidden pb-[0.06em]">
-                <span data-hero="line" className="block">人生重构</span>
-              </span>
-              <span className="block overflow-hidden pb-[0.06em] pl-[1.1em]">
-                <span data-hero="line" className="block">计划</span>
-              </span>
-            </h1>
-            <p className="mt-6 flex items-center gap-4 text-[11px] uppercase tracking-[0.42em] text-primary" data-hero="kicker">
-              <span className="h-px w-12 bg-primary" aria-hidden />
-              Life Reconstruction Plan
-            </p>
+          <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-6">
+            <div>
+              <h1 className="font-serif text-[clamp(3.25rem,7vw,7rem)] font-bold leading-[1.02] tracking-[-0.01em] text-foreground">
+                <span className="block overflow-hidden pb-[0.06em]">
+                  <span data-hero="line" className="block">人生重构</span>
+                </span>
+                <span className="block overflow-hidden pb-[0.06em] pl-[1.1em]">
+                  <span data-hero="line" className="block">计划</span>
+                </span>
+              </h1>
+              <p className="mt-7 flex items-center gap-4 text-[11px] uppercase tracking-[0.42em] text-primary" data-hero="kicker">
+                <span className="h-px w-12 bg-primary" aria-hidden />
+                Life Reconstruction Plan
+              </p>
+            </div>
+
+            {/* 扉页主视觉：装饰，不承载信息 */}
+            <div className="pointer-events-none relative mx-auto hidden aspect-square w-full max-w-[26rem] lg:block" aria-hidden>
+              <HeroAtlas />
+            </div>
           </div>
 
-          {/* 扉页主视觉：装饰，不承载信息 */}
-          <div className="pointer-events-none relative mx-auto hidden aspect-square w-full max-w-[23rem] lg:col-span-5 lg:block" aria-hidden>
-            <HeroAtlas />
-          </div>
-        </div>
+          <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-5">
+              <p data-hero="quote" className="font-serif text-xl leading-[1.9] text-foreground/80 sm:text-2xl">
+                <span className="block">命是你拿到的牌，</span>
+                <span className="mb-3 block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Fate is the hand you are dealt</span>
+                <span className="block">运是你出牌的时机，</span>
+                <span className="mb-3 block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Luck is when you play it</span>
+                <span className="block">努力是你出牌的方式。</span>
+                <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Effort is how you play it</span>
+              </p>
+            </div>
 
-        <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:items-end">
-          <div className="lg:col-span-5">
-            <p data-hero="quote" className="font-serif text-xl leading-[1.9] text-foreground/80 sm:text-2xl">
-              <span className="block">命是你拿到的牌，</span>
-              <span className="mb-3 block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Fate is the hand you are dealt</span>
-              <span className="block">运是你出牌的时机，</span>
-              <span className="mb-3 block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Luck is when you play it</span>
-              <span className="block">努力是你出牌的方式。</span>
-              <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Effort is how you play it</span>
-            </p>
+            <dl data-hero="quote" className="grid grid-cols-3 gap-6 border-t border-border pt-6 lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+              {HERO_STATS.map((s) => (
+                <div key={s.en}>
+                  <dt className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{s.en}</dt>
+                  <dd className="mt-2 font-serif text-3xl font-bold tabular-nums text-foreground">{s.value}</dd>
+                  <dd className="mt-1 text-xs text-muted-foreground">{s.zh}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <div data-hero="cta" className="lg:col-span-3 lg:justify-self-end">
+              <StartButton />
+            </div>
           </div>
 
-          <dl data-hero="quote" className="grid grid-cols-3 gap-6 border-t border-border pt-6 lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-            {HERO_STATS.map((s) => (
-              <div key={s.en}>
-                <dt className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{s.en}</dt>
-                <dd className="mt-2 font-serif text-3xl font-bold tabular-nums text-foreground">{s.value}</dd>
-                <dd className="mt-1 text-xs text-muted-foreground">{s.zh}</dd>
-              </div>
+          {/* 目录：六章一览，锚点直达 */}
+          <nav aria-label="章节目录" className="mt-6 grid grid-cols-2 border-t border-border sm:grid-cols-6">
+            {CHAPTER_SECTIONS.map((chapter) => (
+              <a
+                key={chapter.num}
+                href={`#chapter-${chapter.index}`}
+                data-hero="index"
+                className="group flex min-w-0 flex-col gap-1 border-b border-border px-3 py-3 transition-colors duration-500 first:pl-0 hover:text-primary sm:border-b-0 sm:border-r sm:px-4 sm:first:pl-0 sm:last:border-r-0"
+              >
+                <span className="font-serif text-lg text-primary">{chapter.num}</span>
+                <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors duration-500 group-hover:text-primary">
+                  {chapter.meta.en}
+                </span>
+                <span className="font-serif text-[15px] text-foreground/85">{chapter.title}</span>
+              </a>
             ))}
-          </dl>
-
-          <div data-hero="cta" className="lg:col-span-3 lg:justify-self-end">
-            <StartButton />
-          </div>
+          </nav>
         </div>
-
-        {/* 目录：六章一览，锚点直达 */}
-        <nav aria-label="章节目录" className="mt-8 grid grid-cols-2 border-t border-border sm:grid-cols-6">
-          {CHAPTER_SECTIONS.map((chapter) => (
-            <a
-              key={chapter.num}
-              href={`#chapter-${chapter.index}`}
-              data-hero="index"
-              className="group flex min-w-0 flex-col gap-1 border-b border-border px-3 py-3 transition-colors duration-500 first:pl-0 hover:text-primary sm:border-b-0 sm:border-r sm:px-4 sm:first:pl-0 sm:last:border-r-0"
-            >
-              <span className="font-serif text-lg text-primary">{chapter.num}</span>
-              <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground transition-colors duration-500 group-hover:text-primary">
-                {chapter.meta.en}
-              </span>
-              <span className="font-serif text-[15px] text-foreground/85">{chapter.title}</span>
-            </a>
-          ))}
-        </nav>
       </section>
 
       {/* ===== 字带：八个维度循环滚动，装饰 ===== */}
