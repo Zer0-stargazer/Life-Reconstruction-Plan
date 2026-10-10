@@ -258,7 +258,7 @@ export default function HomePage() {
     <div ref={rootRef} className="min-h-screen overflow-x-hidden bg-background">
       {/* ===== 扉页 ===== */}
       <section className="relative border-b border-border">
-        <div className="mx-auto flex min-h-[calc(100svh-3.75rem)] w-full max-w-[88rem] flex-col justify-between px-6 pb-6 pt-6 sm:px-10 lg:px-16">
+        <div className="mx-auto flex min-h-[calc(100svh-3.75rem)] w-full max-w-[88rem] flex-col justify-between px-6 pb-5 pt-5 sm:px-10 lg:px-16">
           <div data-hero="kicker" className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <span className="h-px w-10 bg-primary" aria-hidden />
@@ -271,9 +271,9 @@ export default function HomePage() {
             </span>
           </div>
 
-          <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-6">
+          <div className="grid flex-1 items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-4">
             <div>
-              <h1 className="font-serif text-[clamp(3.25rem,7vw,7rem)] font-bold leading-[1.02] tracking-[-0.01em] text-foreground">
+              <h1 className="font-serif text-[clamp(3.5rem,7.5vw,7.5rem)] font-bold leading-[1.0] tracking-[-0.015em] text-foreground">
                 <span className="block overflow-hidden pb-[0.06em]">
                   <span data-hero="line" className="block">人生重构</span>
                 </span>
@@ -288,7 +288,7 @@ export default function HomePage() {
             </div>
 
             {/* 扉页主视觉：装饰，不承载信息 */}
-            <div className="pointer-events-none relative mx-auto hidden aspect-square w-full max-w-[26rem] lg:block" aria-hidden>
+            <div className="pointer-events-none relative mx-auto hidden aspect-square w-full max-w-[28rem] lg:block" aria-hidden>
               <HeroAtlas />
             </div>
           </div>
