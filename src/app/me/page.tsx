@@ -3,7 +3,7 @@
 /**
  * /me —— 你的人生时间轴
  *
- * 个性化主线入口：输入年龄 → 从 473 个人生窗口里筛出
+ * 个性化主线入口：输入年龄 → 从 488 个人生窗口里筛出
  * "正在开启 / 已经错过 / 尚未到来"，把一个平铺数据库
  * 变成一张"与我有关的地图"。
  *
@@ -13,7 +13,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { lifeWindows, type LifeWindow, REMEDY_LEVEL_CONFIG, MISS_TYPE_CONFIG, LOCK_FORCE_LABELS } from '@/data/windows';
-import { WINDOW_DENSITY } from '@/data/window-density';
+import { WINDOW_DENSITY, WINDOW_DENSITY_META } from '@/data/window-density';
 import { cn } from '@/lib/utils';
 import { PanelHead, HudCorners, HazardStripe } from '@/components/shared/fig-kit';
 import { Reveal } from '@/components/shared/reveal';
@@ -599,7 +599,7 @@ function AgeOnboarding({ onSubmit }: { onSubmit: (age: number) => void }) {
             <span aria-hidden className="mt-1 h-2.5 w-2.5 shrink-0 rounded-[1px] bg-primary" />
             <div>
               <div className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">What you get</div>
-              <p className="mt-2 font-serif text-lg text-foreground">473 扇门，先分成三堆。</p>
+              <p className="mt-2 font-serif text-lg text-foreground">{WINDOW_DENSITY_META.total} 扇门，先分成三堆。</p>
             </div>
           </div>
           <dl className="grid gap-4 sm:grid-cols-3 lg:w-[46rem] lg:gap-8">
@@ -785,7 +785,7 @@ export default function MePage() {
               <>其中 <span className="font-semibold text-red-600 dark:text-red-400 tabular-nums">{urgentTotal}</span> 扇将在 5 年内关上——
               人生窗口不是隐喻，是发展心理学里真实存在的时机。</>
             ) : (
-              <>473 个人生窗口里，正在开启的、已经关上的、还没来的——都在下面。</>
+              <>{WINDOW_DENSITY_META.total} 个人生窗口里，正在开启的、已经关上的、还没来的——都在下面。</>
             )}
           </p>
 
@@ -1056,7 +1056,7 @@ export default function MePage() {
               href="/windows"
               className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-3 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
             >
-              查看全部 473 个窗口
+              查看全部 {WINDOW_DENSITY_META.total} 个窗口
               <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </div>

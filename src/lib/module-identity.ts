@@ -10,6 +10,7 @@ import {
   type ModuleIconComponent,
 } from '@/components/shared/module-icons';
 import { LAW_DIMENSIONS } from '@/data/laws';
+import { WINDOW_DENSITY_META } from '@/data/window-density';
 
 /**
  * 七个模块的「视觉身份」——全站唯一真源。
@@ -83,7 +84,7 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     title: '窗口',
     question: '哪些门还开着，哪些马上要关？',
     desc: '每扇门都有开合的时间。错过了，代价是多少。',
-    metric: '473',
+    metric: String(WINDOW_DENSITY_META.total),
     unit: '扇窗口',
     icon: WindowIcon,
     iconGradient: 'bg-foreground/5 text-foreground',

@@ -11,7 +11,7 @@ import { readDefaultAge } from '@/lib/default-age';
 /**
  * 人生窗口密度分布图（首页主视觉）
  *
- * 数据来自 src/data/windows.ts 的预聚合（473 条窗口，5 岁一桶）。
+ * 数据来自 src/data/windows.ts 的预聚合（488 条窗口，5 岁一桶）。
  * 两层信息：
  *  1. 堆叠柱：每桶按 past / current / future / elite 四个状态堆叠
  *  2. 累计曲线：到该年龄为止累计开启过的窗口占比
