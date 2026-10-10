@@ -44,7 +44,17 @@ const HERO_STATS = [
   { en: 'Careers', value: careers.length, zh: '个职业画像' },
 ];
 
-const MARQUEE_WORDS =['姓名', '职业', '规律', '窗口', '努力', '运气', '命运', 'DECISION ATLAS'];
+const MARQUEE_WORDS = ['姓名', '职业', '规律', '窗口', '努力', '运气', '命运', 'DECISION ATLAS'];
+
+const MANIFESTO_DIMENSIONS = [
+  { zh: '姓名', en: 'Name' },
+  { zh: '职业', en: 'Career' },
+  { zh: '规律', en: 'Laws' },
+  { zh: '窗口', en: 'Windows' },
+  { zh: '努力', en: 'Effort' },
+  { zh: '运气', en: 'Luck' },
+  { zh: '命运', en: 'Destiny' },
+];
 
 const faqs = [
   { q: '这是算命吗？', a: '不是。这是一个基于概率和数据的决策框架。我们不预测未来，我们帮你计算概率、识别窗口。' },
@@ -218,7 +228,7 @@ export default function HomePage() {
   return (
     <div ref={rootRef} className="min-h-screen overflow-x-hidden bg-background">
       {/* ===== 扉页 ===== */}
-      <section className="relative flex min-h-[92svh] flex-col justify-between border-b border-border px-6 pb-10 pt-12 sm:px-10 lg:px-16">
+      <section className="relative flex flex-col justify-between border-b border-border px-6 pb-8 pt-10 sm:px-10 lg:px-16">
         <div data-hero="kicker" className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <span className="h-px w-10 bg-primary" aria-hidden />
@@ -231,7 +241,7 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="mt-16 grid items-center gap-10 sm:mt-24 lg:grid-cols-12 lg:gap-6">
+        <div className="mt-10 grid items-center gap-8 sm:mt-14 lg:grid-cols-12 lg:gap-6">
           <div className="lg:col-span-7">
             <h1 className="font-serif text-[clamp(3rem,6.5vw,6.5rem)] font-bold leading-[1.02] tracking-[-0.01em] text-foreground">
               <span className="block overflow-hidden pb-[0.06em]">
@@ -253,7 +263,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mt-14 grid gap-10 lg:grid-cols-12 lg:items-end">
+        <div className="mt-10 grid gap-8 lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-5">
             <p data-hero="quote" className="font-serif text-xl leading-[1.9] text-foreground/80 sm:text-2xl">
               <span className="block">命是你拿到的牌，</span>
@@ -281,7 +291,7 @@ export default function HomePage() {
         </div>
 
         {/* 目录：六章一览，锚点直达 */}
-        <nav aria-label="章节目录" className="mt-14 grid grid-cols-2 border-t border-border sm:grid-cols-6">
+        <nav aria-label="章节目录" className="mt-8 grid grid-cols-2 border-t border-border sm:grid-cols-6">
           {CHAPTER_SECTIONS.map((chapter) => (
             <a
               key={chapter.num}
@@ -321,6 +331,14 @@ export default function HomePage() {
           <div className="lg:col-span-3">
             <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">Manifesto</span>
             <span data-hairline className="mt-5 block h-px w-12 bg-primary" aria-hidden />
+            <ul className="mt-10 space-y-4 border-t border-border pt-6">
+              {MANIFESTO_DIMENSIONS.map((d) => (
+                <li key={d.en} className="flex items-baseline justify-between gap-4 border-b border-border/60 pb-3">
+                  <span className="font-serif text-base text-foreground/85">{d.zh}</span>
+                  <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{d.en}</span>
+                </li>
+              ))}
+            </ul>
           </div>
           <div className="lg:col-span-9">
             <p className="font-serif text-2xl leading-[1.9] text-foreground sm:text-[28px]">
@@ -351,7 +369,7 @@ export default function HomePage() {
           <header className="lg:sticky lg:top-24 lg:col-span-5 lg:self-start">
             <div
               data-numeral
-              className="font-serif text-[9rem] font-bold leading-[0.8] tabular-nums text-primary sm:text-[11rem]"
+              className={cn('font-serif text-[9rem] font-bold leading-[0.8] tabular-nums sm:text-[11rem]', chapter.index % 2 ? 'text-ink-accent' : 'text-primary')}
             >
               {chapter.num}
             </div>
