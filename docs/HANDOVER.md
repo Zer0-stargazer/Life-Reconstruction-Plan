@@ -1,6 +1,6 @@
 # 人生重构计划 - 项目交接手册
 
-> **2026-10-01 修订**。原 2026-07 版的"踩坑记录"完整保留（仍是真金白银的经验），
+> **2026-10-10 修订**。原 2026-07 版的"踩坑记录"完整保留（仍是真金白银的经验），
 > 过时信息已就地修正并标注。已知问题全集见 [KNOWN-ISSUES.md](KNOWN-ISSUES.md)，
 > 产品侧结论见 [PRODUCT-AUDIT.md](PRODUCT-AUDIT.md)，历史工程体检见 [history/HEALTH-REPORT.md](history/HEALTH-REPORT.md)。
 
@@ -11,7 +11,8 @@ pnpm install          # 安装依赖（必须 pnpm；Windows 下 esbuild postins
 pnpm dev              # 启动开发（读 $PORT，默认 5000）
 pnpm ts-check         # 类型检查
 pnpm lint             # ESLint
-pnpm validate         # ts-check + lint（CI 同一套）
+pnpm test             # vitest（目前只覆盖职业资源数据）
+pnpm validate         # ts-check + lint + test（CI 同一套）
 pnpm build            # 生产构建
 ```
 
@@ -130,7 +131,8 @@ shadcn/ui 组件在 `src/components/ui/`, 不要从外部引入新 UI 库。如�
 - **757** 个职业对象, 类型: `Career`
   （2026-09-26 去重 1539→1535；2026-09-28 移除 778 条机器生成模板条目 → **757**，历史数据在 git `f8edce0` / `8945efe`）
 - 每个职业含 `salary` / `trend` / `aiRisk` / `selfStudyScore` / `keySkill`；
-  学习资源按**分类**查找（`getTutorials` / `getBooks` / `getLearningChannels`），不是逐个职业写死
+  学习资源：职业专属在 `data/resources/*.ts`（按类别拆分，合并入口 `data/career-resources.ts`），无专属时回落到分类（`getTutorials` / `getBooks` / `getLearningChannels`）
+- **新增职业资源**：只能填 curl 实测 200/403 的 https 链接，不要写搜索页；格式见 `career-resources.ts` 头注释；新文件要在合并入口 import 并展开；`pnpm test` 会校验
 - **修改注意**: 幂等性靠 `id` 唯一；追加时取 `max(id)+1`（当前末位 id 是 1342，历史上删过中间项，不要用 `length+1`）
 
 ### 规律数据 (laws-*.ts)
@@ -272,3 +274,5 @@ shadcn/ui 组件在 `src/components/ui/`, 不要从外部引入新 UI 库。如�
 | history/HEALTH-REPORT.md | 历史工程体检快照（工程/数据/文档/构建） |
 | PRODUCT-AUDIT.md | 产品打磨审计 + 第十节「信息架构重做」 |
 | HANDOVER.md | 本文 |
+| LAUNCH-CHECKLIST.md | 上线前检查清单（硬门槛 / 建议 / 手测） |
+| DESIGN-VISITOR-PREVIEW-AND-CREDITS.md | 商业化设计稿（访客预览 + 额度制） |
