@@ -355,6 +355,21 @@ export default function HomePage() {
                 大多数人把所有精力花在如何更努力地出牌上，却从没看过自己手里到底有什么牌。
               </p>
             </blockquote>
+            <div className="mt-12 grid gap-3 sm:grid-cols-3">
+              {[
+                { zh: '概率', en: 'PROBABILITY', text: '给出可能性区间，不给确定答案。', tone: 'border-primary/25 bg-primary/[0.05] text-primary' },
+                { zh: '窗口', en: 'WINDOWS', text: '标出哪些机会正开着、何时会关上。', tone: 'border-ink-accent/30 bg-ink-accent/[0.06] text-ink-accent' },
+                { zh: '框架', en: 'FRAMEWORK', text: '把判断拆成可以反复使用的步骤。', tone: 'border-amber-500/25 bg-amber-500/[0.05] text-amber-700 dark:text-amber-400' },
+              ].map((p) => (
+                <div key={p.en} className={cn('rounded-lg border p-4', p.tone)}>
+                  <div className="flex items-baseline justify-between">
+                    <span className="font-serif text-xl font-semibold">{p.zh}</span>
+                    <span className="text-[10px] tracking-[0.2em] opacity-70">{p.en}</span>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{p.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
