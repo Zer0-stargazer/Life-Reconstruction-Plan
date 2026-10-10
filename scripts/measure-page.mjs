@@ -80,7 +80,12 @@ const expr = `(() => {
              head: (el.textContent || '').trim().slice(0, 16) };
   });
   const mq = document.querySelector('.home-marquee');
-  if (mq) out.marqueeTop = Math.round(mq.getBoundingClientRect().top + window.scrollY);
+  if (mq) {
+    const wrap = mq.closest('div');
+    const r = (wrap || mq).getBoundingClientRect();
+    out.marqueeTop = Math.round(r.top + window.scrollY);
+    out.marqueeH = Math.round(r.height);
+  }
   return JSON.stringify(out);
 })()`;
 

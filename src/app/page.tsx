@@ -257,7 +257,7 @@ export default function HomePage() {
   return (
     <div ref={rootRef} className="min-h-screen overflow-x-hidden bg-background">
       {/* ===== 扉页 ===== */}
-      <section className="relative flex flex-col justify-between border-b border-border px-6 pb-6 pt-8 sm:px-10 lg:px-16">
+      <section className="relative flex min-h-[calc(100svh-3.75rem)] flex-col justify-between border-b border-border px-6 pb-6 pt-8 sm:px-10 lg:px-16">
         <div data-hero="kicker" className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <span className="h-px w-10 bg-primary" aria-hidden />
@@ -270,7 +270,7 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="mt-6 grid items-center gap-8 sm:mt-9 lg:grid-cols-12 lg:gap-6">
+        <div className="mt-6 grid items-center gap-8 sm:mt-8 lg:grid-cols-12 lg:gap-6">
           <div className="lg:col-span-7">
             <h1 className="font-serif text-[clamp(3rem,6.5vw,6.5rem)] font-bold leading-[1.02] tracking-[-0.01em] text-foreground">
               <span className="block overflow-hidden pb-[0.06em]">
@@ -287,7 +287,7 @@ export default function HomePage() {
           </div>
 
           {/* 扉页主视觉：装饰，不承载信息 */}
-          <div className="pointer-events-none relative mx-auto hidden aspect-square w-full max-w-[22rem] lg:col-span-5 lg:block" aria-hidden>
+          <div className="pointer-events-none relative mx-auto hidden aspect-square w-full max-w-[23rem] lg:col-span-5 lg:block" aria-hidden>
             <HeroAtlas />
           </div>
         </div>
@@ -320,7 +320,7 @@ export default function HomePage() {
         </div>
 
         {/* 目录：六章一览，锚点直达 */}
-        <nav aria-label="章节目录" className="mt-6 grid grid-cols-2 border-t border-border sm:grid-cols-6">
+        <nav aria-label="章节目录" className="mt-8 grid grid-cols-2 border-t border-border sm:grid-cols-6">
           {CHAPTER_SECTIONS.map((chapter) => (
             <a
               key={chapter.num}
@@ -356,11 +356,12 @@ export default function HomePage() {
 
       {/* ===== 手记 ===== */}
       <section className="border-b border-border bg-card">
-        <div data-reveal className="mx-auto grid max-w-6xl gap-12 px-6 py-24 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16">
-          <div className="lg:col-span-3">
+        <div data-reveal className="mx-auto grid max-w-6xl gap-12 px-6 py-16 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16">
+          <div className="flex flex-col lg:col-span-3">
             <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">Manifesto</span>
             <span data-hairline className="mt-5 block h-px w-12 bg-primary" aria-hidden />
-            <ul className="mt-10 space-y-4 border-t border-border pt-6">
+            {/* 维度索引铺满整列高度，避免标题下方留出大片空白 */}
+            <ul className="mt-8 flex flex-1 flex-col justify-between gap-4 border-t border-border pt-6">
               {MANIFESTO_DIMENSIONS.map((d) => (
                 <li key={d.en} className="flex items-baseline justify-between gap-4 border-b border-border/60 pb-3">
                   <span className="font-serif text-base text-foreground/85">{d.zh}</span>
@@ -408,7 +409,7 @@ export default function HomePage() {
         <section
           key={chapter.num}
           id={`chapter-${chapter.index}`}
-          className="relative mx-auto grid max-w-6xl scroll-mt-10 gap-12 border-b border-border px-6 py-24 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16"
+          className="relative mx-auto grid max-w-6xl scroll-mt-10 gap-12 border-b border-border px-6 py-16 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16"
         >
           <header data-chapter-head className="lg:sticky lg:top-24 lg:col-span-5 lg:self-start">
             <div
@@ -430,7 +431,7 @@ export default function HomePage() {
             </div>
           </header>
 
-          <div className="lg:col-span-7 lg:pt-6">
+          <div className="lg:col-span-7 lg:flex lg:flex-col lg:justify-center">
             <div data-entries className="border-t border-border">
               {chapter.items.map((item) => (
                 <EntryRow key={item.href} item={item} />
@@ -459,7 +460,7 @@ export default function HomePage() {
 
       {/* ===== 常见问题 ===== */}
       <section className="border-b border-border bg-card">
-        <div data-reveal className="mx-auto max-w-6xl px-6 py-24 sm:px-10 lg:px-16">
+        <div data-reveal className="mx-auto max-w-6xl px-6 py-16 sm:px-10 lg:px-16">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-5">
               <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">Questions</span>
@@ -501,7 +502,7 @@ export default function HomePage() {
 
       {/* ===== 终章 ===== */}
       <section className="relative overflow-hidden">
-        <div data-reveal className="mx-auto flex max-w-3xl flex-col items-center px-6 py-32 text-center sm:px-8">
+        <div data-reveal className="mx-auto flex max-w-3xl flex-col items-center px-6 py-20 text-center sm:px-8">
           <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">Epilogue</span>
           <SealMark className="mt-8 h-12 w-12 text-lg" />
           <p className="mt-10 font-serif text-2xl leading-[1.9] text-foreground/85 sm:text-3xl">
