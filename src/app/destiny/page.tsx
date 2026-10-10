@@ -604,6 +604,24 @@ ${customContext}
               </span>
             )}
           </div>
+
+          {!report && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 animate-fade-in-up stagger-6">
+              {[
+                { zh: '命', en: 'FATE', hint: '先天条件与底色', tone: 'border-red-500/25 bg-red-500/[0.04] text-red-600 dark:text-red-400' },
+                { zh: '运', en: 'FORTUNE', hint: '时机与环境的起伏', tone: 'border-blue-500/25 bg-blue-500/[0.04] text-blue-600 dark:text-blue-400' },
+                { zh: '努力', en: 'EFFORT', hint: '你出牌的方式与节奏', tone: 'border-emerald-500/25 bg-emerald-500/[0.04] text-emerald-600 dark:text-emerald-400' },
+              ].map((d) => (
+                <div key={d.en} className={cn('rounded-lg border p-4', d.tone)}>
+                  <div className="flex items-baseline justify-between">
+                    <span className="font-serif text-2xl font-semibold">{d.zh}</span>
+                    <span className="text-[10px] tracking-[0.2em] opacity-70">{d.en}</span>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{d.hint}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Report */}

@@ -446,18 +446,19 @@ export default function NamePage() {
         {/* Insights */}
         <div className="mt-12 border-t border-border pt-8">
           <h2 className="text-sm font-semibold text-foreground mb-4">名字的隐性力量</h2>
-          <div className="space-y-3 text-xs leading-relaxed">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs leading-relaxed">
             {[
-              { term: '首因效应', text: '名字是别人认识你的第一个信号。', icon: <Zap className="h-3.5 w-3.5 text-primary" /> },
-              { term: '自我实现预言', text: '名字会潜移默化地影响自我认知。叫坚强的人更容易表现出坚韧，叫雅静的人更容易内省。', icon: <Star className="h-3.5 w-3.5 text-primary" /> },
-              { term: '记忆锚点', text: '在信息过载的时代，一个容易记住的名字就是竞争优势。简洁、独特、有画面感的名字，传播成本最低。', icon: <Sparkles className="h-3.5 w-3.5 text-primary" /> },
-            ].map((insight, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-md bg-muted/30">
-                <div className="mt-0.5 shrink-0">{insight.icon}</div>
-                <div>
-                  <span className="text-foreground font-semibold">{insight.term}</span>
-                  <span className="text-muted-foreground ml-1">{insight.text}</span>
+              { term: '首因效应', en: 'FIRST IMPRESSION', text: '名字是别人认识你的第一个信号。', icon: <Zap className="h-3.5 w-3.5" />, tone: 'border-amber-500/25 bg-amber-500/[0.05] text-amber-600 dark:text-amber-400' },
+              { term: '自我实现预言', en: 'SELF-FULFILLING', text: '名字会潜移默化地影响自我认知。叫坚强的人更容易表现出坚韧，叫雅静的人更容易内省。', icon: <Star className="h-3.5 w-3.5" />, tone: 'border-violet-500/25 bg-violet-500/[0.05] text-violet-600 dark:text-violet-400' },
+              { term: '记忆锚点', en: 'MEMORY ANCHOR', text: '在信息过载的时代，一个容易记住的名字就是竞争优势。简洁、独特、有画面感的名字，传播成本最低。', icon: <Sparkles className="h-3.5 w-3.5" />, tone: 'border-teal-500/25 bg-teal-500/[0.05] text-teal-600 dark:text-teal-400' },
+            ].map((insight) => (
+              <div key={insight.en} className={cn('rounded-lg border p-4', insight.tone)}>
+                <div className="flex items-center gap-2">
+                  {insight.icon}
+                  <span className="text-[10px] tracking-[0.18em] opacity-80">{insight.en}</span>
                 </div>
+                <p className="mt-2 font-semibold text-foreground">{insight.term}</p>
+                <p className="mt-1 text-muted-foreground">{insight.text}</p>
               </div>
             ))}
           </div>
