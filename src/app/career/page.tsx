@@ -441,7 +441,7 @@ export default function CareerPage() {
               </button>
             ))}
           </div>
-          {/* 搜索：757 个职业靠翻页找不到目标，按名称/技能/描述直接定位 */}
+          {/* 搜索：近千个职业靠翻页找不到目标，按名称/技能/描述直接定位 */}
           <div className="relative mb-2">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
             <input
@@ -497,7 +497,7 @@ export default function CareerPage() {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 sm:px-8 py-8">
-        {/* 快看：757 条里先看两极 */}
+        {/* 快看：近千条里先看两极 */}
         {(goldenCareers.length > 0 || riskyCareers.length > 0) && (
           <Reveal className="mb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

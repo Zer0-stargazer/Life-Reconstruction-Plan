@@ -11,6 +11,7 @@ import {
 } from '@/components/shared/module-icons';
 import { LAW_DIMENSIONS } from '@/data/laws';
 import { WINDOW_DENSITY_META } from '@/data/window-density';
+import { CAREER_COUNT } from '@/data/career-count';
 
 /**
  * 七个模块的「视觉身份」——全站唯一真源。
@@ -56,9 +57,9 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     tag: '02',
     href: '/career',
     title: '职业',
-    question: '757 条赛道里，哪条上限更高、更抗 AI？',
+    question: `${CAREER_COUNT} 条赛道里，哪条上限更高、更抗 AI？`,
     desc: '看薪资、趋势、被机器替代的风险，也看自学能不能进去。',
-    metric: '757',
+    metric: String(CAREER_COUNT),
     unit: '条赛道',
     icon: CareerIcon,
     iconGradient: 'bg-foreground/5 text-foreground',
