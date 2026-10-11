@@ -242,6 +242,52 @@ const assessmentQuestions: AssessmentQuestion[] = [
       { label: '危机反而变成转机', score: 90 },
     ],
   },
+
+  // === 健康 ===
+  {
+    id: 'health_1', dimension: 'health',
+    text: '你最近的身体指标与体检情况如何？',
+    options: [
+      { label: '很久没体检，已有指标异常且没控制', score: 10 },
+      { label: '疏于体检，有点小毛病不太管', score: 32 },
+      { label: '基本正常，偶尔关注一下', score: 55 },
+      { label: '规律体检，指标大致正常', score: 75 },
+      { label: '各项指标长期正常且稳定', score: 90 },
+    ],
+  },
+  {
+    id: 'health_2', dimension: 'health',
+    text: '你的睡眠质量如何（睡得着、睡够、醒来有精神）？',
+    options: [
+      { label: '长期睡不好，靠咖啡撑白天', score: 10 },
+      { label: '经常熬夜或睡不实，醒来偏累', score: 32 },
+      { label: '基本够睡，偶尔失眠', score: 55 },
+      { label: '睡眠规律，多数时候不错', score: 75 },
+      { label: '沾枕就着、一觉到天亮', score: 90 },
+    ],
+  },
+  {
+    id: 'health_3', dimension: 'health',
+    text: '你的运动与身体活动习惯如何？',
+    options: [
+      { label: '几乎不运动，久坐为主', score: 10 },
+      { label: '偶尔动动，谈不上规律', score: 32 },
+      { label: '有零星运动，每周一两次', score: 55 },
+      { label: '规律有氧+力量，每周数次', score: 78 },
+      { label: '长期规律训练，体能出色', score: 92 },
+    ],
+  },
+  {
+    id: 'health_4', dimension: 'health',
+    text: '你白天的精力与情绪状态如何？',
+    options: [
+      { label: '全天疲惫或长期焦虑低落', score: 10 },
+      { label: '容易累，情绪起伏较大', score: 32 },
+      { label: '总体够用，午后有低谷', score: 55 },
+      { label: '精力稳定，情绪基本平稳', score: 78 },
+      { label: '精力充沛，情绪稳定能自调', score: 92 },
+    ],
+  },
 ];
 
 // ============================================================
@@ -259,11 +305,12 @@ interface SimDimension {
 }
 
 const dimensionDefaults: Omit<SimDimension, 'value'>[] = [
-  { key: 'family', label: '出身', description: '家庭经济与文化资本', weight: 0.25, color: '#ef4444', icon: '🏠' },
-  { key: 'talent', label: '天赋', description: '智商、体能、外貌等先天禀赋', weight: 0.20, color: '#a855f7', icon: '🧬' },
-  { key: 'effort', label: '努力', description: '时间投入、自律、坚持', weight: 0.20, color: '#22c55e', icon: '💪' },
-  { key: 'choice', label: '选择', description: '赛道、城市、伴侣等关键决策', weight: 0.20, color: '#3b82f6', icon: '🧭' },
-  { key: 'luck', label: '运气', description: '时代红利、偶遇、随机事件', weight: 0.15, color: '#f59e0b', icon: '🍀' },
+  { key: 'family', label: '出身', description: '家庭经济与文化资本', weight: 0.22, color: '#ef4444', icon: '🏠' },
+  { key: 'talent', label: '天赋', description: '智商、体能、外貌等先天禀赋', weight: 0.18, color: '#a855f7', icon: '🧬' },
+  { key: 'effort', label: '努力', description: '时间投入、自律、坚持', weight: 0.18, color: '#22c55e', icon: '💪' },
+  { key: 'choice', label: '选择', description: '赛道、城市、伴侣等关键决策', weight: 0.17, color: '#3b82f6', icon: '🧭' },
+  { key: 'luck', label: '运气', description: '时代红利、偶遇、随机事件', weight: 0.13, color: '#f59e0b', icon: '🍀' },
+  { key: 'health', label: '健康', description: '体能、精力与身心状态', weight: 0.12, color: '#10b981', icon: '🫀' },
 ];
 
 function createDefaultDimensions(): SimDimension[] {
@@ -317,6 +364,10 @@ function getScenarioText(dims: SimDimension[]): string {
   else if (d.luck >= 40) parts.push('。运气不好不坏，该有的机会也有');
   else parts.push('。运气似乎总和你作对，生不逢时');
 
+  if (d.health >= 70) parts.push('。你身体和精神状态都在线，是长期作战的本钱');
+  else if (d.health >= 40) parts.push('。身体状况还行，偶尔透支但能缓过来');
+  else parts.push('。身体和精力已经在亮红灯，正拖累其他所有维度');
+
   return parts.join('');
 }
 
@@ -333,6 +384,7 @@ function getStrategyAdvice(dims: SimDimension[]): { strategy: string; leverage: 
     effort: '用努力建立复利——坚持做一件事10000小时，你的对手就不是普通人了。',
     choice: '继续做对选择——你已经有好判断力，关键是找到更大的决策杠杆（更大的城市、更好的赛道）。',
     luck: '运气好的时候要加仓——贵人、时机、红利，来的时候要敢于All in。',
+    health: '身体和精力是其他一切维度的底座——状态好的时候，你的努力、判断和运气都会被放大。',
   };
 
   const weakFixMap: Record<string, string> = {
@@ -341,6 +393,7 @@ function getStrategyAdvice(dims: SimDimension[]): { strategy: string; leverage: 
     effort: '努力是最可控的维度。从最小的习惯开始——每天30分钟专注做一件事，坚持100天后你就超越了80%的人。不需要意志力，需要系统。',
     choice: '提升决策质量的方法是增加信息量。每周花2小时研究一个新领域，3年后你的视野和判断力会质变。关键是"多看"才能"选对"。',
     luck: '运气无法控制，但可以增加运气的表面积。多尝试、多社交、多暴露在新环境中——运气是概率游戏，增加尝试次数就是增加好运的期望值。',
+    health: '健康是所有维度的地板。先补睡眠——7 小时是底线；再加规律运动（每周 150 分钟有氧 + 2-3 次力量）。精力回来了，努力和判断力才用得上力。',
   };
 
   return {
@@ -375,8 +428,8 @@ export default function SimulationPage() {
   const { guard } = useLockedAction();
   const [step, setStep] = useState<Step>('assessment');
   // 用户填的维度与答案持久化：刷新后不再从头来过（原来是纯 useState，刷新即丢）
-  const [dimensions, setDimensions] = usePersistedState<SimDimension[]>('sim.dimensions.v1', createDefaultDimensions);
-  const [answers, setAnswers] = usePersistedState<Record<string, string>>('sim.answers.v1', {});
+  const [dimensions, setDimensions] = usePersistedState<SimDimension[]>('sim.dimensions.v2', createDefaultDimensions);
+  const [answers, setAnswers] = usePersistedState<Record<string, string>>('sim.answers.v2', {});
   const [simulated, setSimulated] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(0);
 
@@ -397,7 +450,7 @@ export default function SimulationPage() {
   }, []);
   useEscapeKey(closeAi, aiOpen);
 
-  // 模拟器五维（出身/天赋/努力/选择/运气）用内置权重，与 /user 偏好权重（健康/财富等）是两个不同概念
+  // 模拟器六维（出身/天赋/努力/健康/选择/运气）用内置权重，与 /user 偏好权重（健康/财富等）是两个不同概念
   const score = calculateScore(dimensions);
   const scoreInfo = getScoreLabel(score);
   const scenarioText = simulated ? getScenarioText(dimensions) : '';
@@ -418,12 +471,12 @@ export default function SimulationPage() {
     return groups;
   }, []);
 
-  const dimensionOrder = ['family', 'talent', 'effort', 'choice', 'luck'];
+  const dimensionOrder = ['family', 'talent', 'effort', 'health', 'choice', 'luck'];
   const dimensionLabels: Record<string, string> = {
-    family: '出身', talent: '天赋', effort: '努力', choice: '选择', luck: '运气',
+    family: '出身', talent: '天赋', effort: '努力', health: '健康', choice: '选择', luck: '运气',
   };
   const dimensionNumerals: Record<string, string> = {
-    family: '壹', talent: '贰', effort: '叁', choice: '肆', luck: '伍',
+    family: '壹', talent: '贰', effort: '叁', health: '肆', choice: '伍', luck: '陆',
   };
 
   // 从问卷答案计算维度分数
@@ -511,7 +564,7 @@ ${defaultAge !== null && defaultAge > 0 ? `\n用户当前年龄：${defaultAge}�
 ${contextStr}
 
 请从以下维度给出深度分析：
-1. **维度画像**：当前五个维度的组合，构成什么样的人生画像
+1. **维度画像**：当前六个维度的组合，构成什么样的人生画像
 2. **关键瓶颈**：哪个维度是当前最大的限制因素，为什么
 3. **破局路径**：针对最弱维度，给出3条具体可执行的提升方案（不是鸡汤，要可操作）
 4. **杠杆策略**：如何用最强维度撬动最弱维度的改善
@@ -592,7 +645,7 @@ ${contextStr}
         desc={
           <>
             {step === 'assessment'
-              ? '先回答量化问卷，客观评估你的五个维度。无法评判自己？选项替你量化。'
+              ? '先回答量化问卷，客观评估你的六个维度。无法评判自己？选项替你量化。'
               : '问卷结果已出。微调滑块推演你的人生画像，或让AI给出深度分析与行动方案。'
             }
             {loaded && defaultAge !== null && defaultAge > 0 && (
@@ -637,8 +690,8 @@ ${contextStr}
         {/* ==================== 步骤1: 量化问卷 ==================== */}
         {step === 'assessment' && (
           <div className="space-y-8 animate-fade-in-up">
-            {/* 五维概览：先看清要评估什么 */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 border-t border-b border-border">
+            {/* 六维概览：先看清要评估什么 */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-b border-border">
               {dimensionOrder.map((dimKey) => (
                 <div key={dimKey} className="flex flex-col gap-2 px-4 py-5 first:pl-0 sm:first:pl-0 [&:not(:first-child)]:border-l border-border">
                   <span className="font-serif text-2xl text-primary">{dimensionNumerals[dimKey]}</span>
@@ -1018,7 +1071,7 @@ ${contextStr}
               {/* Context card */}
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
                 <p className="text-xs text-foreground/80 leading-relaxed">
-                  基于你的量化评估结果，AI将从5个维度深度分析：维度画像、关键瓶颈、破局路径、杠杆策略、执行时间表。你可以追问任何维度或策略。
+                  基于你的量化评估结果，AI将从6个维度深度分析：维度画像、关键瓶颈、破局路径、杠杆策略、执行时间表。你可以追问任何维度或策略。
                 </p>
                 <div className="mt-2 flex items-center gap-2 flex-wrap">
                   {dimensions.map(d => (
