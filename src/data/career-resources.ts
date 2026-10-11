@@ -28,6 +28,8 @@ import { supplementResources06 } from './resources/supplement-06';
 import { supplementResources07 } from './resources/supplement-07';
 import { supplementResources08 } from './resources/supplement-08';
 import { supplementResources09 } from './resources/supplement-09';
+import { supplementResources10 } from './resources/supplement-10';
+import { supplementResources11 } from './resources/supplement-11';
 
 export interface CareerResourceLink {
   title: string;
@@ -483,4 +485,6 @@ export const CAREER_RESOURCES: Record<string, CareerResourceSet> = {
   ...supplementResources07,
   ...supplementResources08,
   ...supplementResources09,
+  ...supplementResources10,
+  ...supplementResources11,
 };
