@@ -13,6 +13,7 @@
     "preinstall": "npx only-allow pnpm",
     "test": "vitest run",
     "check:resources": "tsx scripts/check-career-resources.ts",
+    "check:data": "tsx scripts/check-data.ts",
     "check:db": "tsx scripts/check-supabase.ts"
   },
   "dependencies": {

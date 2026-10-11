@@ -539,6 +539,23 @@ export default function CareerPage() {
                 </span>
               )}
             </div>
+            {/* 空态：搜索词 + 分类 + 排序叠加后可能一条都不剩，
+                原先只显示「0 / 0」和一片空白，用户不知道该往哪退 */}
+            {filtered.length === 0 && (
+              <div className="col-span-full rounded-xl border border-dashed border-border/70 bg-muted/20 px-6 py-12 text-center">
+                <p className="text-sm font-medium text-foreground/80">没有符合当前条件的职业</p>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  搜索词、分类和排序是叠加生效的，放宽任意一个就能重新出结果
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setSearchQuery(''); setSelectedCategory('all'); setActiveSorts([]); }}
+                  className="mt-4 rounded-lg border border-primary/25 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                >
+                  清空全部筛选
+                </button>
+              </div>
+            )}
             {visibleCareers.map((career, ci) => {
               const TrendIcon = trendIcon[career.trend];
               const isExpanded = showResources === career.id;
