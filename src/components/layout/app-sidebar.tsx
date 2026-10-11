@@ -107,14 +107,14 @@ export function AppSidebar() {
           isActive
             ? 'font-medium text-primary'
             : isLocked
-              ? 'text-muted-foreground/60 hover:bg-foreground/[0.04] hover:text-muted-foreground'
+              ? 'text-muted-foreground/75 hover:bg-foreground/[0.04] hover:text-muted-foreground'
               : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
         )}
       >
         {isActive && <span aria-hidden className="nav-rule" />}
         <Icon className="h-5 w-5 shrink-0" strokeWidth={1.25} />
         <span className="flex-1 truncate">{item.label}</span>
-        {isLocked && <Lock className="h-3 w-3 shrink-0 text-muted-foreground/60" strokeWidth={1.25} />}
+        {isLocked && <Lock className="h-3 w-3 shrink-0 text-muted-foreground/75" strokeWidth={1.25} />}
         {!isActive && !isLocked && (
           <ChevronRight
             className="h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity duration-300 group-hover:opacity-60"
@@ -194,7 +194,7 @@ export function AppSidebar() {
               ? 'font-medium text-amber-600 dark:text-amber-400'
               : isDeveloper
                 ? 'text-amber-600/80 hover:text-amber-600 dark:text-amber-400/80 dark:hover:text-amber-400'
-                : 'text-muted-foreground/60 hover:text-muted-foreground'
+                : 'text-muted-foreground/75 hover:text-muted-foreground'
           )}
         >
           <Shield className="h-4 w-4 shrink-0" strokeWidth={1.25} />

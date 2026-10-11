@@ -31,8 +31,11 @@ import {
 const CURRENT_YEAR = new Date().getFullYear();
 const MAX_AGE = 100;
 /** 每档清单默认显示条数，其余折在"展开其余 N 个"里 */
-const URGENT_PREVIEW = 8;
-const OPEN_PREVIEW = 8;
+// 主清单每组默认露几条。原先 8/8/5/10/8 加起来三十多张卡，
+// 用户从聚焦区往下滑很久还在滑，体感像"永远滑不到底"。
+// 聚焦区已经把最要紧的九条摆在最上面了，主清单只负责"想细看时再展开"。
+const URGENT_PREVIEW = 4;
+const OPEN_PREVIEW = 4;
 
 function parseAgeRange(age: string): { start: number; end: number } {
   const trimmed = age.trim();
@@ -130,9 +133,9 @@ function FocusColumn({
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="text-[13px] font-semibold text-foreground leading-tight">{title}</h3>
-          <p className="text-[10px] text-muted-foreground leading-tight">{hint}</p>
+          <p className="text-[11px] text-muted-foreground leading-tight">{hint}</p>
         </div>
-        <span className="shrink-0 font-mono text-[10px] text-muted-foreground/60 tabular-nums">
+        <span className="shrink-0 font-mono text-[11px] text-muted-foreground/75 tabular-nums">
           {total}
         </span>
       </div>
@@ -150,7 +153,7 @@ function FocusColumn({
       {total > items.length && (
         <button
           onClick={onSeeAll}
-          className="w-full border-t border-border py-2.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-accent/40 hover:text-primary"
+          className="w-full border-t border-border py-2.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent/40 hover:text-primary"
         >
           查看全部 {total} 个 →
         </button>
@@ -200,7 +203,7 @@ function MarkedFold({
 function StateBadge({ w }: { w: ClassifiedWindow }) {
   if (w.state === 'urgent') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 border border-red-500/25 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 border border-red-500/25 px-2 py-0.5 text-[11px] font-semibold text-red-600 dark:text-red-400">
         <Flame className="h-3 w-3" />
         {w.yearsLeft === 0 ? '今年关上' : `只剩 ${w.yearsLeft} 年`}
       </span>
@@ -208,7 +211,7 @@ function StateBadge({ w }: { w: ClassifiedWindow }) {
   }
   if (w.state === 'open') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
         <Hourglass className="h-3 w-3" />
         还剩 {w.yearsLeft !== undefined && w.yearsLeft < 200 ? `${w.yearsLeft} 年` : '很久'}
       </span>
@@ -251,7 +254,7 @@ function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOp
       >
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="font-mono text-[10px] text-muted-foreground/40 tabular-nums">
+            <span className="font-mono text-[11px] text-muted-foreground/70 tabular-nums">
               #{String(w.id).padStart(3, '0')}
             </span>
             <span className="text-[11px] font-mono font-semibold text-muted-foreground tabular-nums">
@@ -268,10 +271,10 @@ function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOp
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <StateBadge w={w} />
           {w.state === 'missed' && (
-            <span className={cn('text-[10px] font-medium', miss.color)}>{miss.label}</span>
+            <span className={cn('text-[11px] font-medium', miss.color)}>{miss.label}</span>
           )}
         </div>
-        <ChevronDown className={cn('h-4 w-4 text-muted-foreground/40 mt-1 transition-transform', expanded && 'rotate-180')} />
+        <ChevronDown className={cn('h-4 w-4 text-muted-foreground/70 mt-1 transition-transform', expanded && 'rotate-180')} />
       </button>
 
       {expanded && (
@@ -281,21 +284,21 @@ function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOp
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {lock && (
               <div className="rounded-md border border-border bg-muted/30 px-2.5 py-2">
-                <div className="text-[10px] text-muted-foreground mb-0.5">锁死力</div>
+                <div className="text-[11px] text-muted-foreground mb-0.5">锁死力</div>
                 <div className={cn('text-xs font-semibold', lock.color)}>{lock.label}</div>
               </div>
             )}
             <div className="rounded-md border border-border bg-muted/30 px-2.5 py-2">
-              <div className="text-[10px] text-muted-foreground mb-0.5">错过后果</div>
+              <div className="text-[11px] text-muted-foreground mb-0.5">错过后果</div>
               <div className={cn('text-xs font-semibold', miss.color)}>{miss.label}</div>
             </div>
             <div className="rounded-md border border-border bg-muted/30 px-2.5 py-2">
-              <div className="text-[10px] text-muted-foreground mb-0.5">补救代价</div>
+              <div className="text-[11px] text-muted-foreground mb-0.5">补救代价</div>
               <div className={cn('text-xs font-semibold', remedy.color)}>{remedy.label}</div>
             </div>
             {w.bestExecuteAge && (
               <div className="rounded-md border border-border bg-muted/30 px-2.5 py-2">
-                <div className="text-[10px] text-muted-foreground mb-0.5">最佳执行期</div>
+                <div className="text-[11px] text-muted-foreground mb-0.5">最佳执行期</div>
                 <div className="text-xs font-semibold text-foreground">{w.bestExecuteAge}岁</div>
               </div>
             )}
@@ -321,7 +324,7 @@ function WindowCard({ w, defaultOpen = false }: { w: ClassifiedWindow; defaultOp
       {/* 表态条：常驻在卡片底部，不藏在展开区里——这个页面的主操作就是逐条表态 */}
       <div className="flex items-center gap-2 border-t border-border/50 bg-muted/10 px-4 py-1.5">
         <WindowMarkBar id={w.id} />
-        <span className="ml-auto text-[9px] text-muted-foreground/35">
+        <span className="ml-auto text-[11px] text-muted-foreground/35">
           {marked ? '已表态' : '未表态'}
         </span>
       </div>
@@ -408,18 +411,18 @@ function FocusTracks({ age, windows }: { age: number; windows: ClassifiedWindow[
           .map((s) => (
             <span
               key={s.year}
-              className="absolute -translate-x-1/2 text-[10px] font-mono text-muted-foreground/60 tabular-nums"
+              className="absolute -translate-x-1/2 text-[11px] font-mono text-muted-foreground/75 tabular-nums"
               style={{ left: `${((s.year - from) / span) * 100}%` }}
             >
               {s.year}
             </span>
           ))}
       </div>
-      <div className="flex items-center gap-4 text-[10px] text-muted-foreground mt-1">
+      <div className="flex items-center gap-4 text-[11px] text-muted-foreground mt-1">
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500/80 inline-block" /> 正在开启</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" /> 即将关闭</span>
         <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400/60 inline-block" /> 尚未到来</span>
-        <span className="text-muted-foreground/60">悬停色带可查看各年份的窗口数</span>
+        <span className="text-muted-foreground/75">悬停色带可查看各年份的窗口数</span>
       </div>
     </div>
   );
@@ -461,12 +464,11 @@ function TimelineSlider({ age, onChange }: { age: number; onChange: (value: numb
             vectorEffect="non-scaling-stroke"
           />
         </svg>
+        {/* 当前位置指示器：只用一个元素（竖向胶囊 + 圆点合成一个把手）。
+            原先是「一条贯穿整条曲线的竖线 + 一个圆点」两个元素，
+            看起来像两个标记，而且用户会以为其中一个偏了。 */}
         <div
-          className="pointer-events-none absolute inset-y-1 z-[1] w-0.5 rounded bg-primary/80 transition-[left] duration-300 ease-out"
-          style={{ left: `calc(${currentX}% - 1px)` }}
-        />
-        <div
-          className="pointer-events-none absolute top-1/2 z-[2] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-4 ring-primary/20 transition-[left] duration-300 ease-out"
+          className="pointer-events-none absolute top-1/2 z-[2] h-9 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.18)] transition-[left] duration-300 ease-out"
           style={{ left: `${currentX}%` }}
           aria-hidden
         />
@@ -481,7 +483,7 @@ function TimelineSlider({ age, onChange }: { age: number; onChange: (value: numb
           aria-valuetext={`${age} 岁`}
         />
       </div>
-      <div className="mt-2 flex justify-between text-[10px] font-mono text-muted-foreground/50 tabular-nums">
+      <div className="mt-2 flex justify-between text-[11px] font-mono text-muted-foreground/70 tabular-nums">
         <span>0</span><span>25</span><span>50</span><span>75</span><span>{MAX_AGE}</span>
       </div>
     </div>
@@ -512,7 +514,7 @@ function AgeOnboarding({ onSubmit }: { onSubmit: (age: number) => void }) {
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
-      <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 py-14 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16 lg:py-16">
+      <div className="mx-auto grid w-full max-w-7xl 2xl:max-w-[1600px] flex-1 items-center gap-12 px-6 py-14 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16 lg:py-12">
         <div className="relative lg:col-span-7">
           <div className="flex items-end gap-5">
             <span className="font-serif text-[10rem] font-bold leading-[0.78] text-primary sm:text-[13rem]">序</span>
@@ -543,7 +545,9 @@ function AgeOnboarding({ onSubmit }: { onSubmit: (age: number) => void }) {
                 {age}
               </text>
             ))}
-            <circle cx={10 + 28 * 7.25} cy={60} r="5" fill="var(--primary)" stroke="none" className="prologue-dot" />
+            {/* 原点落在整条轴的正中间（0–80 岁的中点 = 40 岁）。
+                原先写死成 28 岁，用户看到点不在中间、还以为是第二个标记偏了 */}
+            <circle cx={10 + 40 * 7.25} cy={60} r="5" fill="var(--primary)" stroke="none" className="prologue-dot" />
           </svg>
           <p className="mt-6 max-w-md font-serif text-base leading-[1.9] text-muted-foreground">
             每个人都站在这条线的某一格上。知道自己在哪一格，才看得清哪些窗口正在开启，哪些已经关上。
@@ -594,7 +598,7 @@ function AgeOnboarding({ onSubmit }: { onSubmit: (age: number) => void }) {
 
       {/* 底部：先交代输完年龄会得到什么，首访者不用猜 */}
       <div className="border-t border-border bg-card">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-7 sm:px-10 lg:flex-row lg:items-end lg:justify-between lg:px-16">
+        <div className="mx-auto flex max-w-7xl 2xl:max-w-[1600px] flex-col gap-4 px-6 py-7 sm:px-10 lg:flex-row lg:items-end lg:justify-between lg:px-16">
           <div className="flex items-start gap-6">
             <span aria-hidden className="mt-1 h-2.5 w-2.5 shrink-0 rounded-[1px] bg-primary" />
             <div>
@@ -609,7 +613,7 @@ function AgeOnboarding({ onSubmit }: { onSubmit: (age: number) => void }) {
                 <div>
                   <dt className="flex items-baseline gap-2 font-serif text-sm text-foreground">
                     {p.label}
-                    <span className="text-[9px] uppercase tracking-[0.24em] text-muted-foreground">{p.en}</span>
+                    <span className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">{p.en}</span>
                   </dt>
                   <dd className="mt-1 text-xs leading-relaxed text-muted-foreground">{p.desc}</dd>
                 </div>
@@ -700,7 +704,7 @@ export default function MePage() {
   const missedOther = lists.missedOther.active;
   const missedMarked = lists.missed.marked;
   const futureListAll = lists.future.active;
-  const futureList = futureListAll.slice(0, 8);
+  const futureList = futureListAll.slice(0, 5);
   const futureMarked = lists.future.marked;
 
   // 客观总数（仪表读数用）
@@ -761,11 +765,11 @@ export default function MePage() {
         }} />
         <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-primary/[0.07] blur-3xl" />
 
-        <div className="relative w-full max-w-6xl mx-auto px-6 sm:px-8 pt-5 sm:pt-6 pb-8 sm:pb-10">
+        <div className="relative w-full max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 pt-5 sm:pt-6 pb-8 sm:pb-10">
           {/* HUD 行 */}
           <div className="flex items-center gap-3 mb-5 sm:mb-6 animate-fade-in-up">
             {/* ★ 不是 01–08，从 module-identity 取，别手写编号 */}
-            <span className="text-[10px] tracking-[0.2em] text-primary/70 shrink-0">
+            <span className="text-[11px] tracking-[0.2em] text-primary/70 shrink-0">
               {TIMELINE_IDENTITY.tag} {TIMELINE_IDENTITY.note}
             </span>
             <span className="h-px flex-1 bg-border" />
@@ -790,7 +794,7 @@ export default function MePage() {
           </p>
 
           {/* 仪表读数行（年龄在下方控制台里调，这里不重复显示） */}
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-muted-foreground/60 animate-fade-in-up stagger-3">
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-muted-foreground/75 animate-fade-in-up stagger-3">
             <span>正在开启 <b className="text-emerald-600 dark:text-emerald-400 tabular-nums">{openTotal}</b></span>
             <span>即将关闭 <b className="text-red-500 tabular-nums">{urgentTotal}</b></span>
             <span>已错过 <b className="text-muted-foreground tabular-nums">{missedTotal}</b></span>
@@ -805,17 +809,17 @@ export default function MePage() {
             <HudCorners />
 
             <div className="flex items-baseline justify-between mb-4">
-              <span id="me-age-label" className="text-[10px] font-semibold text-muted-foreground tracking-[0.15em]">
+              <span id="me-age-label" className="text-[11px] font-semibold text-muted-foreground tracking-[0.15em]">
                 你的年龄
               </span>
               <div className="text-right">
                 <span className="text-3xl font-serif font-bold text-primary tabular-nums">{age}</span>
                 <span className="text-xs text-muted-foreground ml-1">岁</span>
-                <span className="text-[10px] text-muted-foreground/50 ml-2">≈<span className="font-mono tabular-nums">{CURRENT_YEAR - age}</span> 年生</span>
+                <span className="text-[11px] text-muted-foreground/70 ml-2">≈<span className="font-mono tabular-nums">{CURRENT_YEAR - age}</span> 年生</span>
               </div>
             </div>
             <TimelineSlider age={age} onChange={updateAge} />
-            <p className="mt-3 pt-3 border-t border-border/60 text-[9px] text-muted-foreground/40">
+            <p className="mt-3 pt-3 border-t border-border/60 text-[11px] text-muted-foreground/70">
               此年龄全局生效：/user 偏好、/windows 年龄筛选、首页图表指针共用同一个值
             </p>
           </div>
@@ -824,12 +828,12 @@ export default function MePage() {
 
       {/* 概览直方图 + 聚焦轨道 */}
       {/* ===== 现在最该看的三类：聚焦，不把几十张卡平铺 ===== */}
-      <section className="w-full max-w-6xl mx-auto px-6 sm:px-8 py-8 sm:py-10 order-3">
+      <section className="w-full max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-8 sm:py-10 order-3">
         <div className="flex items-baseline justify-between border-b border-border pb-3 mb-5">
           <div className="flex items-baseline gap-2.5">
             <h2 className="text-sm font-semibold text-foreground">现在最该看的三类</h2>
           </div>
-          <span className="text-[10px] text-muted-foreground/50">
+          <span className="text-[11px] text-muted-foreground/70">
             错过代价最大的排在最前
           </span>
         </div>
@@ -883,7 +887,7 @@ export default function MePage() {
         </div>
       </section>
 
-      <section className="w-full max-w-6xl mx-auto px-6 sm:px-8 py-10 order-2">
+      <section className="w-full max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-10 order-2">
         <div className="rounded-xl border border-border bg-card p-5 animate-fade-in-up">
           <PanelHead
             title="你身边 ±15 年的窗口"
@@ -896,7 +900,7 @@ export default function MePage() {
       </section>
 
       {/* 三档清单 */}
-      <section className="w-full max-w-6xl mx-auto px-6 sm:px-8 pb-16 order-4" ref={listRef}>
+      <section className="w-full max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 pb-16 order-4" ref={listRef}>
         {/* Tabs */}
         <div className="flex items-center gap-2 mb-5 animate-fade-in-up">
           {tabs.map((t) => (
@@ -912,7 +916,7 @@ export default function MePage() {
             >
               {t.icon}
               {t.label}
-              <span className={cn('tabular-nums font-mono', tab === t.key ? 'text-primary-foreground/80' : 'text-muted-foreground/60')}>
+              <span className={cn('tabular-nums font-mono', tab === t.key ? 'text-primary-foreground/80' : 'text-muted-foreground/75')}>
                 {t.count}
               </span>
             </button>
@@ -1003,7 +1007,7 @@ export default function MePage() {
                   </h3>
                 </div>
                 <div className="space-y-2.5">
-                  {(missedPermanentShowAll ? missedPermanent : missedPermanent.slice(0, 5)).map((w) => (
+                  {(missedPermanentShowAll ? missedPermanent : missedPermanent.slice(0, 3)).map((w) => (
                     <WindowCard key={w.id} w={w} />
                   ))}
                 </div>
@@ -1026,7 +1030,7 @@ export default function MePage() {
                 </h3>
               </div>
               <div className="space-y-2.5">
-                {(missedOtherShowAll ? missedOther : missedOther.slice(0, 10)).map((w) => (
+                {(missedOtherShowAll ? missedOther : missedOther.slice(0, 5)).map((w) => (
                   <WindowCard key={w.id} w={w} />
                 ))}
               </div>
@@ -1072,7 +1076,7 @@ export default function MePage() {
 
       {/* 底部：一句收束 */}
       <section className="border-t border-border bg-muted/15">
-        <div className="w-full max-w-6xl mx-auto px-6 sm:px-8 py-3 sm:py-4">
+        <div className="w-full max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-3 sm:py-4">
           <div className="flex items-start gap-2.5 max-w-3xl">
             <Lock className="h-3.5 w-3.5 text-primary/60 mt-0.5 shrink-0" />
             <p className="text-xs sm:text-sm text-foreground/80 leading-snug font-serif">

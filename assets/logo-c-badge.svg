@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="人生重构计划 标志方案C 徽章">
+  <title>人生重构计划 · 方案 C：圆形徽章</title>
+  <desc>圆形徽章，内含分叉跃升轨迹，外圈为刻度注记</desc>
+  <style>
+    .ring { stroke: #2C2C2A; fill: none; opacity: 0.28; }
+    .ink { stroke: #2C2C2A; fill: none; }
+    .gold { stroke: #B8860B; fill: none; }
+    @media (prefers-color-scheme: dark) { .ring { stroke: #E8E6DF; } .ink { stroke: #E8E6DF; } .gold { stroke: #D9A227; } }
+  </style>
+
+  <circle class="ring" cx="60" cy="60" r="52" stroke-width="1.5"/>
+  <g class="ring" stroke-width="2" stroke-linecap="round">
+    <path d="M60 8 V16"/><path d="M60 104 V112"/>
+    <path d="M8 60 H16"/><path d="M104 60 H112"/>
+  </g>
+
+  <path class="ink" d="M28 76 H54" stroke-width="3.5" stroke-linecap="round" opacity="0.45"/>
+  <path class="gold" d="M54 76 C 66 76, 70 66, 80 44" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="ink" d="M54 76 C 66 76, 74 74, 92 70" stroke-width="3" stroke-linecap="round" opacity="0.28"/>
+  <rect class="gold" x="48" y="70" width="12" height="12" rx="2" stroke-width="2.5"/>
+  <circle cx="80" cy="44" r="5" fill="#B8860B"/>
+</svg>

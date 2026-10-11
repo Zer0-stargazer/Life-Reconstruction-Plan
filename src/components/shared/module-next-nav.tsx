@@ -80,10 +80,10 @@ export function ModuleNextNav() {
 
   return (
     <div className="border-t border-border bg-muted/10">
-      <div className="max-w-5xl mx-auto px-6 sm:px-8 py-8">
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-8">
         <Reveal>
           <div className="mb-4 flex items-baseline gap-2.5">
-            <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">NEXT</span>
+            <span className="font-mono text-[11px] tracking-[0.15em] text-primary/70">NEXT</span>
             <span className="text-xs text-muted-foreground">按顺序走完八个模块，就是一次完整的自我盘点</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

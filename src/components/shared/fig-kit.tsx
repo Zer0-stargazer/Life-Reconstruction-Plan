@@ -24,10 +24,10 @@ export function PanelHead({
   return (
     <div className={cn('flex items-baseline justify-between gap-3 border-b border-border pb-3 mb-4', className)}>
       <div className="flex items-baseline gap-2.5 min-w-0">
-        {fig && <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70 shrink-0">{fig}</span>}
+        {fig && <span className="font-mono text-[11px] tracking-[0.15em] text-primary/70 shrink-0">{fig}</span>}
         <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
       </div>
-      {note && <span className="text-[10px] text-muted-foreground/50 shrink-0">{note}</span>}
+      {note && <span className="text-[11px] text-muted-foreground/70 shrink-0">{note}</span>}
     </div>
   );
 }
@@ -44,9 +44,9 @@ export function HudLine({
 }) {
   return (
     <div className={cn('flex items-center gap-3 mb-8 animate-fade-in-up', className)}>
-      <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70 shrink-0">{index}</span>
+      <span className="font-mono text-[11px] tracking-[0.2em] text-primary/70 shrink-0">{index}</span>
       <span className="h-px flex-1 bg-border" />
-      {note && <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">{note}</span>}
+      {note && <span className="font-mono text-[11px] text-muted-foreground/70 shrink-0">{note}</span>}
     </div>
   );
 }
@@ -76,7 +76,7 @@ export function TickRule({ label, className }: { label?: string; className?: str
   return (
     <div className={cn('flex items-center gap-3', className)}>
       {label && (
-        <span className="shrink-0 font-mono text-[9px] tracking-[0.2em] text-muted-foreground/40">
+        <span className="shrink-0 font-mono text-[11px] tracking-[0.2em] text-muted-foreground/70">
           {label}
         </span>
       )}

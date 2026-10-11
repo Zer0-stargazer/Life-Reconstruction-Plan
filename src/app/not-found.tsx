@@ -20,13 +20,13 @@ export default function NotFound() {
   ];
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-6 py-16">
+    <div className="flex min-h-[80vh] items-center justify-center px-6 py-12">
       <div className="w-full max-w-xl">
         {/* HUD 行 */}
         <div className="mb-8 flex items-center gap-3 animate-fade-in">
-          <span className="font-mono text-[10px] tracking-[0.2em] text-primary/70">ERR · 404</span>
+          <span className="font-mono text-[11px] tracking-[0.2em] text-primary/70">ERR · 404</span>
           <span className="h-px flex-1 bg-border" />
-          <span className="font-mono text-[10px] text-muted-foreground/50">ROUTE NOT FOUND</span>
+          <span className="font-mono text-[11px] text-muted-foreground/70">ROUTE NOT FOUND</span>
         </div>
 
         <h1 className="font-serif text-4xl sm:text-5xl font-semibold tracking-tight text-foreground animate-fade-in-up">
@@ -56,7 +56,7 @@ export default function NotFound() {
         </div>
 
         <nav aria-label="模块快捷入口" className="mt-10 animate-fade-in-up stagger-4">
-          <p className="mb-3 font-mono text-[10px] tracking-[0.15em] text-muted-foreground/50">QUICK JUMP</p>
+          <p className="mb-3 font-mono text-[11px] tracking-[0.15em] text-muted-foreground/70">QUICK JUMP</p>
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
             {routes.map((r) => (
               <li key={r.href}>

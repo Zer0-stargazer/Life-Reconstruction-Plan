@@ -303,15 +303,15 @@ export function WindowDensityChart() {
               className="h-2 w-2 rounded-[1px]"
               style={{ background: 'var(--primary)', opacity: Math.max(0.25, s.opacity) }}
             />
-            <span className="font-mono text-[10px] text-muted-foreground/70">{s.label}</span>
+            <span className="font-mono text-[11px] text-muted-foreground/70">{s.label}</span>
           </div>
         ))}
         <div className="flex items-center gap-1.5">
           <span className="h-px w-4 bg-foreground/40" />
-          <span className="font-mono text-[10px] text-muted-foreground/70">累计占比</span>
+          <span className="font-mono text-[11px] text-muted-foreground/70">累计占比</span>
         </div>
         {ageBucket !== null && age !== null && (
-          <div className="ml-auto font-mono text-[10px] text-primary/80">
+          <div className="ml-auto font-mono text-[11px] text-primary/80">
             你在「{WINDOW_DENSITY[ageBucket].from}–{WINDOW_DENSITY[ageBucket].to} 岁」区间 ·
             该区间 {WINDOW_DENSITY[ageBucket].total} 个窗口
           </div>

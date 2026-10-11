@@ -28,7 +28,7 @@ export function WindowMarkBar({ id, className }: { id: number; className?: strin
 
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)} role="group" aria-label="标记这条窗口">
-      <span className="mr-1 text-[10px] uppercase tracking-[0.22em] text-muted-foreground/70" aria-hidden>
+      <span className="mr-1 text-[11px] uppercase tracking-[0.22em] text-muted-foreground/70" aria-hidden>
         Status
       </span>
       {WINDOW_MARK_ORDER.map((m) => {
@@ -77,7 +77,7 @@ export function WindowMarkChip({ id }: { id: number }) {
       )}
     >
       {WINDOW_MARK_META[cur].short}
-      <span aria-hidden className="text-[9px] opacity-60">×</span>
+      <span aria-hidden className="text-[11px] opacity-60">×</span>
     </button>
   );
 }

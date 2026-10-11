@@ -90,7 +90,7 @@ export function AiThinkingBlock({ content, active }: { content: string; active: 
       <div className="rounded-lg border border-dashed border-primary/25 bg-primary/[0.03] px-4 py-3">
         <div className="flex items-center gap-1.5 mb-1.5">
           <Brain className="h-3 w-3 text-primary/60 animate-pulse" />
-          <span className="text-[10px] font-mono text-primary/50">THINKING · 思考中</span>
+          <span className="text-[11px] font-mono text-primary/50">THINKING · 思考中</span>
         </div>
         <p className="text-xs text-muted-foreground/70 leading-relaxed whitespace-pre-wrap line-clamp-6 select-none">
           {content.slice(-600)}
@@ -101,7 +101,7 @@ export function AiThinkingBlock({ content, active }: { content: string; active: 
 
   return (
     <details className="group rounded-lg border border-dashed border-border bg-muted/20 px-4 py-2.5">
-      <summary className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground/60 cursor-pointer select-none hover:text-muted-foreground transition-colors">
+      <summary className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/75 cursor-pointer select-none hover:text-muted-foreground transition-colors">
         <Brain className="h-3 w-3" />
         查看思考过程
       </summary>

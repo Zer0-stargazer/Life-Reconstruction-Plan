@@ -4,7 +4,7 @@
  */
 export default function Loading() {
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8 sm:px-8" role="status" aria-label="页面加载中">
+    <div className="mx-auto max-w-7xl 2xl:max-w-[1600px] px-6 py-8 sm:px-8" role="status" aria-label="页面加载中">
       <span className="sr-only">加载中…</span>
 
       {/* HUD 行骨架 */}

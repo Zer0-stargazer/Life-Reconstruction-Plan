@@ -228,7 +228,7 @@ ${contextStr}
               ? '14 道题，照出身体里正在悄悄磨损的零件。分数只用于定位短板，不替代体检与就医。'
               : '自评完成。看七个子域里哪块最该先补，或让 AI 给出优先改善方案。'}
             {loaded && defaultAge !== null && defaultAge > 0 && (
-              <span className="ml-2 text-xs text-muted-foreground/50">(当前年龄 {defaultAge} 岁)</span>
+              <span className="ml-2 text-xs text-muted-foreground/70">(当前年龄 {defaultAge} 岁)</span>
             )}
           </>
         }
@@ -244,16 +244,16 @@ ${contextStr}
             return (
               <div key={s.key} className="flex items-center gap-2">
                 <div className={cn(
-                  'flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold transition-all',
+                  'flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold transition-all',
                   isActive ? 'bg-primary text-primary-foreground' :
                   isDone ? 'bg-primary/20 text-primary' :
-                  'bg-muted/40 text-muted-foreground/50'
+                  'bg-muted/40 text-muted-foreground/70'
                 )}>
                   {isDone ? '✓' : i + 1}
                 </div>
                 <span className={cn(
-                  'text-[10px] font-medium transition-colors',
-                  isActive ? 'text-foreground' : 'text-muted-foreground/50'
+                  'text-[11px] font-medium transition-colors',
+                  isActive ? 'text-foreground' : 'text-muted-foreground/70'
                 )}>{s.label}</span>
                 {i < 1 && <div className="w-6 h-px bg-border" />}
               </div>
@@ -262,7 +262,7 @@ ${contextStr}
         </div>
       </ModulePageHead>
 
-      <div className="mx-auto max-w-6xl px-6 py-8 sm:px-8">
+      <div className="mx-auto max-w-7xl 2xl:max-w-[1600px] px-6 py-8 sm:px-8">
         {/* ==================== 步骤1：自评问卷 ==================== */}
         {step === 'assessment' && (
           <div className="space-y-8 animate-fade-in-up">
@@ -309,8 +309,8 @@ ${contextStr}
                   <div className="flex items-center gap-2">
                     <span className="font-serif text-base text-primary">{DOMAIN_NUMERALS[di]}</span>
                     <h2 className="text-sm font-semibold text-foreground">{domain.name}</h2>
-                    <span className="text-[10px] text-muted-foreground/50">{domain.subtitle}</span>
-                    <span className="text-[10px] text-muted-foreground/50">
+                    <span className="text-[11px] text-muted-foreground/70">{domain.subtitle}</span>
+                    <span className="text-[11px] text-muted-foreground/70">
                       <span className="font-mono tabular-nums">{questions.filter((q) => typeof answers[q.id] === 'number').length}/{questions.length}</span> 已答
                     </span>
                     <div className="h-px flex-1 bg-border" />
@@ -337,11 +337,11 @@ ${contextStr}
                                 'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all',
                                 selected === opt.score ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
                               )}>
-                                {selected === opt.score && <span className="text-[10px]">✓</span>}
+                                {selected === opt.score && <span className="text-[11px]">✓</span>}
                               </span>
                               <span className="flex-1">{opt.label}</span>
                               <span className={cn(
-                                'font-mono text-[9px] tabular-nums',
+                                'font-mono text-[11px] tabular-nums',
                                 opt.score >= 70 ? 'text-green-600 dark:text-green-400' :
                                 opt.score >= 40 ? 'text-amber-600 dark:text-amber-400' :
                                 'text-red-600 dark:text-red-400'
@@ -369,7 +369,7 @@ ${contextStr}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
               {!assessmentComplete && (
-                <span className="text-xs text-muted-foreground/60">还需回答 {totalQuestions - answeredCount} 题</span>
+                <span className="text-xs text-muted-foreground/75">还需回答 {totalQuestions - answeredCount} 题</span>
               )}
             </div>
           </div>
@@ -428,7 +428,7 @@ ${contextStr}
               {/* 最弱三域的关键信号 */}
               <div className="space-y-5">
                 <div className="flex items-baseline gap-2.5">
-                  <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">SIGNALS</span>
+                  <span className="font-mono text-[11px] tracking-[0.15em] text-primary/70">SIGNALS</span>
                   <span className="text-xs text-muted-foreground">最该先看的信号与行动</span>
                 </div>
                 {weakest.map((d) => (
@@ -444,8 +444,8 @@ ${contextStr}
                           <div key={sig.id} className="rounded-md border border-border/60 bg-background p-3">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-semibold text-foreground">{sig.name}</span>
-                              <span className={cn('text-[10px] font-medium', HEALTH_TAG_CONFIG[sig.tag].color)}>{HEALTH_TAG_CONFIG[sig.tag].label}</span>
-                              <span className="ml-auto font-mono text-[9px] text-muted-foreground/60">强度 {'●'.repeat(sig.intensity)}</span>
+                              <span className={cn('text-[11px] font-medium', HEALTH_TAG_CONFIG[sig.tag].color)}>{HEALTH_TAG_CONFIG[sig.tag].label}</span>
+                              <span className="ml-auto font-mono text-[11px] text-muted-foreground/75">强度 {'●'.repeat(sig.intensity)}</span>
                             </div>
                             <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">{sig.description}</p>
                             <div className="mt-2 grid gap-1 text-[11px] sm:grid-cols-2">
@@ -505,7 +505,7 @@ ${contextStr}
                   {domainScores.map((d, i) => {
                     const p = polarToCartesian(angles[i], CHART_RADIUS + 18);
                     return (
-                      <text key={d.domain.id} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" className="fill-muted-foreground text-[10px]">
+                      <text key={d.domain.id} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" className="fill-muted-foreground text-[11px]">
                         {d.domain.name}
                       </text>
                     );
@@ -515,7 +515,7 @@ ${contextStr}
                   {domainScores.map((d) => (
                     <div key={d.domain.id} className="flex items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: DOMAIN_COLORS[d.domain.id] }} />
-                      <span className="text-[9px] text-muted-foreground">{d.domain.name}</span>
+                      <span className="text-[11px] text-muted-foreground">{d.domain.name}</span>
                     </div>
                   ))}
                 </div>
@@ -523,11 +523,11 @@ ${contextStr}
 
               {/* 综合分 */}
               <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <div className="mb-2 text-[10px] uppercase tracking-[0.15em] text-muted-foreground/60">综合精力分</div>
+                <div className="mb-2 text-[11px] uppercase tracking-[0.15em] text-muted-foreground/75">综合精力分</div>
                 <div className={cn('font-serif text-5xl font-bold', tier.color)}>{overall}</div>
                 <div className={cn('mt-1 text-[11px] font-medium', tier.color)}>{tier.label}</div>
-                <div className="mt-3 text-[10px] leading-relaxed text-muted-foreground/70">{tier.desc}</div>
-                <p className="mt-3 border-t border-border pt-3 text-[10px] leading-relaxed text-muted-foreground/60">
+                <div className="mt-3 text-[11px] leading-relaxed text-muted-foreground/70">{tier.desc}</div>
+                <p className="mt-3 border-t border-border pt-3 text-[11px] leading-relaxed text-muted-foreground/75">
                   分数只是相对定位，帮你决定先改什么；它不是体检结论，也不能替代就医。
                 </p>
               </div>
@@ -568,10 +568,10 @@ ${contextStr}
               </button>
 
               {/* 提醒 */}
-              <div className="rounded-lg border border-border bg-muted/10 p-4">
+              <div className="rounded-lg border border-border bg-muted/50 p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <Activity className="h-3.5 w-3.5 text-primary/60" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">边界说明</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/75">边界说明</span>
                 </div>
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
                   本模块只提供主流医学与运动科学共识范围内的常识性建议，不构成诊断。出现持续或加重的症状（如胸痛、明显消瘦、长期失眠、情绪持续低落），请及时就医，不要用自评结果替代专业判断。
@@ -628,7 +628,7 @@ ${contextStr}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     {domainScores.map((d) => (
-                      <span key={d.domain.id} className="inline-flex items-center gap-1 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[9px] text-muted-foreground">
+                      <span key={d.domain.id} className="inline-flex items-center gap-1 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[11px] text-muted-foreground">
                         {d.domain.icon} {d.domain.name}:{d.score}
                       </span>
                     ))}
@@ -674,7 +674,7 @@ ${contextStr}
                     onChange={(e) => setAiQuestion(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAISend(); } }}
                     placeholder="追问：我的睡眠怎么改善？/ 精力上不去怎么办？"
-                    className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/50"
                     disabled={aiStreaming}
                   />
                   {aiStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}

@@ -84,7 +84,7 @@ src/
 │   ├── luck-nodes.ts           # 250个运气节点
 │   ├── careers.ts              # 888个职业（2026-09-26 去重 → 09-28 移除 778 条机器生成模板条目 → 757 → 10-10 新增 131 个现代职业）
 │   ├── career-count.ts         # ★ 职业总数常量（避免为显示一个数字把整份职业库打进 bundle）
-│   ├── career-resources.ts     # ★ 职业级专属学习资源（888/888 全覆盖，分类文件在 data/resources/，URL 实测才入库）
+│   ├── career-resources.ts     # 职业级学习资源（888/888 有配置，人均 1.89 份，目标 5 份；分类文件在 data/resources/，URL 实测才入库）
 │   ├── health.ts + health-*.ts # 第8模块：7 子域各 18 条 = 126 条健康信号
 │   └── laws*.ts                # 8维度规律（共267条，各文件条数不等）
 ├── hooks/

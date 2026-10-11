@@ -253,7 +253,7 @@ export default function NamePage() {
         width="4xl"
       />
 
-      <div className="max-w-4xl mx-auto px-6 sm:px-8 py-8">
+      <div className="max-w-6xl 2xl:max-w-[1400px] mx-auto px-6 sm:px-8 py-8">
         {/* Configuration */}
         <div className="space-y-6 mb-8">
           {/* Gender */}
@@ -291,7 +291,7 @@ export default function NamePage() {
                 value={surnameInput}
                 onChange={(e) => setSurnameInput(e.target.value.slice(0, 2))}
                 placeholder="输入你的姓氏，留空则随机"
-                className="w-48 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-48 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
               {surnameInput && (
                 <button
@@ -303,7 +303,7 @@ export default function NamePage() {
                 </button>
               )}
               {!surnameInput && (
-                <span className="text-[10px] text-muted-foreground/50">留空将随机生成姓氏</span>
+                <span className="text-[11px] text-muted-foreground/70">留空将随机生成姓氏</span>
               )}
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -349,7 +349,7 @@ export default function NamePage() {
                       {s.label}
                     </span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground">{s.desc}</span>
+                  <span className="text-[11px] text-muted-foreground">{s.desc}</span>
                 </button>
               ))}
             </div>
@@ -455,7 +455,7 @@ export default function NamePage() {
               <div key={insight.en} className={cn('rounded-lg border p-4', insight.tone)}>
                 <div className="flex items-center gap-2">
                   {insight.icon}
-                  <span className="text-[10px] tracking-[0.18em] opacity-80">{insight.en}</span>
+                  <span className="text-[11px] tracking-[0.18em] opacity-80">{insight.en}</span>
                 </div>
                 <p className="mt-2 font-semibold text-foreground">{insight.term}</p>
                 <p className="mt-1 text-muted-foreground">{insight.text}</p>

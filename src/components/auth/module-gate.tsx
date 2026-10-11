@@ -33,14 +33,20 @@ export function ModuleGate({ modulePath, children }: { modulePath: string; child
 }
 
 /**
- * 访客预览横幅：一句话说明当前是"可逛不可点"的预览态，
+ * 预览横幅：一句话说明当前是"可逛不可点"的预览态，
  * 解锁动作收口到全局 UnlockDialog（unlockStore.show）。
+ *
+ * 已登录后**不再显示**：横幅写的是"访客预览"，登录了还说访客是自相矛盾的。
+ * 已登录未持码的用户点详情时会走 UnlockDialog 就地兑换，/user 页也有兑换入口，
+ * 不缺引导，不需要这条横幅一直挂着。
  */
 export function PreviewBanner() {
   const { user } = useAuth();
 
+  if (user) return null;
+
   return (
-    <div className="w-full max-w-5xl mx-auto px-6 sm:px-8 pt-4">
+    <div className="w-full max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 pt-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-primary/25 bg-primary/[0.05] px-4 py-2.5">
         <Lock className="h-3.5 w-3.5 shrink-0 text-primary/70" />
         <span className="text-xs text-muted-foreground leading-relaxed">
@@ -66,7 +72,7 @@ export function ModuleLockIcon({ modulePath }: { modulePath: string }) {
   if (isLoading || canAccessModule(modulePath)) return null;
 
   return (
-    <Lock className="w-3 h-3 text-muted-foreground/60" />
+    <Lock className="w-3 h-3 text-muted-foreground/75" />
   );
 }
 
@@ -78,7 +84,7 @@ export function RoleBadge() {
 
   if (isDeveloper) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
         <Crown className="w-3 h-3" />
         开发者
       </span>
@@ -87,7 +93,7 @@ export function RoleBadge() {
 
   if (isPremium) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
         <Zap className="w-3 h-3" />
         充电用户
       </span>
@@ -95,7 +101,7 @@ export function RoleBadge() {
   }
 
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border">
       普通用户
     </span>
   );

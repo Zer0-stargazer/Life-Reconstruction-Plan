@@ -457,7 +457,7 @@ export default function AdminPage() {
                 onChange={(e) => { setPassword(e.target.value); setLoginError(''); }}
                 onKeyDown={(e) => e.key === 'Enter' && handleDevLogin()}
                 placeholder="开发者密码"
-                className="w-full rounded-lg border border-border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full rounded-lg border border-border bg-background px-4 py-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
               <button
                 onClick={() => setShowPassword(!showPassword)}
@@ -514,7 +514,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-card/50">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Shield className="w-5 h-5 text-primary" />
             <h1 className="text-lg font-serif font-bold text-foreground">开发者后台</h1>
@@ -537,7 +537,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 py-6">
         {dataError && (
           <div className="mb-6 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
             <XCircle className="w-4 h-4 shrink-0" />
@@ -671,7 +671,7 @@ export default function AdminPage() {
                           {user.invite_code_used || '-'}
                         </td>
                         <td className="px-4 py-3 text-xs font-mono tabular-nums">
-                          <span className={cn(user.ai_credits > 0 ? 'text-primary' : 'text-muted-foreground/40')}>
+                          <span className={cn(user.ai_credits > 0 ? 'text-primary' : 'text-muted-foreground/70')}>
                             {user.ai_credits ?? 0}
                           </span>
                         </td>
@@ -723,7 +723,7 @@ export default function AdminPage() {
                                     value={creditDelta}
                                     onChange={(e) => setCreditDelta(e.target.value)}
                                     placeholder="如 50 或 -20"
-                                    className="w-36 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    className="w-36 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
                                   />
                                 </label>
                                 <label className="flex-1 min-w-48 space-y-1">
@@ -732,7 +732,7 @@ export default function AdminPage() {
                                     value={creditReason}
                                     onChange={(e) => setCreditReason(e.target.value)}
                                     placeholder="如 活动补偿 / 误扣退还"
-                                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
                                   />
                                 </label>
                                 <button
@@ -814,13 +814,13 @@ export default function AdminPage() {
                         value={newCode}
                         onChange={(e) => setNewCode(e.target.value)}
                         placeholder="邀请码 (如 VIP-2026)"
-                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                       <input
                         value={newLabel}
                         onChange={(e) => setNewLabel(e.target.value)}
                         placeholder="备注 (可选)"
-                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                       <input
                         type="number"
@@ -828,7 +828,7 @@ export default function AdminPage() {
                         onChange={(e) => setNewMaxUses(e.target.value)}
                         placeholder="可用次数"
                         min="1"
-                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                       <input
                         type="number"
@@ -836,7 +836,7 @@ export default function AdminPage() {
                         onChange={(e) => setNewCredits(e.target.value)}
                         placeholder="含 AI 次数"
                         min="0"
-                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                       <button
                         onClick={handleCreateInvite}
@@ -856,7 +856,7 @@ export default function AdminPage() {
                         value={batchPrefix}
                         onChange={(e) => setBatchPrefix(e.target.value)}
                         placeholder="前缀"
-                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                       <input
                         type="number"
@@ -865,7 +865,7 @@ export default function AdminPage() {
                         placeholder="数量 (1-50)"
                         min="1"
                         max="50"
-                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                       <input
                         type="number"
@@ -873,7 +873,7 @@ export default function AdminPage() {
                         onChange={(e) => setBatchCredits(e.target.value)}
                         placeholder="每码含 AI 次数"
                         min="0"
-                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                       <div />
                       <button
@@ -991,12 +991,12 @@ export default function AdminPage() {
                           className="flex-1 flex flex-col items-center justify-end h-full gap-1"
                           title={`${day}：${d.total} 次，成功 ${d.ok} 次`}
                         >
-                          <span className="text-[10px] font-mono text-muted-foreground">{d.total}</span>
+                          <span className="text-[11px] font-mono text-muted-foreground">{d.total}</span>
                           <div
                             className="w-full rounded-t bg-primary/70"
                             style={{ height: `${Math.max(3, Math.round(d.total / maxDayTotal * 96))}px` }}
                           />
-                          <span className="text-[10px] text-muted-foreground">{day.slice(5)}</span>
+                          <span className="text-[11px] text-muted-foreground">{day.slice(5)}</span>
                         </div>
                       ))}
                     </div>

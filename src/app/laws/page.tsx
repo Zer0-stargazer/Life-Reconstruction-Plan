@@ -137,14 +137,14 @@ function LawsDistribution({ dims }: { dims: LawDimension[] }) {
         <div className="flex items-baseline gap-2.5 min-w-0">
           <h2 className="text-sm font-semibold text-foreground truncate">维度 × 危险度分布</h2>
         </div>
-        <span className="text-[10px] text-muted-foreground/50 shrink-0"><span className="font-mono tabular-nums">{total}</span> 条 · {dims.length} 个维度</span>
+        <span className="text-[11px] text-muted-foreground/70 shrink-0"><span className="font-mono tabular-nums">{total}</span> 条 · {dims.length} 个维度</span>
       </div>
       <div className="space-y-2">
         {dims.map((d) => {
           const n = d.items.length || 1;
           return (
             <div key={d.id} className="flex items-center gap-3">
-              <span className="w-16 sm:w-20 shrink-0 truncate font-mono text-[10px] text-muted-foreground/80">{d.name}</span>
+              <span className="w-16 sm:w-20 shrink-0 truncate font-mono text-[11px] text-muted-foreground/80">{d.name}</span>
               <div className="flex h-3 flex-1 overflow-hidden rounded-sm bg-muted/40">
                 {TAG_LEGEND.map(({ tag }) => {
                   const c = d.items.filter((i) => i.tag === tag).length;
@@ -159,7 +159,7 @@ function LawsDistribution({ dims }: { dims: LawDimension[] }) {
                   );
                 })}
               </div>
-              <span className="w-7 shrink-0 text-right font-mono text-[10px] tabular-nums text-muted-foreground/60">{d.items.length}</span>
+              <span className="w-7 shrink-0 text-right font-mono text-[11px] tabular-nums text-muted-foreground/75">{d.items.length}</span>
             </div>
           );
         })}
@@ -168,7 +168,7 @@ function LawsDistribution({ dims }: { dims: LawDimension[] }) {
         {TAG_LEGEND.map(({ tag, label }) => (
           <div key={tag} className="flex items-center gap-1.5">
             <span className={cn('h-2 w-2 rounded-[1px] inline-block', TAG_BAR[tag])} />
-            <span className="font-mono text-[10px] text-muted-foreground/70">{label}</span>
+            <span className="font-mono text-[11px] text-muted-foreground/70">{label}</span>
           </div>
         ))}
       </div>
@@ -324,13 +324,13 @@ function InlineAIChat({
           <SubIcon className="h-4 w-4 text-primary" />
           <div>
             <h4 className="text-sm font-semibold text-foreground leading-none">{subTopic.label}</h4>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{subTopic.description}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{subTopic.description}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
           <AiCopyButton getText={() => lastAssistantText} />
           <Bot className="h-3.5 w-3.5 text-primary/50" />
-          <span className="text-[9px] text-muted-foreground">AI 对话</span>
+          <span className="text-[11px] text-muted-foreground">AI 对话</span>
         </div>
       </div>
 
@@ -392,7 +392,7 @@ function InlineAIChat({
             onKeyDown={handleKeyDown}
             placeholder={isStreaming ? '等待回复中...' : '追问或提问...'}
             disabled={isStreaming}
-            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
           />
           {isStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}
           <button
@@ -458,8 +458,8 @@ function LawCard({ item, onClick }: { item: LawItem; dimension: LawDimension; on
       {/* Metric card */}
       <div className={cn('rounded-lg p-2.5 mb-3', tagConf.bgColor)}>
         <div className="flex items-center gap-1 mb-1">
-          <Crosshair className="h-3 w-3 text-muted-foreground/60" />
-          <span className="text-[9px] text-muted-foreground">{item.metric}</span>
+          <Crosshair className="h-3 w-3 text-muted-foreground/75" />
+          <span className="text-[11px] text-muted-foreground">{item.metric}</span>
         </div>
         <span className={cn(
           'text-lg font-bold font-mono tabular-nums',
@@ -478,13 +478,13 @@ function LawCard({ item, onClick }: { item: LawItem; dimension: LawDimension; on
 
       {/* Bottom attribute pills */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1 text-[10px]">
-          <TrendingUp className="h-3 w-3 text-muted-foreground/60" />
+        <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1 text-[11px]">
+          <TrendingUp className="h-3 w-3 text-muted-foreground/75" />
           <span className="text-primary">{item.breakthrough}%</span>
           <span className="text-muted-foreground">挽回</span>
         </span>
-        <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1 text-[10px]">
-          <Shield className="h-3 w-3 text-muted-foreground/60" />
+        <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1 text-[11px]">
+          <Shield className="h-3 w-3 text-muted-foreground/75" />
           <span className={recoveryConf.color}>{recoveryConf.label}</span>
         </span>
       </div>
@@ -516,13 +516,13 @@ function FocusLawCard({ item, onClick }: { item: LawItem; onClick: () => void })
 
       <div className="mb-2.5 flex items-center gap-2">
         <span className={cn(
-          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
+          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium',
           tagConf.bgColor, tagConf.color
         )}>
           {tagConf.icon}
           {tagConf.label}
         </span>
-        <span className="text-[10px] text-muted-foreground/50">挽回 <span className="font-mono tabular-nums">{item.breakthrough}%</span></span>
+        <span className="text-[11px] text-muted-foreground/70">挽回 <span className="font-mono tabular-nums">{item.breakthrough}%</span></span>
       </div>
 
       <h3 className="text-[15px] font-semibold text-foreground leading-snug">{item.name}</h3>
@@ -539,8 +539,8 @@ function FocusLawCard({ item, onClick }: { item: LawItem; onClick: () => void })
       </div>
 
       <div className="mt-2.5 flex items-center justify-between">
-        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-          <Shield className="h-3 w-3 text-muted-foreground/60" />
+        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+          <Shield className="h-3 w-3 text-muted-foreground/75" />
           恢复 <span className={recoveryConf.color}>{recoveryConf.label}</span>
         </span>
         <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
@@ -647,7 +647,7 @@ function LawDetailPanel({
                 {dimension.name}
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-muted-foreground font-mono">{currentIndex + 1}/{totalCount}</span>
+                <span className="text-[11px] text-muted-foreground font-mono">{currentIndex + 1}/{totalCount}</span>
                 <button
                   onClick={() => setIsFullWidth(!isFullWidth)}
                   className="h-7 w-7 flex items-center justify-center rounded-full bg-white/80 dark:bg-black/20 text-muted-foreground hover:text-foreground transition-colors"
@@ -686,7 +686,7 @@ function LawDetailPanel({
               {/* Breakthrough progress bar */}
               <div className="mt-3">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-muted-foreground">挽回概率</span>
+                  <span className="text-[11px] text-muted-foreground">挽回概率</span>
                   <span className="text-xs font-mono font-semibold text-primary">{item.breakthrough}%</span>
                 </div>
                 <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
@@ -704,8 +704,8 @@ function LawDetailPanel({
 
             {/* Intensity + Recovery */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <div className="text-[10px] text-muted-foreground mb-2">强度等级</div>
+              <div className="rounded-lg border border-border bg-muted/60 p-3">
+                <div className="text-[11px] text-muted-foreground mb-2">强度等级</div>
                 <div className="flex items-center gap-1.5">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <div
@@ -725,10 +725,10 @@ function LawDetailPanel({
                   <span className={cn('text-xs font-medium ml-1', intensityConf.color)}>{intensityConf.label}</span>
                 </div>
               </div>
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
-                <div className="text-[10px] text-muted-foreground mb-2">恢复难度</div>
+              <div className="rounded-lg border border-border bg-muted/60 p-3">
+                <div className="text-[11px] text-muted-foreground mb-2">恢复难度</div>
                 <span className={cn('text-sm font-medium', recoveryConf.color)}>{recoveryConf.label}</span>
-                <div className="text-[10px] text-muted-foreground mt-1">代价：{item.cost}</div>
+                <div className="text-[11px] text-muted-foreground mt-1">代价：{item.cost}</div>
               </div>
             </div>
 
@@ -753,7 +753,7 @@ function LawDetailPanel({
                 <div className="space-y-2">
                   {item.strategies.map((strategy, i) => (
                     <div key={i} className="flex gap-3 rounded-lg border border-border bg-card p-3">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-mono font-bold text-primary">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-mono font-bold text-primary">
                         {i + 1}
                       </span>
                       <p className="text-sm text-foreground/90 leading-relaxed">{strategy}</p>
@@ -780,7 +780,7 @@ function LawDetailPanel({
                     >
                       <SubIcon className="h-4 w-4 text-primary" />
                       <span className="text-[11px] font-medium text-foreground">{sub.label}</span>
-                      <span className="text-[9px] text-muted-foreground">{sub.description}</span>
+                      <span className="text-[11px] text-muted-foreground">{sub.description}</span>
                     </button>
                   );
                 })}
@@ -808,7 +808,7 @@ function LawDetailPanel({
             </button>
             <div className="flex items-center gap-1.5">
               <Bot className="h-3.5 w-3.5 text-primary/40" />
-              <span className="text-[10px] text-muted-foreground">点击上方按钮开始 AI 分析</span>
+              <span className="text-[11px] text-muted-foreground">点击上方按钮开始 AI 分析</span>
             </div>
             <button
               onClick={onNext}
@@ -960,8 +960,8 @@ export default function LawsPage() {
                 {icon}
                 <span>{dim.name}</span>
                 <span className={cn(
-                  'text-[10px] font-mono',
-                  isActive ? 'text-primary/50' : 'text-muted-foreground/40'
+                  'text-[11px] font-mono',
+                  isActive ? 'text-primary/50' : 'text-muted-foreground/70'
                 )}>
                   {dim.items.length}
                 </span>
@@ -984,23 +984,23 @@ export default function LawsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <div className="text-lg font-bold font-mono text-foreground tabular-nums">{dimensionStats.total}</div>
-            <div className="text-[10px] text-muted-foreground">总条目</div>
+            <div className="text-[11px] text-muted-foreground">总条目</div>
           </div>
           <div className="rounded-lg border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/20 p-3 text-center">
             <div className="text-lg font-bold font-mono text-red-600 dark:text-red-400 tabular-nums">{dimensionStats.critical}</div>
-            <div className="text-[10px] text-red-600/70 dark:text-red-400/70">致命</div>
+            <div className="text-[11px] text-red-600/70 dark:text-red-400/70">致命</div>
           </div>
           <div className="rounded-lg border border-amber-200 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-center">
             <div className="text-lg font-bold font-mono text-amber-600 dark:text-amber-400 tabular-nums">{dimensionStats.danger}</div>
-            <div className="text-[10px] text-amber-600/70 dark:text-amber-400/70">危险</div>
+            <div className="text-[11px] text-amber-600/70 dark:text-amber-400/70">危险</div>
           </div>
           <div className="rounded-lg border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50 dark:bg-emerald-950/20 p-3 text-center">
             <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">{dimensionStats.opportunity}</div>
-            <div className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">机会</div>
+            <div className="text-[11px] text-emerald-600/70 dark:text-emerald-400/70">机会</div>
           </div>
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
             <div className="text-lg font-bold font-mono text-primary tabular-nums">{dimensionStats.avgBreakthrough}%</div>
-            <div className="text-[10px] text-muted-foreground">平均挽回</div>
+            <div className="text-[11px] text-muted-foreground">平均挽回</div>
           </div>
         </div>
         </Reveal>
@@ -1009,7 +1009,7 @@ export default function LawsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Tag filter */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground mr-1">筛选</span>
+            <span className="text-[11px] text-muted-foreground mr-1">筛选</span>
             {([
               { value: 'all' as const, label: '全部' },
               { value: 'critical' as const, label: '致命' },
@@ -1039,9 +1039,9 @@ export default function LawsPage() {
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setListShowAll(false); }}
               placeholder="搜索规律名称、描述或案例..."
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-8 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 pl-8 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70" />
           </div>
         </div>
 
@@ -1054,7 +1054,7 @@ export default function LawsPage() {
                 <div className="rounded-xl border border-border bg-muted/20 p-4">
                   <div className="mb-3 flex items-baseline justify-between gap-3">
                     <h3 className="text-xs font-semibold text-foreground">这个维度里，先盯住这三条</h3>
-                    <span className="text-[10px] text-muted-foreground/50">
+                    <span className="text-[11px] text-muted-foreground/70">
                       致命优先 · 挽回概率越低越靠前
                     </span>
                   </div>
@@ -1078,7 +1078,7 @@ export default function LawsPage() {
                   <h3 className="text-xs font-semibold text-foreground">
                     {focusItems.length > 0 ? '其余条目' : '全部条目'}
                   </h3>
-                  <span className="font-mono text-[10px] text-muted-foreground/50">
+                  <span className="font-mono text-[11px] text-muted-foreground/70">
                     {visibleRest.length} / {restItems.length}
                   </span>
                 </div>
@@ -1107,7 +1107,7 @@ export default function LawsPage() {
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="flex flex-col items-center justify-center py-12 text-center">
             <Eye className="h-10 w-10 text-muted-foreground/20 mb-3" />
             <p className="text-sm text-muted-foreground">没有匹配的规律条目</p>
             <button

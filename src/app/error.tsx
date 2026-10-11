@@ -21,12 +21,12 @@ export default function ErrorBoundary({
   }, [error]);
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-6 py-16">
+    <div className="flex min-h-[80vh] items-center justify-center px-6 py-12">
       <div className="w-full max-w-xl">
         <div className="mb-8 flex items-center gap-3">
-          <span className="font-mono text-[10px] tracking-[0.2em] text-destructive/80">ERR · 500</span>
+          <span className="font-mono text-[11px] tracking-[0.2em] text-destructive/80">ERR · 500</span>
           <span className="h-px flex-1 bg-border" />
-          <span className="font-mono text-[10px] text-muted-foreground/50">RUNTIME FAULT</span>
+          <span className="font-mono text-[11px] text-muted-foreground/70">RUNTIME FAULT</span>
         </div>
 
         <div className="flex items-start gap-3">

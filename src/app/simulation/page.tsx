@@ -649,7 +649,7 @@ ${contextStr}
               : '问卷结果已出。微调滑块推演你的人生画像，或让AI给出深度分析与行动方案。'
             }
             {loaded && defaultAge !== null && defaultAge > 0 && (
-              <span className="ml-2 text-xs text-muted-foreground/50">
+              <span className="ml-2 text-xs text-muted-foreground/70">
                 (当前年龄 {defaultAge} 岁)
               </span>
             )}
@@ -667,16 +667,16 @@ ${contextStr}
             return (
               <div key={s.key} className="flex items-center gap-2">
                 <div className={cn(
-                  'flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold transition-all',
+                  'flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold transition-all',
                   isActive ? 'bg-primary text-primary-foreground' :
                   isDone ? 'bg-primary/20 text-primary' :
-                  'bg-muted/40 text-muted-foreground/50'
+                  'bg-muted/40 text-muted-foreground/70'
                 )}>
                   {isDone ? '✓' : i + 1}
                 </div>
                 <span className={cn(
-                  'text-[10px] font-medium transition-colors',
-                  isActive ? 'text-foreground' : 'text-muted-foreground/50'
+                  'text-[11px] font-medium transition-colors',
+                  isActive ? 'text-foreground' : 'text-muted-foreground/70'
                 )}>{s.label}</span>
                 {i < 2 && <div className="w-6 h-px bg-border" />}
               </div>
@@ -686,7 +686,7 @@ ${contextStr}
 
       </ModulePageHead>
 
-      <div className="max-w-6xl mx-auto px-6 sm:px-8 py-8">
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-8">
         {/* ==================== 步骤1: 量化问卷 ==================== */}
         {step === 'assessment' && (
           <div className="space-y-8 animate-fade-in-up">
@@ -725,7 +725,7 @@ ${contextStr}
                   <div className="flex items-center gap-2">
                     <span className="font-serif text-base text-primary">{dimensionNumerals[dimKey]}</span>
                     <h2 className="text-sm font-semibold text-foreground">{dimensionLabels[dimKey]}</h2>
-                    <span className="text-[10px] text-muted-foreground/50">
+                    <span className="text-[11px] text-muted-foreground/70">
                       <span className="font-mono tabular-nums">{questions.filter(q => answers[q.id]).length}/{questions.length}</span> 已答
                     </span>
                     <div className="flex-1 h-px bg-border" />
@@ -754,11 +754,11 @@ ${contextStr}
                                   ? 'border-primary bg-primary text-primary-foreground'
                                   : 'border-border'
                               )}>
-                                {selected === opt.label && <span className="text-[10px]">✓</span>}
+                                {selected === opt.label && <span className="text-[11px]">✓</span>}
                               </span>
                               <span className="flex-1">{opt.label}</span>
                               <span className={cn(
-                                'text-[9px] font-mono tabular-nums',
+                                'text-[11px] font-mono tabular-nums',
                                 opt.score >= 70 ? 'text-green-600 dark:text-green-400' :
                                 opt.score >= 40 ? 'text-amber-600 dark:text-amber-400' :
                                 'text-red-600 dark:text-red-400'
@@ -786,7 +786,7 @@ ${contextStr}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
               {!assessmentComplete && (
-                <span className="text-xs text-muted-foreground/60">
+                <span className="text-xs text-muted-foreground/75">
                   还需回答 {totalQuestions - answeredCount} 题
                 </span>
               )}
@@ -839,7 +839,7 @@ ${contextStr}
                       }}
                     />
                   </div>
-                  <div className="flex justify-between text-[9px] text-muted-foreground/40">
+                  <div className="flex justify-between text-[11px] text-muted-foreground/70">
                     <span>极低</span>
                     <span>中等</span>
                     <span>极高</span>
@@ -958,7 +958,7 @@ ${contextStr}
                   {dimensions.map(d => (
                     <div key={d.key} className="flex items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: d.color }} />
-                      <span className="text-[9px] text-muted-foreground">{d.label}</span>
+                      <span className="text-[11px] text-muted-foreground">{d.label}</span>
                     </div>
                   ))}
                 </div>
@@ -966,18 +966,18 @@ ${contextStr}
 
               {/* Score */}
               <div className="rounded-lg border border-border bg-card p-6 text-center">
-                <div className="text-[10px] text-muted-foreground/60 uppercase tracking-[0.15em] mb-2">综合评分</div>
+                <div className="text-[11px] text-muted-foreground/75 uppercase tracking-[0.15em] mb-2">综合评分</div>
                 <div className={cn('text-5xl font-serif font-bold mb-1 transition-colors duration-300', scoreInfo.color)}>
                   {scoreInfo.label}
                 </div>
                 <div className="text-3xl font-mono font-light text-foreground mb-2 tabular-nums">{animatedScore}</div>
-                <div className="text-[10px] text-muted-foreground font-medium">{scoreInfo.tier}</div>
-                <div className="mt-3 text-[10px] text-muted-foreground/60 leading-relaxed">{scoreInfo.desc}</div>
+                <div className="text-[11px] text-muted-foreground font-medium">{scoreInfo.tier}</div>
+                <div className="mt-3 text-[11px] text-muted-foreground/75 leading-relaxed">{scoreInfo.desc}</div>
               </div>
 
               {/* Dimension weights */}
               <div className="rounded-lg border border-border bg-card p-4">
-                <h3 className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-[0.15em] mb-3">维度权重</h3>
+                <h3 className="text-[11px] font-semibold text-muted-foreground/75 uppercase tracking-[0.15em] mb-3">维度权重</h3>
                 {dimensions.map(d => (
                   <div key={d.key} className="flex items-center gap-2 py-1.5">
                     <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: d.color }} />
@@ -985,7 +985,7 @@ ${contextStr}
                     <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden mr-1">
                       <div className="h-full rounded-full transition-all" style={{ width: `${d.weight * 100}%`, backgroundColor: d.color, opacity: 0.5 }} />
                     </div>
-                    <span className="text-[10px] font-mono text-foreground tabular-nums w-6 text-right">{Math.round(d.weight * 100)}%</span>
+                    <span className="text-[11px] font-mono text-foreground tabular-nums w-6 text-right">{Math.round(d.weight * 100)}%</span>
                   </div>
                 ))}
               </div>
@@ -994,7 +994,7 @@ ${contextStr}
               <div className="rounded-lg border border-border bg-muted/10 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="h-3.5 w-3.5 text-primary/60" />
-                  <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">破局思路</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground/75 uppercase tracking-wider">破局思路</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
                   大多数人把所有精力花在「努力」这一个维度上，但提升一个弱维度20分，比提升一个强维度20分的收益更大。找到你的最弱维度，它就是你最大的增长空间。
@@ -1075,7 +1075,7 @@ ${contextStr}
                 </p>
                 <div className="mt-2 flex items-center gap-2 flex-wrap">
                   {dimensions.map(d => (
-                    <span key={d.key} className="inline-flex items-center gap-1 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[9px] text-muted-foreground">
+                    <span key={d.key} className="inline-flex items-center gap-1 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[11px] text-muted-foreground">
                       {d.icon} {d.label}:{d.value}
                     </span>
                   ))}
@@ -1134,7 +1134,7 @@ ${contextStr}
                   onChange={e => setAiQuestion(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAISend(); } }}
                   placeholder="追问：我的努力维度怎么提升？/ 短板如何弥补？"
-                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/50"
                   disabled={aiStreaming}
                 />
                 {aiStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}

@@ -258,13 +258,13 @@ function InlineAIChat({
           <SubIcon className="h-4 w-4 text-primary" />
           <div>
             <h4 className="text-sm font-semibold text-foreground leading-none">{subTopic.label}</h4>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{subTopic.description}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{subTopic.description}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
           <AiCopyButton getText={() => lastAssistantText} />
           <Bot className="h-3.5 w-3.5 text-primary/50" />
-          <span className="text-[9px] text-muted-foreground">AI 对话</span>
+          <span className="text-[11px] text-muted-foreground">AI 对话</span>
         </div>
       </div>
 
@@ -332,7 +332,7 @@ function InlineAIChat({
             onKeyDown={handleKeyDown}
             placeholder={isStreaming ? '等待回复中...' : '追问或提问...'}
             disabled={isStreaming}
-            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
           />
           {isStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}
           <button
@@ -368,7 +368,7 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
       {/* Category pill */}
       <div className="flex items-center justify-between mb-3">
         <span className={cn(
-          'inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium',
+          'inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium',
           config.bgColor, config.color
         )}>
           {CATEGORY_ICONS[node.category]}
@@ -392,7 +392,7 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
             ) : (
               <ArrowUpRight className="h-3 w-3 text-blue-500" />
             )}
-            <span className="text-[9px] text-muted-foreground">{config.drainLabel}</span>
+            <span className="text-[11px] text-muted-foreground">{config.drainLabel}</span>
           </div>
           <span className={cn(
             'text-lg font-bold font-mono tabular-nums',
@@ -406,12 +406,12 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
           className="rounded-md border border-border/40 p-2.5 bg-muted/40"
         >
           <div className="flex items-center gap-1 mb-1">
-            <ArrowUpRight className="h-3 w-3 text-muted-foreground/50" />
-            <span className="text-[9px] text-muted-foreground">{config.gainLabel}</span>
+            <ArrowUpRight className="h-3 w-3 text-muted-foreground/70" />
+            <span className="text-[11px] text-muted-foreground">{config.gainLabel}</span>
           </div>
           <span className={cn(
             'text-lg font-bold font-mono tabular-nums',
-            gainValue > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground/40'
+            gainValue > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground/70'
           )}>
             {gainValue}%
           </span>
@@ -423,12 +423,12 @@ function LuckCard({ node, onClick }: { node: LuckNode; onClick: () => void }) {
 
       {/* Bottom attribute pills */}
       <div className="flex items-center gap-2">
-        <span className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-muted/40 px-2 py-1 text-[10px]">
-          <Crosshair className="h-3 w-3 text-muted-foreground/60" />
+        <span className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-muted/40 px-2 py-1 text-[11px]">
+          <Crosshair className="h-3 w-3 text-muted-foreground/75" />
           <span className={diffConfig.color}>{diffConfig.label}</span>
         </span>
-        <span className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-muted/40 px-2 py-1 text-[10px]">
-          <AlertTriangle className="h-3 w-3 text-muted-foreground/60" />
+        <span className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-muted/40 px-2 py-1 text-[11px]">
+          <AlertTriangle className="h-3 w-3 text-muted-foreground/75" />
           <span className="text-muted-foreground truncate max-w-[100px]">{node.silentCost.length > 8 ? node.silentCost.slice(0, 8) + '...' : node.silentCost}</span>
         </span>
       </div>
@@ -553,7 +553,7 @@ function LuckDetailPanel({
                       ) : (
                         <TrendingUp className="h-3.5 w-3.5 text-blue-500" />
                       )}
-                      <span className="text-[10px] text-muted-foreground">{config.drainLabel}</span>
+                      <span className="text-[11px] text-muted-foreground">{config.drainLabel}</span>
                     </div>
                     <span className={cn(
                       'text-3xl font-bold font-mono tabular-nums',
@@ -561,14 +561,14 @@ function LuckDetailPanel({
                     )}>
                       {drainValue < 0 ? drainValue : `+${drainValue}`}%
                     </span>
-                    <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground/70">
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground/70">
                       发生概率 × 影响强度，数值越大对人生冲击越大；负值 = 消耗你的，正值 = 能借力的
                     </p>
                   </div>
                   <div className="rounded-xl p-4 bg-muted/40">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-                      <span className="text-[10px] text-muted-foreground">{config.gainLabel}</span>
+                      <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/70" />
+                      <span className="text-[11px] text-muted-foreground">{config.gainLabel}</span>
                     </div>
                     <span className={cn(
                       'text-3xl font-bold font-mono tabular-nums',
@@ -576,7 +576,7 @@ function LuckDetailPanel({
                     )}>
                       {gainValue}%
                     </span>
-                    <p className="mt-1.5 text-[10px] leading-relaxed text-muted-foreground/70">
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground/70">
                       你能靠行动改变它的程度：0% = 纯看天意，75% = 基本可以主动操作
                     </p>
                   </div>
@@ -585,15 +585,15 @@ function LuckDetailPanel({
                 {/* Attribute pills row */}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="rounded-lg bg-muted/40 px-3 py-2 text-center">
-                    <div className="text-[9px] text-muted-foreground mb-0.5">发生概率</div>
+                    <div className="text-[11px] text-muted-foreground mb-0.5">发生概率</div>
                     <div className="text-sm font-semibold font-mono tabular-nums text-foreground">{Math.round(node.probability * 100)}%</div>
                   </div>
                   <div className="rounded-lg bg-muted/40 px-3 py-2 text-center">
-                    <div className="text-[9px] text-muted-foreground mb-0.5">应对难度</div>
+                    <div className="text-[11px] text-muted-foreground mb-0.5">应对难度</div>
                     <div className={cn('text-sm font-semibold', diffConfig.color)}>{diffConfig.label}</div>
                   </div>
                   <div className="rounded-lg bg-muted/40 px-3 py-2 text-center">
-                    <div className="text-[9px] text-muted-foreground mb-0.5">沉没代价</div>
+                    <div className="text-[11px] text-muted-foreground mb-0.5">沉没代价</div>
                     <div className="text-xs font-medium text-foreground truncate" title={node.silentCost}>{node.silentCost.length > 6 ? node.silentCost.slice(0, 6) + '...' : node.silentCost}</div>
                   </div>
                 </div>
@@ -619,7 +619,7 @@ function LuckDetailPanel({
                   <ul className="space-y-2">
                     {node.strategy.split(/[。；;]/).filter(Boolean).map((s, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-amber-900/80 dark:text-amber-200/80">
-                        <span className="shrink-0 h-5 w-5 rounded-full bg-amber-200 dark:bg-amber-800/50 flex items-center justify-center text-[10px] font-bold text-amber-800 dark:text-amber-200 mt-0.5">{i + 1}</span>
+                        <span className="shrink-0 h-5 w-5 rounded-full bg-amber-200 dark:bg-amber-800/50 flex items-center justify-center text-[11px] font-bold text-amber-800 dark:text-amber-200 mt-0.5">{i + 1}</span>
                         <span className="leading-relaxed">{s.trim()}</span>
                       </li>
                     ))}
@@ -665,14 +665,14 @@ function LuckDetailPanel({
                   <div className="rounded-xl border border-border p-3">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <Radar className="h-3.5 w-3.5 text-primary/60" />
-                      <span className="text-[10px] font-medium text-muted-foreground">放大信号</span>
+                      <span className="text-[11px] font-medium text-muted-foreground">放大信号</span>
                     </div>
                     <p className="text-xs text-foreground/70 leading-relaxed">{node.amplifySignal}</p>
                   </div>
                   <div className="rounded-xl border border-border p-3">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <CalendarCheck className="h-3.5 w-3.5 text-primary/60" />
-                      <span className="text-[10px] font-medium text-muted-foreground">兑现节奏</span>
+                      <span className="text-[11px] font-medium text-muted-foreground">兑现节奏</span>
                     </div>
                     <p className="text-xs text-foreground/70 leading-relaxed">{node.cashRhythm}</p>
                   </div>
@@ -820,16 +820,16 @@ export default function LuckPage() {
         width="6xl"
         aside={
           <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/50" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70" />
             <input
               ref={searchRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索节点、危害或对冲协议..."
-              className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground/40 border border-border rounded px-1.5 py-0.5 hidden sm:inline">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground/70 border border-border rounded px-1.5 py-0.5 hidden sm:inline">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
           </div>
         }
       >
@@ -849,7 +849,7 @@ export default function LuckPage() {
               {opt.icon}
               {opt.label}
               {opt.value !== 'all' && (
-                <span className="ml-0.5 text-[10px] font-mono tabular-nums opacity-60">{counts[opt.value as LuckCategory]}</span>
+                <span className="ml-0.5 text-[11px] font-mono tabular-nums opacity-60">{counts[opt.value as LuckCategory]}</span>
               )}
             </button>
           ))}
@@ -874,9 +874,9 @@ export default function LuckPage() {
       </div>
 
       {/* Card Grid */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 py-8">
         {filtered.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
+          <div className="text-center py-14 text-muted-foreground">
             <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-30" />
             <p className="text-sm">没有匹配的节点</p>
           </div>
@@ -893,8 +893,8 @@ export default function LuckPage() {
                     {CATEGORY_ICONS[category]}
                     {config.label}
                   </span>
-                  <span className="text-[10px] font-mono text-muted-foreground/40 tabular-nums">{items.length}项</span>
-                  <span className="text-[10px] text-muted-foreground/30 hidden sm:inline">· {config.subLabel}</span>
+                  <span className="text-[11px] font-mono text-muted-foreground/70 tabular-nums">{items.length}项</span>
+                  <span className="text-[11px] text-muted-foreground/30 hidden sm:inline">· {config.subLabel}</span>
                   <TickRule className="flex-1" />
                 </div>
 
@@ -923,7 +923,7 @@ export default function LuckPage() {
 
       {/* Bottom insight */}
       <div className="border-t border-border bg-muted/10">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 py-8">
           <h2 className="text-sm font-semibold text-foreground mb-4">关于运气的真相</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs leading-relaxed">
             <div className="rounded-lg border border-border bg-card p-4">

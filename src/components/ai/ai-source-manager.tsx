@@ -255,7 +255,7 @@ export function AiSourceManager({ onActiveChanged }: { onActiveChanged?: () => v
               </span>
             )}
           </div>
-          <p className="text-[10px] text-muted-foreground/70">
+          <p className="text-[11px] text-muted-foreground/70">
             导出文件含明文密钥，请妥善保管。
           </p>
         </div>
@@ -270,7 +270,7 @@ export function AiSourceManager({ onActiveChanged }: { onActiveChanged?: () => v
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[10px] text-muted-foreground">名称</span>
+              <span className="text-[11px] text-muted-foreground">名称</span>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -279,7 +279,7 @@ export function AiSourceManager({ onActiveChanged }: { onActiveChanged?: () => v
               />
             </label>
             <label className="block">
-              <span className="text-[10px] text-muted-foreground">协议</span>
+              <span className="text-[11px] text-muted-foreground">协议</span>
               <select
                 value={form.protocol}
                 onChange={(e) => setForm({ ...form, protocol: e.target.value as AiProtocol })}
@@ -293,18 +293,18 @@ export function AiSourceManager({ onActiveChanged }: { onActiveChanged?: () => v
           </div>
 
           <label className="block">
-            <span className="text-[10px] text-muted-foreground">接口地址（Base URL）</span>
+            <span className="text-[11px] text-muted-foreground">接口地址（Base URL）</span>
             <input
               value={form.baseUrl}
               onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
               placeholder="https://api.apikey.fan/v1"
               className="mt-1 w-full rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/40"
             />
-            <span className="text-[10px] text-muted-foreground/70">{PROTOCOL_OPTIONS.find(p => p.id === form.protocol)?.hint}</span>
+            <span className="text-[11px] text-muted-foreground/70">{PROTOCOL_OPTIONS.find(p => p.id === form.protocol)?.hint}</span>
           </label>
 
           <label className="block">
-            <span className="text-[10px] text-muted-foreground">API Key</span>
+            <span className="text-[11px] text-muted-foreground">API Key</span>
             <input
               type="text"
               value={form.apiKey}
@@ -315,14 +315,14 @@ export function AiSourceManager({ onActiveChanged }: { onActiveChanged?: () => v
           </label>
 
           <label className="block">
-            <span className="text-[10px] text-muted-foreground">模型名</span>
+            <span className="text-[11px] text-muted-foreground">模型名</span>
             <input
               value={form.model}
               onChange={(e) => setForm({ ...form, model: e.target.value })}
               placeholder="glm-5.3-flash"
               className="mt-1 w-full rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/40"
             />
-            <span className="text-[10px] text-muted-foreground/70">必须填服务端真实支持的模型 id，不确定就先用测试按钮验证</span>
+            <span className="text-[11px] text-muted-foreground/70">必须填服务端真实支持的模型 id，不确定就先用测试按钮验证</span>
           </label>
 
           {formError && (
@@ -372,17 +372,17 @@ export function AiSourceManager({ onActiveChanged }: { onActiveChanged?: () => v
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-semibold text-foreground truncate">{s.name}</span>
-                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                     {PROTOCOL_OPTIONS.find((p) => p.id === s.protocol)?.label ?? s.protocol}
                   </span>
                   {isActive && (
-                    <span className="rounded-full bg-primary/10 border border-primary/25 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    <span className="rounded-full bg-primary/10 border border-primary/25 px-1.5 py-0.5 text-[11px] font-medium text-primary">
                       使用中
                     </span>
                   )}
                   {s.lastTest && (
                     <span className={cn(
-                      'inline-flex items-center gap-1 text-[10px]',
+                      'inline-flex items-center gap-1 text-[11px]',
                       s.lastTest.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
                     )}>
                       <CircleDot className="h-2.5 w-2.5" />
@@ -390,13 +390,13 @@ export function AiSourceManager({ onActiveChanged }: { onActiveChanged?: () => v
                     </span>
                   )}
                 </div>
-                <div className="mt-1 text-[10px] font-mono text-muted-foreground/80 truncate">{s.baseUrl}</div>
-                <div className="text-[10px] font-mono text-muted-foreground/80">
+                <div className="mt-1 text-[11px] font-mono text-muted-foreground/80 truncate">{s.baseUrl}</div>
+                <div className="text-[11px] font-mono text-muted-foreground/80">
                   模型 {s.model} · Key {visible[s.id] ? s.apiKey : '•'.repeat(12)}
                 </div>
                 {s.lastTest?.message && (
                   <div className={cn(
-                    'mt-1 text-[10px] leading-relaxed',
+                    'mt-1 text-[11px] leading-relaxed',
                     s.lastTest.ok ? 'text-muted-foreground' : 'text-red-600 dark:text-red-400'
                   )}>
                     {s.lastTest.message}

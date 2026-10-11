@@ -298,18 +298,18 @@ export default function HomePage() {
             <div className="lg:col-span-5">
               <p data-hero="quote" className="font-serif text-xl leading-[1.9] text-foreground/80 sm:text-2xl">
                 <span className="block">命是你拿到的牌，</span>
-                <span className="mb-3 block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Fate is the hand you are dealt</span>
+                <span className="mb-3 block text-[11px] uppercase tracking-[0.3em] text-muted-foreground/70">Fate is the hand you are dealt</span>
                 <span className="block">运是你出牌的时机，</span>
-                <span className="mb-3 block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Luck is when you play it</span>
+                <span className="mb-3 block text-[11px] uppercase tracking-[0.3em] text-muted-foreground/70">Luck is when you play it</span>
                 <span className="block">努力是你出牌的方式。</span>
-                <span className="block text-[10px] uppercase tracking-[0.3em] text-muted-foreground/70">Effort is how you play it</span>
+                <span className="block text-[11px] uppercase tracking-[0.3em] text-muted-foreground/70">Effort is how you play it</span>
               </p>
             </div>
 
             <dl data-hero="quote" className="grid grid-cols-3 gap-6 border-t border-border pt-6 lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
               {HERO_STATS.map((s) => (
                 <div key={s.en}>
-                  <dt className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{s.en}</dt>
+                  <dt className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{s.en}</dt>
                   <dd className="mt-2 font-serif text-3xl font-bold tabular-nums text-foreground">{s.value}</dd>
                   <dd className="mt-1 text-xs text-muted-foreground">{s.zh}</dd>
                 </div>
@@ -359,7 +359,7 @@ export default function HomePage() {
 
       {/* ===== 手记 ===== */}
       <section className="border-b border-border bg-card">
-        <div data-reveal className="mx-auto grid max-w-6xl gap-12 px-6 py-16 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16">
+        <div data-reveal className="mx-auto grid max-w-7xl 2xl:max-w-[1600px] gap-12 px-6 py-12 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16">
           <div className="flex flex-col lg:col-span-3">
             <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">Manifesto</span>
             <span data-hairline className="mt-5 block h-px w-12 bg-primary" aria-hidden />
@@ -368,7 +368,7 @@ export default function HomePage() {
               {MANIFESTO_DIMENSIONS.map((d) => (
                 <li key={d.en} className="flex items-baseline justify-between gap-4 border-b border-border/60 pb-3">
                   <span className="font-serif text-base text-foreground/85">{d.zh}</span>
-                  <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{d.en}</span>
+                  <span className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{d.en}</span>
                 </li>
               ))}
             </ul>
@@ -397,7 +397,7 @@ export default function HomePage() {
                 <div key={p.en} data-principle className={cn('rounded-lg border p-4', p.tone)}>
                   <div className="flex items-baseline justify-between">
                     <span className="font-serif text-xl font-semibold">{p.zh}</span>
-                    <span className="text-[10px] tracking-[0.2em] opacity-70">{p.en}</span>
+                    <span className="text-[11px] tracking-[0.2em] opacity-70">{p.en}</span>
                   </div>
                   <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{p.text}</p>
                 </div>
@@ -412,7 +412,7 @@ export default function HomePage() {
         <section
           key={chapter.num}
           id={`chapter-${chapter.index}`}
-          className="relative mx-auto grid max-w-6xl scroll-mt-10 gap-12 border-b border-border px-6 py-16 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16"
+          className="relative mx-auto grid max-w-7xl 2xl:max-w-[1600px] scroll-mt-10 gap-12 border-b border-border px-6 py-12 sm:px-10 lg:grid-cols-12 lg:gap-16 lg:px-16"
         >
           <header data-chapter-head className="lg:sticky lg:top-24 lg:col-span-5 lg:self-start">
             <div
@@ -463,7 +463,7 @@ export default function HomePage() {
 
       {/* ===== 常见问题 ===== */}
       <section className="border-b border-border bg-card">
-        <div data-reveal className="mx-auto max-w-6xl px-6 py-16 sm:px-10 lg:px-16">
+        <div data-reveal className="mx-auto max-w-7xl 2xl:max-w-[1600px] px-6 py-12 sm:px-10 lg:px-16">
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-5">
               <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">Questions</span>
@@ -505,7 +505,7 @@ export default function HomePage() {
 
       {/* ===== 终章 ===== */}
       <section className="relative overflow-hidden">
-        <div data-reveal className="mx-auto flex max-w-3xl flex-col items-center px-6 py-20 text-center sm:px-8">
+        <div data-reveal className="mx-auto flex max-w-3xl flex-col items-center px-6 py-14 text-center sm:px-8">
           <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">Epilogue</span>
           <SealMark className="mt-8 h-12 w-12 text-lg" />
           <p className="mt-10 font-serif text-2xl leading-[1.9] text-foreground/85 sm:text-3xl">
@@ -518,7 +518,7 @@ export default function HomePage() {
       </section>
 
       <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-7 text-xs text-muted-foreground sm:px-10 lg:px-16">
+        <div className="mx-auto flex max-w-7xl 2xl:max-w-[1600px] items-center justify-between gap-4 px-6 py-7 text-xs text-muted-foreground sm:px-10 lg:px-16">
           <span className="font-serif">人生重构计划 · 不是算命，是算概率</span>
           <span className="hidden text-[11px] uppercase tracking-[0.3em] sm:inline">Vol. 01</span>
         </div>

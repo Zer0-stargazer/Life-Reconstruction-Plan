@@ -445,7 +445,7 @@ ${customContext}
         width="4xl"
       />
 
-      <div className="max-w-4xl mx-auto px-6 sm:px-8 py-8">
+      <div className="max-w-6xl 2xl:max-w-[1400px] mx-auto px-6 sm:px-8 py-8">
         {/* Input Form */}
         <div className="space-y-6">
           {/* === 基础信息区 === */}
@@ -549,7 +549,7 @@ ${customContext}
               <PenLine className="h-3.5 w-3.5 text-primary/60" />
               <h2 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">关于你自己（选填）</h2>
               {customFillCount > 0 && (
-                <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+                <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
                   {customFillCount}/5 已填写
                 </span>
               )}
@@ -569,10 +569,10 @@ ${customContext}
                 return (
                   <div key={field.key} className="rounded-lg border border-border bg-card p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Icon className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
+                      <Icon className="h-3.5 w-3.5 text-muted-foreground/75" aria-hidden="true" />
                       <label htmlFor={`destiny-custom-${field.key}`} className="text-xs font-semibold text-foreground">{field.label}</label>
                       {input[field.key] && (
-                        <span className="text-[9px] text-primary font-medium">已填写</span>
+                        <span className="text-[11px] text-primary font-medium">已填写</span>
                       )}
                     </div>
                     <textarea
@@ -582,7 +582,7 @@ ${customContext}
                       placeholder={field.placeholder}
                       rows={field.lines}
                       maxLength={500}
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none leading-relaxed"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none leading-relaxed"
                     />
                   </div>
                 );
@@ -599,7 +599,7 @@ ${customContext}
               <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </button>
             {customFillCount === 0 && (
-              <span className="ml-3 text-xs text-muted-foreground/60">
+              <span className="ml-3 text-xs text-muted-foreground/75">
                 填写关于你自己的信息，可以获得更个性化的分析
               </span>
             )}
@@ -615,7 +615,7 @@ ${customContext}
                 <div key={d.en} className={cn('rounded-lg border p-4', d.tone)}>
                   <div className="flex items-baseline justify-between">
                     <span className="font-serif text-2xl font-semibold">{d.zh}</span>
-                    <span className="text-[10px] tracking-[0.2em] opacity-70">{d.en}</span>
+                    <span className="text-[11px] tracking-[0.2em] opacity-70">{d.en}</span>
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{d.hint}</p>
                 </div>
@@ -640,20 +640,20 @@ ${customContext}
               <div className="rounded-lg border border-border bg-card p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Clock className="h-3.5 w-3.5 text-foreground/40" />
-                  <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">当前阶段</span>
+                  <span className="text-[11px] text-muted-foreground/75 uppercase tracking-wider">当前阶段</span>
                 </div>
                 <p className="text-lg font-serif font-semibold text-foreground mb-2">{report.phase}</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">{report.phaseDesc}</p>
                 <div className="mt-3 flex items-center gap-1.5">
-                  <span className="text-[10px] text-muted-foreground">约{report.age}岁</span>
-                  <span className="text-[10px] text-muted-foreground/40">·</span>
-                  <span className="text-[10px] text-muted-foreground">人生进度约{Math.min(Math.round((report.age / 80) * 100), 100)}%</span>
+                  <span className="text-[11px] text-muted-foreground">约{report.age}岁</span>
+                  <span className="text-[11px] text-muted-foreground/70">·</span>
+                  <span className="text-[11px] text-muted-foreground">人生进度约{Math.min(Math.round((report.age / 80) * 100), 100)}%</span>
                 </div>
               </div>
               <div className="rounded-lg border border-primary/15 bg-primary/[0.02] p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <ArrowRight className="h-3.5 w-3.5 text-primary/60" />
-                  <span className="text-[10px] text-primary/60 uppercase tracking-wider">下一个关键窗口</span>
+                  <span className="text-[11px] text-primary/60 uppercase tracking-wider">下一个关键窗口</span>
                 </div>
                 <p className="text-lg font-serif font-semibold text-primary mb-2">{report.nextWindow}</p>
                 <p className="text-xs text-primary/60 leading-relaxed">{report.nextWindowDesc}</p>
@@ -718,7 +718,7 @@ ${customContext}
             </button>
 
             {/* Bottom insight */}
-            <div className="rounded-lg border border-border bg-muted/10 p-5 animate-fade-in-up stagger-6">
+            <div className="rounded-lg border border-border bg-muted/50 p-5 animate-fade-in-up stagger-6">
               <p className="text-xs text-muted-foreground leading-relaxed font-serif italic">
                 &ldquo;命运报告基于统计模型和概率分析，不构成人生建议。每个人的人生都是独特的——
                 这个工具的目的是帮你更清晰地看到牌面，而不是替你出牌。&rdquo;
@@ -781,11 +781,11 @@ ${customContext}
                 </p>
                 {customFillCount > 0 && (
                   <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                    {input.personality && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[9px] text-primary">性格</span>}
-                    {input.hobbies && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[9px] text-primary">兴趣</span>}
-                    {input.keyExperiences && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[9px] text-primary">经历</span>}
-                    {input.currentChallenge && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[9px] text-primary">困惑</span>}
-                    {input.otherInfo && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[9px] text-primary">补充</span>}
+                    {input.personality && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary">性格</span>}
+                    {input.hobbies && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary">兴趣</span>}
+                    {input.keyExperiences && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary">经历</span>}
+                    {input.currentChallenge && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary">困惑</span>}
+                    {input.otherInfo && <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary">补充</span>}
                   </div>
                 )}
               </div>
@@ -842,7 +842,7 @@ ${customContext}
                   onChange={e => setAiQuestion(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAISend(); } }}
                   placeholder="追问：我的性格适合什么方向？/ 如何解决当前困惑？"
-                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/50"
                   disabled={aiStreaming}
                 />
                 {aiStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}

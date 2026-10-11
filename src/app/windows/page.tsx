@@ -20,6 +20,7 @@ import { useEscapeKey } from '@/hooks/use-escape-key';
 import { ModulePageHead } from '@/components/shared/module-page-head';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
 import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
+import { useWindowMarks, WINDOW_MARK_META, WINDOW_MARK_ORDER, type WindowMark } from '@/hooks/use-window-marks';
 import { Filter, AlertTriangle, ChevronDown, ChevronUp, Sparkles, User, Lock, ShieldAlert, Target, Layers, XCircle, Bot, X, Send } from 'lucide-react';
 
 const statusOptions: { value: WindowStatus | 'all'; label: string; dotColor: string }[] = [
@@ -88,7 +89,7 @@ function LockForceBar({ score }: { score: number }) {
           />
         ))}
       </div>
-      <span className={cn('text-[9px] font-medium', config.color)}>{config.label}</span>
+      <span className={cn('text-[11px] font-medium', config.color)}>{config.label}</span>
     </div>
   );
 }
@@ -102,6 +103,14 @@ export default function WindowsPage() {
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   /** 组内"展开全部"：默认每组只露 12 条，避免一展开就是几十张卡 */
   const [groupShowAll, setGroupShowAll] = useState<Set<string>>(new Set());
+  /**
+   * 表态筛选：光靠"状态筛选"是找不到东西的——488 条里筛完"正在开启"还有几十条，
+   * 用户根本记不住哪条自己处理过。所以要能按"我标记过什么"来切：
+   * 未表态（还没处理的）/ 已在做 / 已完成 / 与我无关。
+   * 标记与时间轴 /me 共用同一份 localStorage，两边同步。
+   */
+  const [markFilter, setMarkFilter] = useState<'all' | 'unmarked' | WindowMark>('all');
+  const { marks, setMark, markedCount } = useWindowMarks();
 
   /** 每组默认预览条数 */
   const GROUP_PREVIEW = 12;
@@ -140,11 +149,17 @@ export default function WindowsPage() {
   }, [ageTouched, parsedAge, saveDefaultAge]);
 
   const filtered = useMemo(() => {
-    const base = filter === 'all'
+    let base = filter === 'all'
       ? lifeWindows.filter(Boolean)
       : lifeWindows.filter(w => w && w.status === filter);
+    if (markFilter !== 'all') {
+      base = base.filter(w => {
+        const m = w ? marks[w.id] : undefined;
+        return markFilter === 'unmarked' ? !m : m === markFilter;
+      });
+    }
     return base;
-  }, [filter]);
+  }, [filter, markFilter, marks]);
 
   // 分组顺序从可配置的人生阶段派生（/user 改了阶段这里自动跟着变），末尾补非阶段分组
   const groupOrder = useMemo(
@@ -220,13 +235,10 @@ export default function WindowsPage() {
     });
   };
 
+  // 展开互斥：一次只展开一张。原先是 Set 累加，点开第二张时第一张仍开着，
+  // 同一排的三张会一起撑开，页面越点越长
   const toggleCard = (id: number) => {
-    setExpandedCards(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setExpandedCards(prev => (prev.has(id) ? new Set<number>() : new Set<number>([id])));
   };
 
   // AI深度规划 - 流式生成
@@ -367,7 +379,7 @@ export default function WindowsPage() {
                     }
                   }}
                   placeholder="输入年龄"
-                  className="w-20 rounded-md border border-border bg-background px-2 py-1 text-xs font-mono text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-20 rounded-md border border-border bg-background px-2 py-1 text-xs font-mono text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/50"
                   autoFocus
                 />
                 <span className="text-xs text-muted-foreground">岁</span>
@@ -384,7 +396,7 @@ export default function WindowsPage() {
                           }
                         }
                       }}
-                      className="flex items-center gap-1 rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/15 transition-colors"
+                      className="flex items-center gap-1 rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/15 transition-colors"
                     >
                       <Sparkles className="h-2.5 w-2.5" />
                       {relevantWindows.length}个相关窗口
@@ -423,7 +435,7 @@ export default function WindowsPage() {
       </ModulePageHead>
 
       <section className="border-b border-border bg-card">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-10">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-10">
           <div className="mb-4 flex items-baseline justify-between gap-3">
             <h2 className="font-serif text-lg font-semibold text-foreground">人生窗口密度分布</h2>
             <span className="text-[11px] tracking-wide text-muted-foreground">共 {WINDOW_DENSITY_META.total} 个 · 每 5 岁一格</span>
@@ -446,7 +458,7 @@ export default function WindowsPage() {
         小屏横向滚动，别把按钮挤出屏幕外。
       */}
       <div className="sticky top-12 md:top-0 z-20 border-b border-border bg-background/90 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-2.5 pb-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-8 pt-2.5 pb-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
           <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1 shrink-0" />
           {statusOptions.map(opt => (
             <button
@@ -465,8 +477,36 @@ export default function WindowsPage() {
           ))}
         </div>
 
+        {/* 表态筛选：488 条里筛完状态还有几十条，只靠状态是找不到东西的。
+            这里让用户按"我处理过没有"切，找"还没表态的"最快。 */}
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-8 pb-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          <span className="shrink-0 text-[11px] text-muted-foreground/70">表态</span>
+          {(['all', 'unmarked', ...WINDOW_MARK_ORDER] as const).map(v => {
+            const label = v === 'all' ? '全部' : v === 'unmarked' ? '未表态' : WINDOW_MARK_META[v].label;
+            const n = v === 'unmarked'
+              ? lifeWindows.length - markedCount
+              : v === 'all' ? lifeWindows.length
+              : Object.values(marks).filter(m => m === v).length;
+            return (
+              <button
+                key={v}
+                onClick={() => setMarkFilter(v)}
+                className={cn(
+                  'shrink-0 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all',
+                  markFilter === v
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
+                )}
+              >
+                {label}
+                <span className="font-mono tabular-nums opacity-70">{n}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* 分段跳转：小屏才知道自己在哪一段 */}
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto">
           <SectionJumper
             sections={groupOrder
               .filter(g => groups[g] && groups[g].length > 0)
@@ -477,7 +517,7 @@ export default function WindowsPage() {
       </div>
 
       {/* Window Cards by Group */}
-      <div className="max-w-6xl mx-auto px-8 py-8">
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-8 py-8">
         {groupOrder.map(groupName => {
           const items = groups[groupName];
           if (!items || items.length === 0) return null;
@@ -493,17 +533,17 @@ export default function WindowsPage() {
                 className="w-full flex items-center gap-3 mb-3 group"
               >
                 <h2 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{groupName}</h2>
-                <span className="text-[10px] font-mono text-muted-foreground/40 tabular-nums">
+                <span className="text-[11px] font-mono text-muted-foreground/70 tabular-nums">
                   {WINDOW_GROUP_LABELS[groupName] || `${items.length}项`}
                 </span>
                 {parsedAge !== null && items.some(w => isAgeRelevant(w, parsedAge)) && (
-                  <span className="flex items-center gap-0.5 rounded-sm bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+                  <span className="flex items-center gap-0.5 rounded-sm bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
                     <Sparkles className="h-2.5 w-2.5" />
                     {items.filter(w => isAgeRelevant(w, parsedAge!)).length}个与你相关
                   </span>
                 )}
                 <TickRule className="flex-1" />
-                <div className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors">
+                <div className="text-muted-foreground/70 group-hover:text-muted-foreground transition-colors">
                   {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                 </div>
               </button>
@@ -547,13 +587,39 @@ export default function WindowsPage() {
                       >
                         {/* Header Row */}
                         <div className="flex items-center justify-between mb-2">
-                          <span className={cn('text-[10px] font-mono font-medium tabular-nums', config.color)}>
+                          <span className={cn('text-[11px] font-mono font-medium tabular-nums', config.color)}>
                             {w.age}岁
                           </span>
                           <div className="flex items-center gap-1.5">
+                            {/* 个人表态：与时间轴 /me 共用同一份标记，点一下切换，再点取消 */}
+                            {WINDOW_MARK_ORDER.map(mk => {
+                              const on = marks[w.id] === mk;
+                              return (
+                                <button
+                                  key={mk}
+                                  type="button"
+                                  aria-pressed={on}
+                                  title={WINDOW_MARK_META[mk].desc}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMark(w.id, on ? null : mk);
+                                  }}
+                                  className={cn(
+                                    'rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors',
+                                    on
+                                      ? mk === 'done' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                        : mk === 'doing' ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                                        : 'bg-muted text-muted-foreground line-through'
+                                      : 'text-muted-foreground/70 hover:bg-accent/60 hover:text-foreground'
+                                  )}
+                                >
+                                  {WINDOW_MARK_META[mk].short}
+                                </button>
+                              );
+                            })}
                             {/* 补救代价标签 */}
                             <span className={cn(
-                              'rounded-md px-1.5 py-0.5 text-[9px] font-medium',
+                              'rounded-md px-1.5 py-0.5 text-[11px] font-medium',
                               w.remedyLevel === 'irreversible' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' :
                               w.remedyLevel === 'extreme' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400' :
                               'bg-muted/60 text-muted-foreground'
@@ -562,7 +628,7 @@ export default function WindowsPage() {
                             </span>
                             {/* 状态标签 */}
                             <span className={cn(
-                              'rounded-md px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide',
+                              'rounded-md px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wide',
                               w.status === 'current' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
                               w.status === 'elite' ? 'bg-primary/10 text-primary' :
                               'bg-muted/60 text-muted-foreground'
@@ -570,7 +636,7 @@ export default function WindowsPage() {
                               {config.label}
                             </span>
                             {isRelevant && (
-                              <span className="flex items-center gap-0.5 rounded-md bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                              <span className="flex items-center gap-0.5 rounded-md bg-primary/15 px-1.5 py-0.5 text-[11px] font-semibold text-primary">
                                 <Sparkles className="h-2.5 w-2.5" />
                                 与你相关
                               </span>
@@ -584,11 +650,11 @@ export default function WindowsPage() {
                         {/* 锁死力 + 标签行 */}
                         <div className="mt-2.5 flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Lock className="h-3 w-3 text-muted-foreground/50" />
+                            <Lock className="h-3 w-3 text-muted-foreground/70" />
                             <LockForceBar score={w.lockForceScore} />
                           </div>
                           {w.tag && (
-                            <span className="rounded-md bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                            <span className="rounded-md bg-muted/40 px-1.5 py-0.5 text-[11px] text-muted-foreground">
                               {w.tag}
                             </span>
                           )}
@@ -601,7 +667,7 @@ export default function WindowsPage() {
                             <div className="flex items-start gap-2">
                               <Target className="h-3 w-3 text-primary/60 mt-0.5 shrink-0" />
                               <div>
-                                <span className="text-[10px] font-medium text-muted-foreground/60">最佳执行期</span>
+                                <span className="text-[11px] font-medium text-muted-foreground/75">最佳执行期</span>
                                 <p className="text-xs text-foreground font-medium">{w.bestExecuteAge}</p>
                               </div>
                             </div>
@@ -610,7 +676,7 @@ export default function WindowsPage() {
                             <div className="flex items-start gap-2">
                               <Layers className="h-3 w-3 text-primary/60 mt-0.5 shrink-0" />
                               <div>
-                                <span className="text-[10px] font-medium text-muted-foreground/60">执行阶段</span>
+                                <span className="text-[11px] font-medium text-muted-foreground/75">执行阶段</span>
                                 <p className="text-xs text-foreground font-medium">{w.executePhase}</p>
                               </div>
                             </div>
@@ -619,7 +685,7 @@ export default function WindowsPage() {
                             <div className="flex items-start gap-2">
                               <XCircle className={cn('h-3 w-3 mt-0.5 shrink-0', missConfig.color)} />
                               <div>
-                                <span className="text-[10px] font-medium text-muted-foreground/60">错过类型</span>
+                                <span className="text-[11px] font-medium text-muted-foreground/75">错过类型</span>
                                 <p className={cn('text-xs font-medium', missConfig.color)}>
                                   {missConfig.label}
                                   <span className="text-muted-foreground font-normal ml-1.5">{missConfig.description}</span>
@@ -629,9 +695,9 @@ export default function WindowsPage() {
 
                             {/* 强制锁死力说明 */}
                             <div className="flex items-start gap-2">
-                              <Lock className="h-3 w-3 text-muted-foreground/50 mt-0.5 shrink-0" />
+                              <Lock className="h-3 w-3 text-muted-foreground/70 mt-0.5 shrink-0" />
                               <div>
-                                <span className="text-[10px] font-medium text-muted-foreground/60">锁死机制</span>
+                                <span className="text-[11px] font-medium text-muted-foreground/75">锁死机制</span>
                                 <p className="text-xs text-foreground">{w.lockedForce}</p>
                               </div>
                             </div>
@@ -640,7 +706,7 @@ export default function WindowsPage() {
                             <div className="flex items-start gap-2">
                               <ShieldAlert className={cn('h-3 w-3 mt-0.5 shrink-0', remedyConfig.color)} />
                               <div>
-                                <span className="text-[10px] font-medium text-muted-foreground/60">事后补救代价</span>
+                                <span className="text-[11px] font-medium text-muted-foreground/75">事后补救代价</span>
                                 <p className={cn('text-xs font-medium', remedyConfig.color)}>
                                   {remedyConfig.label}
                                   <span className="text-muted-foreground font-normal ml-1.5">{w.remedyCost}</span>
@@ -658,7 +724,7 @@ export default function WindowsPage() {
                                     startAIPlanning(`请深入分析人生窗口"${w.title}"（${w.age}岁）：\n1. 这个窗口的核心机遇和风险\n2. 锁死力${w.lockForceScore}/5意味着什么\n3. 错过类型"${missConfig.label}"的具体后果\n4. 最佳执行策略和行动清单\n5. 如果已错过，还有什么补救路径`);
                                   }
                                 }}
-                                className="w-full flex items-center justify-center gap-1.5 rounded-md bg-primary/8 border border-primary/15 px-3 py-1.5 text-[10px] font-medium text-primary hover:bg-primary/15 transition-all active:scale-[0.98]"
+                                className="w-full flex items-center justify-center gap-1.5 rounded-md bg-primary/8 border border-primary/15 px-3 py-1.5 text-[11px] font-medium text-primary hover:bg-primary/15 transition-all active:scale-[0.98]"
                               >
                                 <Bot className="h-3 w-3" />
                                 AI 深度分析此窗口
@@ -669,7 +735,7 @@ export default function WindowsPage() {
 
                         {/* 展开/收起提示 */}
                         {!isCardExpanded && (
-                          <div className="mt-2 text-[9px] text-muted-foreground/30 text-center">
+                          <div className="mt-2 text-[11px] text-muted-foreground/30 text-center">
                             点击展开详情
                           </div>
                         )}
@@ -696,7 +762,7 @@ export default function WindowsPage() {
 
       {/* Bottom context */}
       <div className="border-t border-border bg-muted/10">
-        <div className="max-w-6xl mx-auto px-8 py-8">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-8 py-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="rounded-lg border border-border bg-card p-5">
               <h3 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
@@ -833,7 +899,7 @@ export default function WindowsPage() {
                   onChange={e => setAiQuestion(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAISend(); } }}
                   placeholder="追问具体窗口或策略..."
-                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/50"
                   disabled={aiStreaming}
                 />
                 {aiStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}

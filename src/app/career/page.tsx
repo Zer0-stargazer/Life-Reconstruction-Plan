@@ -64,7 +64,7 @@ function ResourceGroup({ icon: Icon, title, children }: { icon: LucideIcon; titl
     <div>
       <div className="mb-1.5 flex items-center gap-1.5">
         <Icon className="h-3 w-3 text-primary/60" />
-        <span className="text-[10px] font-semibold text-foreground">{title}</span>
+        <span className="text-[11px] font-semibold text-foreground">{title}</span>
       </div>
       <div className="space-y-1.5">{children}</div>
     </div>
@@ -82,11 +82,11 @@ function ResourceLinkItem({ link }: { link: CareerLink }) {
     >
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">{link.title}</p>
-        <p className="mt-0.5 text-[10px] text-muted-foreground/60">
+        <p className="mt-0.5 text-[11px] text-muted-foreground/75">
           {link.source}{link.note ? ` · ${link.note}` : ''}
         </p>
       </div>
-      <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+      <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/70 transition-colors group-hover:text-primary" />
     </a>
   );
 }
@@ -117,8 +117,8 @@ function CareerResourcePanel({ career }: { career: Career }) {
           {books.map((b) => (
             <div key={b.title} className="rounded-md border border-border/50 bg-background/50 px-2.5 py-2">
               <p className="text-[11px] font-medium text-foreground">{b.title}</p>
-              <p className="text-[10px] text-muted-foreground/60">{b.author}</p>
-              {b.why && <p className="mt-0.5 text-[10px] leading-relaxed text-muted-foreground/70">{b.why}</p>}
+              <p className="text-[11px] text-muted-foreground/75">{b.author}</p>
+              {b.why && <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground/70">{b.why}</p>}
             </div>
           ))}
         </ResourceGroup>
@@ -184,7 +184,7 @@ function QuickLookGroup({
       <div className="mb-2.5 flex items-center gap-2">
         <Icon className={cn('h-3.5 w-3.5', iconColor)} />
         <span className="text-xs font-semibold text-foreground">{title}</span>
-        <span className="truncate text-[10px] text-muted-foreground/70">{hint}</span>
+        <span className="truncate text-[11px] text-muted-foreground/70">{hint}</span>
       </div>
       <div className="space-y-1.5">
         {items.map(c => (
@@ -197,7 +197,7 @@ function QuickLookGroup({
               <span className="truncate text-sm font-medium text-foreground">{c.name}</span>
               <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">{c.salary}</span>
             </span>
-            <span className="mt-0.5 block truncate text-[10px] text-muted-foreground/60">{reasonOf(c)}</span>
+            <span className="mt-0.5 block truncate text-[11px] text-muted-foreground/75">{reasonOf(c)}</span>
           </button>
         ))}
       </div>
@@ -390,22 +390,22 @@ export default function CareerPage() {
 
       {/* Salary Distribution */}
       <div className="border-b border-border bg-muted/10">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-5">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-5">
           <div className="flex items-center gap-2 mb-3">
             <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">薪资分布</span>
+            <span className="text-[11px] font-semibold text-muted-foreground/75 uppercase tracking-wider">薪资分布</span>
           </div>
           <div className="flex items-end gap-3">
             {Object.entries(salaryBuckets).map(([range, count]) => (
               <div key={range} className="flex-1 flex flex-col items-center gap-1.5">
-                <span className="text-[9px] font-mono text-muted-foreground tabular-nums">{count}</span>
+                <span className="text-[11px] font-mono text-muted-foreground tabular-nums">{count}</span>
                 <div className="w-full bg-muted rounded-sm overflow-hidden" style={{ height: '40px' }}>
                   <div
                     className="w-full bg-primary/30 rounded-sm transition-all duration-500"
                     style={{ height: `${(count / maxBucket) * 100}%`, marginTop: `${100 - (count / maxBucket) * 100}%` }}
                   />
                 </div>
-                <span className="text-[9px] text-muted-foreground">{range}</span>
+                <span className="text-[11px] text-muted-foreground">{range}</span>
               </div>
             ))}
           </div>
@@ -415,7 +415,7 @@ export default function CareerPage() {
       {/* Filters
           top-12：移动端有一条 fixed 的 h-12 顶栏，写 top-0 会被它盖住（见 app-sidebar） */}
       <div className="sticky top-12 md:top-0 z-10 border-b border-border bg-background/90 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-3">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-8 py-3">
           {/* 分类多，小屏一行放不下：横向滚动而不是挤成一团 */}
           <div className="flex items-center gap-2 mb-2 overflow-x-auto scrollbar-hide sm:flex-wrap sm:overflow-visible">
             <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1 shrink-0" />
@@ -443,19 +443,19 @@ export default function CareerPage() {
           </div>
           {/* 搜索：近千个职业靠翻页找不到目标，按名称/技能/描述直接定位 */}
           <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索职业、技能关键词（如：心理咨询 / Python）..."
-              className="w-full rounded-lg border border-border bg-background pl-9 pr-9 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="w-full rounded-lg border border-border bg-background pl-9 pr-9 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 aria-label="清除搜索"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground/50 hover:text-foreground transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground/70 hover:text-foreground transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -463,7 +463,7 @@ export default function CareerPage() {
           </div>
           {/* 排序 chip：手机上 py-0.5 的点击区按不住，加大到 32px 高 */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide sm:overflow-visible">
-            <span className="shrink-0 text-[9px] text-muted-foreground/50">
+            <span className="shrink-0 text-[11px] text-muted-foreground/70">
               {activeSorts.length === 0 ? '默认：趋势上升 → AI 低风险 → 年薪高' : '排序（可多选）'}
             </span>
             {sortOptions.map(opt => (
@@ -471,13 +471,13 @@ export default function CareerPage() {
                 key={opt.value}
                 onClick={() => toggleSort(opt.value)}
                 className={cn(
-                  'shrink-0 rounded-sm px-2.5 py-1.5 sm:py-0.5 text-[10px] font-medium transition-all flex items-center gap-1',
+                  'shrink-0 rounded-sm px-2.5 py-1.5 sm:py-0.5 text-[11px] font-medium transition-all flex items-center gap-1',
                   activeSorts.includes(opt.value) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/60'
                 )}
               >
                 {opt.label}
                 {activeSorts.includes(opt.value) && (
-                  <span className="text-[10px] text-primary/60">
+                  <span className="text-[11px] text-primary/60">
                     {activeSorts.indexOf(opt.value) + 1}
                   </span>
                 )}
@@ -486,7 +486,7 @@ export default function CareerPage() {
             {activeSorts.length > 0 && (
               <button
                 onClick={() => setActiveSorts([])}
-                className="rounded-sm px-1.5 py-0.5 text-[9px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                className="rounded-sm px-1.5 py-0.5 text-[11px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
               >
                 清除
               </button>
@@ -496,7 +496,7 @@ export default function CareerPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 sm:px-8 py-8">
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-8">
         {/* 快看：近千条里先看两极 */}
         {(goldenCareers.length > 0 || riskyCareers.length > 0) && (
           <Reveal className="mb-6">
@@ -531,7 +531,7 @@ export default function CareerPage() {
           {/* Career Grid */}
           <div className={cn('lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 content-start')}>
             {/* 显示进度读数 */}
-            <div className="col-span-full flex items-center justify-between text-[10px] text-muted-foreground/60 mb-1">
+            <div className="col-span-full flex items-center justify-between text-[11px] text-muted-foreground/75 mb-1">
               <span>显示 <span className="font-mono tabular-nums">{visibleCareers.length} / {filtered.length}</span></span>
               {filtered.length !== careers.length && (
                 <span>
@@ -583,19 +583,19 @@ export default function CareerPage() {
                       <span className="rounded-md border border-border/50 bg-muted/40 px-2 py-0.5 text-[11px] font-mono text-foreground tabular-nums">
                         {career.salary}
                       </span>
-                      <span className={cn('rounded-md px-2 py-0.5 text-[10px] font-medium', aiRiskColor[career.aiRisk])}>
+                      <span className={cn('rounded-md px-2 py-0.5 text-[11px] font-medium', aiRiskColor[career.aiRisk])}>
                         AI{aiRiskLabel[career.aiRisk]}
                       </span>
-                      <span className={cn('rounded-md px-1.5 py-0.5 text-[9px] font-medium flex items-center gap-0.5', selfStudyColor(career.selfStudyScore))}>
+                      <span className={cn('rounded-md px-1.5 py-0.5 text-[11px] font-medium flex items-center gap-0.5', selfStudyColor(career.selfStudyScore))}>
                         <Star className="h-2.5 w-2.5" />
                         自学{career.selfStudyScore}
                       </span>
-                      <span className="rounded-md bg-muted/40 px-2 py-0.5 text-[9px] text-muted-foreground">
+                      <span className="rounded-md bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground">
                         {career.category}
                       </span>
                       <span
                         onClick={(e) => { e.stopPropagation(); guard(() => setAiPanel({ open: true, career })); }}
-                        className="ml-auto rounded-md border border-primary/15 bg-primary/5 px-2 py-0.5 text-[9px] text-primary/60 hover:text-primary hover:bg-primary/10 transition-colors flex items-center gap-1 cursor-pointer"
+                        className="ml-auto rounded-md border border-primary/15 bg-primary/5 px-2 py-0.5 text-[11px] text-primary/60 hover:text-primary hover:bg-primary/10 transition-colors flex items-center gap-1 cursor-pointer"
                       >
                         <Sparkles className="h-2.5 w-2.5" />
                         分析
@@ -605,19 +605,19 @@ export default function CareerPage() {
                     <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between">
                       <button
                         onClick={(e) => { e.stopPropagation(); setShowResources(isExpanded ? null : career.id); }}
-                        className="flex items-center gap-1 text-[10px] text-primary/60 hover:text-primary transition-colors"
+                        className="flex items-center gap-1 text-[11px] text-primary/60 hover:text-primary transition-colors"
                       >
                         <GraduationCap className="h-3 w-3" />
                         <span>学习资源 · {resourceCount(career)} 项</span>
                         {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </button>
-                      <span className="text-[9px] text-muted-foreground/40">{selfStudyLabel(career.selfStudyScore)}</span>
+                      <span className="text-[11px] text-muted-foreground/70">{selfStudyLabel(career.selfStudyScore)}</span>
                     </div>
                   </div>
 
                   {/* 展开的资源面板 */}
                   {isExpanded && (
-                    <div className="rounded-b-lg border border-t-0 border-border bg-card/50 px-4 pb-4 pt-2 animate-fade-in-up">
+                    <div className="rounded-b-lg border border-t-0 border-border bg-muted/50 px-4 pb-4 pt-2 animate-fade-in-up">
                       <CareerResourcePanel career={career} />
                     </div>
                   )}
@@ -634,7 +634,7 @@ export default function CareerPage() {
               </button>
             )}
             {hiddenCount === 0 && filtered.length > PAGE_SIZE && (
-              <div className="col-span-full py-2 text-center text-[10px] text-muted-foreground/40">
+              <div className="col-span-full py-2 text-center text-[11px] text-muted-foreground/70">
                 已显示全部 <span className="font-mono tabular-nums">{filtered.length}</span> 个职业
               </div>
             )}
@@ -665,10 +665,10 @@ export default function CareerPage() {
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs text-muted-foreground">自学推荐指数</span>
                       <div className="flex items-center gap-1.5">
-                        <span className={cn('rounded-sm px-2 py-0.5 text-[10px] font-medium', selfStudyColor(selected.selfStudyScore))}>
+                        <span className={cn('rounded-sm px-2 py-0.5 text-[11px] font-medium', selfStudyColor(selected.selfStudyScore))}>
                           {selected.selfStudyScore}/10
                         </span>
-                        <span className="text-[10px] text-muted-foreground">{selfStudyLabel(selected.selfStudyScore)}</span>
+                        <span className="text-[11px] text-muted-foreground">{selfStudyLabel(selected.selfStudyScore)}</span>
                       </div>
                     </div>
                     <div className="h-1.5 rounded-full bg-muted overflow-hidden">
@@ -680,7 +680,7 @@ export default function CareerPage() {
                         style={{ width: `${selected.selfStudyScore * 10}%` }}
                       />
                     </div>
-                    <p className="text-[9px] text-muted-foreground/50 mt-1">
+                    <p className="text-[11px] text-muted-foreground/70 mt-1">
                       {selected.selfStudyDifficulty === 'easy' ? '自学门槛低，适合自学入门' :
                        selected.selfStudyDifficulty === 'medium' ? '需要一定基础，自学可行' : '自学门槛高，建议系统学习'}
                     </p>
@@ -710,7 +710,7 @@ export default function CareerPage() {
                   <div className="py-2 border-b border-border/50">
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs text-muted-foreground">AI替代风险</span>
-                      <span className={cn('rounded-sm px-2 py-0.5 text-[10px] font-medium', aiRiskColor[selected.aiRisk])}>
+                      <span className={cn('rounded-sm px-2 py-0.5 text-[11px] font-medium', aiRiskColor[selected.aiRisk])}>
                         {aiRiskLabel[selected.aiRisk]}
                       </span>
                     </div>
@@ -751,7 +751,7 @@ export default function CareerPage() {
 
                 {/* Strategic insight */}
                 <div className="mt-4 p-3 rounded-md bg-muted/30 border border-border/50">
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
                     {selected.aiRisk === 'high'
                       ? '⚠ 这个职业面临较高的AI替代风险。建议提前布局转型或建立AI无法替代的差异化优势。'
                       : selected.aiRisk === 'low'
@@ -764,7 +764,7 @@ export default function CareerPage() {
               <div className="rounded-lg border border-dashed border-border bg-card/50 p-8 text-center sticky top-20">
                 <Briefcase className="h-8 w-8 text-muted-foreground/20 mx-auto mb-3" />
                 <p className="text-xs text-muted-foreground">点击任意职业查看详情</p>
-                <p className="text-[10px] text-muted-foreground/50 mt-1">包括薪资、趋势、AI风险分析</p>
+                <p className="text-[11px] text-muted-foreground/70 mt-1">包括薪资、趋势、AI风险分析</p>
               </div>
             )}
           </div>
@@ -773,7 +773,7 @@ export default function CareerPage() {
 
       {/* Bottom context */}
       <div className="border-t border-border bg-muted/10">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-8">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Reveal delay={0}>
             <div className="rounded-lg border border-border bg-card p-4">

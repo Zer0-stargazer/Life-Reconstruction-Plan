@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="人生重构计划 标志方案A 轨迹分叉">
+  <title>人生重构计划 · 方案 A：轨迹分叉</title>
+  <desc>一条人生轨迹走到窗口处分为两条，一条继续原路，一条跃升</desc>
+  <style>
+    .ink { stroke: #2C2C2A; fill: none; }
+    .gold { stroke: #B8860B; fill: none; }
+    @media (prefers-color-scheme: dark) { .ink { stroke: #E8E6DF; } .gold { stroke: #D9A227; } }
+  </style>
+
+  <path class="ink" d="M14 84 H58" stroke-width="4" stroke-linecap="round" opacity="0.45"/>
+  <path class="gold" d="M58 84 C 74 84, 80 62, 92 34" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="ink" d="M58 84 C 72 84, 80 80, 104 74" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
+
+  <rect class="gold" x="52" y="78" width="12" height="12" rx="2" stroke-width="3"/>
+  <circle cx="92" cy="34" r="5.5" fill="#B8860B"/>
+</svg>

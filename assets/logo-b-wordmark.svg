@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" width="200" height="120" role="img" aria-label="人生重构计划 标志方案B 字标">
+  <title>人生重构计划 · 方案 B：字标 + 分叉</title>
+  <desc>衬线字标「重构」配下方分叉轨迹，四角为 HUD 括号</desc>
+  <style>
+    .ink { fill: #2C2C2A; }
+    .mark { stroke: #B8860B; fill: none; }
+    .hair { stroke: #2C2C2A; fill: none; opacity: 0.35; }
+    @media (prefers-color-scheme: dark) { .ink { fill: #E8E6DF; } .mark { stroke: #D9A227; } .hair { stroke: #E8E6DF; } }
+  </style>
+
+  <path class="hair" d="M8 8 H20 M8 8 V20" stroke-width="2"/>
+  <path class="hair" d="M192 8 H180 M192 8 V20" stroke-width="2"/>
+  <path class="hair" d="M8 112 H20 M8 112 V100" stroke-width="2"/>
+  <path class="hair" d="M192 112 H180 M192 112 V100" stroke-width="2"/>
+
+  <text class="ink" x="100" y="52" text-anchor="middle" font-family="Noto Serif SC, Songti SC, serif" font-size="34" font-weight="600" letter-spacing="6">重构</text>
+
+  <path class="mark" d="M46 84 H84" stroke-width="3.5" stroke-linecap="round" opacity="0.5"/>
+  <path class="mark" d="M84 84 C 96 84, 100 72, 110 62" stroke-width="3.5" stroke-linecap="round"/>
+  <path class="mark" d="M84 84 H150" stroke-width="2.5" stroke-linecap="round" opacity="0.3"/>
+  <circle cx="110" cy="62" r="4" fill="#B8860B"/>
+</svg>

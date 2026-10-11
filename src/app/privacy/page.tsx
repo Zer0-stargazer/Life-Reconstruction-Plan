@@ -4,8 +4,8 @@ export const metadata: Metadata = { title: '隐私政策 · 人生重构计划' 
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16 sm:px-8">
-      <p className="text-[10px] tracking-[0.2em] text-primary/70">PRIVACY POLICY</p>
+    <div className="mx-auto max-w-3xl px-6 py-12 sm:px-8">
+      <p className="text-[11px] tracking-[0.2em] text-primary/70">PRIVACY POLICY</p>
       <h1 className="mt-3 font-serif text-3xl font-bold tracking-tight text-foreground">隐私政策</h1>
       <p className="mt-2 text-xs text-muted-foreground">草案 · 上线前需由项目主人确认后正式发布</p>
 

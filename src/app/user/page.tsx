@@ -355,15 +355,15 @@ export default function UserPage() {
                     <h2 className="text-base font-semibold text-foreground">{authUser.nickname}</h2>
                     {/* Role badge */}
                     {authUser.role === 'developer' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                         <Crown className="w-3 h-3" /> 开发者
                       </span>
                     ) : authUser.role === 'premium' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
                         <Zap className="w-3 h-3" /> 充电用户
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground border border-border">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border">
                         普通用户
                       </span>
                     )}
@@ -374,7 +374,7 @@ export default function UserPage() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
+                  className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors"
                 >
                   <LogOut className="h-3 w-3" />
                   退出
@@ -402,7 +402,7 @@ export default function UserPage() {
                       onChange={(e) => { setInviteCode(e.target.value); setInviteStatus('idle'); }}
                       onKeyDown={(e) => e.key === 'Enter' && handleRedeemCode()}
                       placeholder="输入邀请码"
-                      className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+                      className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                     />
                     <button
                       onClick={handleRedeemCode}
@@ -447,7 +447,7 @@ export default function UserPage() {
           {/* Avatar picker */}
           {showAvatarPicker && authUser && (
             <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-[10px] text-muted-foreground mb-2">选择头像</p>
+              <p className="text-[11px] text-muted-foreground mb-2">选择头像</p>
               <div className="flex flex-wrap gap-2">
                 {AVATAR_OPTIONS.map(a => (
                   <button
@@ -499,7 +499,7 @@ export default function UserPage() {
                 </div>
                 <div className="px-6 py-5 space-y-4">
                   <div>
-                    <label htmlFor="login-nickname" className="text-[10px] font-medium text-muted-foreground mb-1.5 block">昵称</label>
+                    <label htmlFor="login-nickname" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">昵称</label>
                     <input
                       id="login-nickname"
                       type="text"
@@ -508,12 +508,12 @@ export default function UserPage() {
                       onKeyDown={(e) => e.key === 'Enter' && (loginMode === 'register' ? handleRegister() : handleLogin())}
                       placeholder="输入你的昵称"
                       maxLength={20}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                       autoFocus
                     />
                   </div>
                   <div>
-                    <label htmlFor="login-password" className="text-[10px] font-medium text-muted-foreground mb-1.5 block">密码</label>
+                    <label htmlFor="login-password" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">密码</label>
                     <input
                       id="login-password"
                       type="password"
@@ -521,7 +521,7 @@ export default function UserPage() {
                       onChange={(e) => setLoginPassword(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && (loginMode === 'register' ? handleRegister() : handleLogin())}
                       placeholder={loginMode === 'register' ? '至少4位密码' : '输入密码'}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                     />
                   </div>
 
@@ -562,7 +562,7 @@ export default function UserPage() {
               <BarChart3 className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-semibold text-foreground">探索进度</h3>
             </div>
-            <span className="text-[10px] font-mono text-muted-foreground tabular-nums">{visitedCount}/{totalModules}</span>
+            <span className="text-[11px] font-mono text-muted-foreground tabular-nums">{visitedCount}/{totalModules}</span>
           </div>
 
           <div className="mb-4">
@@ -573,8 +573,8 @@ export default function UserPage() {
               />
             </div>
             <div className="flex items-center justify-between mt-1.5">
-              <span className="text-[10px] text-muted-foreground">{progressPercent}% 完成</span>
-              <span className="text-[10px] text-primary/60">
+              <span className="text-[11px] text-muted-foreground">{progressPercent}% 完成</span>
+              <span className="text-[11px] text-primary/60">
                 {visitedCount >= totalModules ? '已探索全部模块' : `还有 ${totalModules - visitedCount} 个模块待探索`}
               </span>
             </div>
@@ -595,7 +595,7 @@ export default function UserPage() {
                   )}
                 >
                   {isLocked ? (
-                    <Lock className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
+                    <Lock className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
                   ) : isVisited ? (
                     <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
                   ) : (
@@ -603,16 +603,16 @@ export default function UserPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className={cn('text-[9px] font-mono tabular-nums', isLocked ? 'text-muted-foreground/20' : isVisited ? 'text-primary/50' : 'text-muted-foreground/30')}>
+                      <span className={cn('text-[11px] font-mono tabular-nums', isLocked ? 'text-muted-foreground/20' : isVisited ? 'text-primary/50' : 'text-muted-foreground/30')}>
                         {mod.icon}
                       </span>
-                      <span className={cn('text-xs', isLocked ? 'text-muted-foreground/50' : isVisited ? 'text-foreground font-medium' : 'text-muted-foreground')}>
+                      <span className={cn('text-xs', isLocked ? 'text-muted-foreground/70' : isVisited ? 'text-foreground font-medium' : 'text-muted-foreground')}>
                         {mod.name}
                       </span>
                     </div>
                   </div>
                   {!isLocked && (
-                    <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover/progress:text-muted-foreground/50 transition-colors shrink-0" />
+                    <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover/progress:text-muted-foreground/70 transition-colors shrink-0" />
                   )}
                 </Link>
               );
@@ -635,13 +635,13 @@ export default function UserPage() {
             </div>
             <p className="text-xs text-muted-foreground">选择 AI 来源，配置密钥，用于各模块的深度分析功能</p>
             <div className="flex items-center gap-2 mt-3">
-              <span className="text-[9px] text-muted-foreground">当前使用:</span>
-              <span className="flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/10 rounded-sm px-2 py-0.5">
+              <span className="text-[11px] text-muted-foreground">当前使用:</span>
+              <span className="flex items-center gap-1 text-[11px] font-medium text-primary bg-primary/10 rounded-sm px-2 py-0.5">
                 <Zap className="h-2.5 w-2.5" />
                 {activeModelInfo.source} / {activeModelInfo.name}
               </span>
               {customSources.length > 0 && (
-                <span className="text-[9px] text-muted-foreground/60">
+                <span className="text-[11px] text-muted-foreground/75">
                   ({customSources.filter(s => s.enabled).length}/{customSources.length} 个自定义源已启用)
                 </span>
               )}
@@ -659,12 +659,12 @@ export default function UserPage() {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-foreground">{BUILTIN_PROVIDER.name}</p>
                     {activeAiSource === 'builtin' && (
-                      <span className="flex items-center gap-1 text-[9px] text-primary bg-primary/10 rounded-sm px-1.5 py-0.5"><Zap className="h-2.5 w-2.5" />使用中</span>
+                      <span className="flex items-center gap-1 text-[11px] text-primary bg-primary/10 rounded-sm px-1.5 py-0.5"><Zap className="h-2.5 w-2.5" />使用中</span>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">{BUILTIN_PROVIDER.description}</p>
                 </div>
-                <button onClick={() => setActiveSource('builtin')} className={cn('rounded-md px-3 py-1.5 text-[10px] font-medium transition-all', activeAiSource === 'builtin' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground hover:bg-muted')}>
+                <button onClick={() => setActiveSource('builtin')} className={cn('rounded-md px-3 py-1.5 text-[11px] font-medium transition-all', activeAiSource === 'builtin' ? 'bg-primary text-primary-foreground' : 'bg-muted/50 text-muted-foreground hover:bg-muted')}>
                   {activeAiSource === 'builtin' ? '使用中' : '切换'}
                 </button>
               </div>
@@ -723,8 +723,8 @@ export default function UserPage() {
             {showAgeInput ? (
               <div className="flex items-center gap-2">
                 <input type="number" min={0} max={120} value={defaultAge ?? ''} onChange={(e) => updateDefaultAge(Math.max(0, Math.min(120, parseInt(e.target.value) || 0)))} className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-ring" autoFocus />
-                <span className="text-[10px] text-muted-foreground">岁</span>
-                <button onClick={() => setShowAgeInput(false)} className="text-[10px] text-primary hover:underline">确定</button>
+                <span className="text-[11px] text-muted-foreground">岁</span>
+                <button onClick={() => setShowAgeInput(false)} className="text-[11px] text-primary hover:underline">确定</button>
               </div>
             ) : (
               <button onClick={() => setShowAgeInput(true)} className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs text-foreground hover:bg-accent/30 transition-colors">
@@ -749,7 +749,7 @@ export default function UserPage() {
               <p className="text-sm font-medium text-foreground">数据安全</p>
               <p className="text-xs text-muted-foreground">账号数据云端加密存储，偏好设置本地保存</p>
             </div>
-            <span className="text-[9px] text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-sm px-2 py-1">已保护</span>
+            <span className="text-[11px] text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-sm px-2 py-1">已保护</span>
           </div>
 
           {/* Advanced Settings */}
@@ -775,7 +775,7 @@ export default function UserPage() {
                   <Milestone className="h-4 w-4 text-primary" />
                   <h3 className="text-sm font-semibold text-foreground">自定义人生阶段</h3>
                 </div>
-                <button onClick={resetAdvanced} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={resetAdvanced} className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
                   <RotateCcw className="h-3 w-3" />
                   重置
                 </button>
@@ -812,7 +812,7 @@ export default function UserPage() {
                         onChange={(e) => updateStageRange(stage.id, 'end', Math.max(0, parseInt(e.target.value) || 0))}
                         className="w-12 rounded-md border border-input bg-background px-1.5 py-1 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-ring"
                       />
-                      <span className="text-muted-foreground/60">岁</span>
+                      <span className="text-muted-foreground/75">岁</span>
                     </div>
                   </div>
                 ))}
@@ -863,7 +863,7 @@ export default function UserPage() {
             计算概率、识别窗口。
           </p>
           <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between">
-            <span className="text-[9px] text-muted-foreground/40 font-serif italic">不是算命，是算概率</span>
+            <span className="text-[11px] text-muted-foreground/70 font-serif italic">不是算命，是算概率</span>
           </div>
         </div>
       </div>

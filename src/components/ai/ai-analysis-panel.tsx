@@ -176,7 +176,7 @@ export function AIAnalysisPanel({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-mono text-muted-foreground/60 tracking-wider uppercase">{moduleLabel}</span>
+                <span className="text-[11px] font-mono text-muted-foreground/75 tracking-wider uppercase">{moduleLabel}</span>
               </div>
               <h3 className="text-sm font-semibold text-foreground truncate">{itemTitle}</h3>
             </div>
@@ -197,7 +197,7 @@ export function AIAnalysisPanel({
           </button>
           </div>
         </div>
-        <p className="border-b border-border/60 bg-muted/20 px-5 py-1.5 text-[10px] text-muted-foreground">
+        <p className="border-b border-border/60 bg-muted/20 px-5 py-1.5 text-[11px] text-muted-foreground">
           内容由 AI 生成，仅供参考，不构成人生、职业或投资建议
         </p>
 
@@ -262,7 +262,7 @@ export function AIAnalysisPanel({
               onKeyDown={handleKeyDown}
               placeholder={isStreaming ? '等待回复中...' : '追问或提问...'}
               disabled={isStreaming}
-              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
             />
             {isStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}
             <button
