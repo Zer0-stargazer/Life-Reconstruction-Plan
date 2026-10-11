@@ -20,7 +20,7 @@ import {
   AlertTriangle, Shield, Bot, Wand2,
   ChevronLeft, ChevronRight, X, Maximize2,
   ArrowUpRight, ArrowDownRight, Zap, Eye,
-  Crosshair, BookOpen, Radar, Swords, CalendarCheck,
+  Crosshair, Radar, Swords, CalendarCheck,
   Send, MessageSquare,
 } from 'lucide-react';
 
@@ -606,16 +606,6 @@ function LuckDetailPanel({
                   </div>
                   <p className="text-sm text-foreground/80 leading-relaxed">{node.coreAnalysis}</p>
                 </div>
-
-                {node.realCases && (
-                  <div className="rounded-xl border border-border p-4 border-l-4 border-l-red-400 dark:border-l-red-500">
-                    <div className="flex items-center gap-2 mb-2">
-                      <BookOpen className="h-4 w-4 text-red-500/70" />
-                      <h4 className="text-sm font-semibold text-foreground">真实沙盘推演案例</h4>
-                    </div>
-                    <p className="text-sm text-foreground/80 leading-relaxed italic">{node.realCases}</p>
-                  </div>
-                )}
 
                 {/* Coping Strategy */}
                 <div className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50 p-4">
