@@ -24,10 +24,30 @@
   - [ ] 停掉 dev server → `pnpm build` → `pnpm start` 全路由走查
   - 说明：全部改动至今只在 dev server 上验证过；build 会暴露 dev 模式掩盖的问题
 - [ ] **部署**（1 天）
-  - [ ] 选定部署方式：Vercel（Next.js 亲儿子，最省事，免备案）或 国内服务器 + ICP 备案（周期 1-3 周，需提前启动）
+  - [ ] 选定部署方式（见下方「部署位置的三层约束」再定，别只看"免不免备案"）
   - [ ] 域名 + HTTPS
   - [ ] 生产环境变量重配一遍；**`SESSION_SECRET` 必须设为强随机值**（`openssl rand -hex 32`；开发环境回退用 DEV_PASSWORD，生产禁止）
   - [ ] 生产环境验证：全路由 + 注册/兑换/AI 全流程
+
+#### 部署位置的三层约束（2026-10-12 补，定方案前必读）
+
+问"国内用户能不能正常用"，实际是三层问题叠在一起，只回答一层会选错方案：
+
+| 层 | 放 Cloudflare / Vercel（境外） | 放国内服务器 |
+|---|---|---|
+| **① 用户访问前端** | 无中国大陆节点；`pages.dev`/`workers.dev` 常被 DNS 污染阻断（移动宽带最明显），绑**自定义域名**可改善但仍不稳、晚高峰波动 | 快且稳，但需 ICP 备案（1-3 周，域名先实名） |
+| **② 服务端连 Supabase** | ✅ 境外互通，正常 | ❌ **不通**——本机实测 `*.supabase.co` 直连 `ECONNRESET`。国内服务器遇到的是同一个问题 |
+| **③ 服务端调 AI 供应商** | ✅ 境外互通，正常 | ❌ **不通**——内置 AI **和 BYOK** 都走 `/api/ai/analyze` 由服务端转发（`ai-analysis-panel.tsx` 及各页面均 fetch 该路由），服务器出不去则全部失效 |
+
+**结论**：国内服务器方案需要同时解决 ②③（换国内数据库 + AI 供应商换成国内可达的），
+改造量远大于"买台服务器 + 备案"。**面向国内用户的低成本路径是境外托管 + 自定义域名 +
+接受访问波动**，或把访客态静态化后放国内 CDN（动态功能仍走境外）。
+
+技术可行性已确认（2026-10-12）：Next.js 16 走官方 `@opennextjs/cloudflare`（支持全部
+Next 16 minor，用 Node 运行时 + `nodejs_compat`）；浏览器不直连 Supabase
+（只有 `NEXT_PUBLIC_CONTACT` / `NEXT_PUBLIC_REGISTRATION_OPEN` 两个开关）；
+密码用 `bcryptjs`（纯 JS，非 native），`node:crypto` 的 `createHmac`/`timingSafeEqual`
+在 `nodejs_compat` 下可用 → 无阻断性不兼容。
 
 ### 2. AI 供应商稳定性 ⬜ —— 当前最大体验风险
 
