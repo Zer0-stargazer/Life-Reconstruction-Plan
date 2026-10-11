@@ -12,7 +12,8 @@
     "validate": "pnpm run ts-check && pnpm run lint:build && pnpm run test",
     "preinstall": "npx only-allow pnpm",
     "test": "vitest run",
-    "check:resources": "tsx scripts/check-career-resources.ts"
+    "check:resources": "tsx scripts/check-career-resources.ts",
+    "check:db": "tsx scripts/check-supabase.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

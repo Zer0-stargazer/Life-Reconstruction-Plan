@@ -17,6 +17,38 @@ pnpm check:resources
 由 2026-10-10 补资源时的临时脚本 `_cov.ts` / `_orph.ts` 合并而来——那批脚本当时说
 "跑完即删"，但这两项检查每次改职业数据都要跑，所以留成正经脚本，临时文件已清。
 
+## check-supabase.ts / check-supabase.sql
+
+数据库建表体检（只读）。上线硬门槛第一条：登录、邀请码、开发者后台、内置 AI
+全依赖数据库，缺表缺列缺函数时前端只表现成"接口 500"，从页面上根本看不出根因。
+
+**两个版本查的是同一份清单**，挑网络能通的那个用：
+
+```bash
+pnpm check:db          # Node 版：需要能访问 https://<project>.supabase.co
+```
+
+```sql
+-- SQL 版：Supabase Dashboard → SQL Editor → 粘贴 scripts/check-supabase.sql → Run
+```
+
+检查五项：
+
+1. **表与列** 10 项（含 `app_users.ai_credits` 等额度制列——老库容易漏）
+2. **RPC 函数** `consume_ai_credit` / `refund_ai_credit` / `hit_rate_limit` /
+   `admin_adjust_credits`，都是代码里 `.rpc()` 实际调用的
+3. **全局开关** `app_settings` 里 `builtin_ai_enabled` / `redeem_enabled` 两行种子数据
+4. **行数**（只看规模，不读内容）
+5. 缺什么就提示去执行 `supabase/schema.sql` + `supabase/migrations/2026-10-10-batch5-admin.sql`
+   —— 两个脚本都幂等，已建过的库再跑一遍不会有副作用
+
+安全说明：Node 版取行数用 `head + count`（只拿元数据）；RPC 探测传 `p_user_id = -1`
+（不存在的人，业务异常恰好证明函数存在）；唯一会写的是限流函数探测留下的
+`__checkdb__` 行，探测完立刻自删。SQL 版 100% 只读。
+
+> ⚠️ 两种都用 service role key / 你自己登录的 Dashboard，**别把 key 贴进聊天记录**。
+> 若曾在对话里出现过，去 Dashboard → Settings → API 轮换一次。
+
 ## archive/
 
 > 2026-09-28：原先的 `prepare.sh / dev.sh / build.sh / start.sh / validate.sh`
