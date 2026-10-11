@@ -15,14 +15,21 @@
 - [x] **验证建表齐全** —— ✅ 2026-10-12：Dashboard → SQL Editor 跑 `scripts/check-supabase.sql`，
       **16 项全 ✅**（10 项表/列 + 4 个 RPC + 2 个开关种子）。库是空库
       （app_users 0 / invite_codes 0），没有存量数据要迁移，直接可用
-- [ ] 本地实测：注册 → 登录 → /admin 建码（含 AI 次数）→ 兑换 → AI 余额到账
+- [x] **闭环实测** ✅ 2026-10-12：`pnpm check:flow` **9/9 通过**（注册 → 开发者口令校验 →
+      建码带 5 次额度 → 第二账号注册 → 兑换前 0 → 兑换 → 兑换后 5 → 重复兑换被拒 →
+      码用尽后被拒）。脚本只打 `localhost:5000`；会留 3 个 `e2e_*` 测试账号和 1 个
+      `E2E-*` 码，脚本末尾打印清理 SQL
   - ⚠️ 注意：本机到 `*.supabase.co` 被出网放行拦着（见 DEVLOG 2026-10-11），如果
     dev 起来后注册/登录报 500 或 `fetch failed`，先别查代码——大概率是同一网络问题，
     在代理软件里给 `supabase.co` 加规则（或开全局/TUN 模式）再试
 - 说明：未配置时登录/兑换/后台/内置 AI 均不可用（BYOK 不受影响）
-- [ ] **生产构建验证**（0.5 小时，必须做）
-  - [ ] 停掉 dev server → `pnpm build` → `pnpm start` 全路由走查
-  - 说明：全部改动至今只在 dev server 上验证过；build 会暴露 dev 模式掩盖的问题
+- [x] **生产构建验证** ✅ 2026-10-12
+  - [x] 停 dev server → `pnpm build` → `pnpm start` 全路由走查：**24 个页面全部产出，
+        15 个路由生产模式实测全部 200**，启动日志 0 报错
+  - [x] 顺手修掉 build 唯一告警：`metadataBase` 未设置 → `layout.tsx` 改为读
+        `NEXT_PUBLIC_SITE_URL`（部署时配真实域名）
+  - 坑记录：`rm -rf .next.old` 撞沙箱批量删除阈值（1,713 文件），**先 `mv .next .next.old`
+    再 build**，旧目录留着不管（已 gitignore）
 - [ ] **部署**（1 天）
   - [ ] 选定部署方式（见下方「部署位置的三层约束」再定，别只看"免不免备案"）
   - [ ] 域名 + HTTPS

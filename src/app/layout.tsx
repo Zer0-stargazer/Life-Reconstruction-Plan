@@ -17,6 +17,10 @@ const notoSerifSC = Noto_Serif_SC({
 });
 
 export const metadata: Metadata = {
+  // OG / Twitter 卡片图片要拼绝对地址，不设 metadataBase 时 Next 会回退到
+  // http://localhost:3000 并在 build 时告警。部署后把 NEXT_PUBLIC_SITE_URL
+  // 配成真实域名即可（本地随便给个能解析的地址，只为消掉警告）。
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:5000"),
   title: {
     default: "人生重构计划",
     template: "%s | 人生重构计划",
