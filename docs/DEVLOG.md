@@ -302,9 +302,38 @@ README / AGENTS / PROJECT-BRIEF / 接手文档 / DEVLOG 这五份；历史提交
 
 ---
 
+## 2026-10-11（续）｜ 数据库：库已建，卡在"验证不了"
+
+**主题**：主人说 Supabase 生产库已建、密钥还在。于是把"建表是否齐全"做成可执行清单，
+但本机连不上实例，验证这一步被网络卡住。
+
+- **确认配置正确**：`.env.local` 三件套齐全，`SUPABASE_URL` 是纯 base URL
+  （0 处错加成 `/rest/v1`）——当初 `API URL.txt` 那份带后缀的确实不是应用要的。
+- **新增体检脚本**（`d484a37`）：
+  - `scripts/check-supabase.ts` → `pnpm check:db`：探 10 项表/列、4 个 RPC
+    （`consume_ai_credit` / `refund_ai_credit` / `hit_rate_limit` / `admin_adjust_credits`，
+    都是代码里 `.rpc()` 实际调用的）、`app_settings` 两个开关种子、各表行数。
+  - `scripts/check-supabase.sql`：同一份清单的 SQL 版，Dashboard → SQL Editor 粘贴即用。
+- **本机连不上，且已排除"是本项目问题"**：到所有 `*.supabase.co` 项目域名都
+  TLS 握手失败（curl exit 35，`schannel: failed to receive handshake`）。
+  对照实验：不存在的子域 `zzzqqqnotareal999.supabase.co` 同样失败，
+  `api.supabase.com` 正常 401、`example.com` / `cloudflare.com` 200。
+  代理隧道能建立（`CONNECT ... 200`），直连、强制 IP、`--tlsv1.2`、`--http1.1`、
+  80 端口全部 000。→ **是出网放行列表里没有 Supabase 项目域名，跟库无关。**
+
+**经验**：以后遇到"连不上外部服务"，先拿一个同域名的随机子域做对照。
+如果随机子域也失败、同站其他域名却正常，那 100% 是网络放行问题，
+不要继续往"配置错了 / 服务没开 / 建表缺失"的方向查——这条排查走了四五轮才收住。
+对这种注定会在别的机器上跑的校验，写成 SQL 版比只写 Node 版更有用：
+用户在 Dashboard 里粘贴一次就能拿到结果，不依赖任何本机网络。
+
+---
+
 ## 附录 B · 未决事项（承接 ROADMAP）
 
-- Supabase 三件套配置 + 存量环境重跑 schema.sql（额度制列）。
+- ~~Supabase 三件套配置~~（项目已建、env 已填）；**剩下：验证建表齐全**
+  （`pnpm check:db` 或 Dashboard 跑 `scripts/check-supabase.sql`），
+  以及存量环境重跑 schema.sql（额度制列）——两个脚本都幂等，验出缺再执行。
 - 职业数据：~~888 目标是否继续扩容待定~~（2026-10-11 已达成，资源 888/888 全覆盖）。
 - 统一卡片体系 / 容器宽度 / 色板收敛（需视觉迭代）。
 - admin 统一会话、限流持久化、AI 多协议实测；测试仅覆盖职业资源（auth/AI 流程待补）。

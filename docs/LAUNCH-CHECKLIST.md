@@ -10,13 +10,19 @@
 
 ### 1. 生产环境从零到一 ⬜
 
-- [ ] **Supabase 三件套**（0.5 天）
-  - [ ] Supabase 建项目（Dashboard）
-  - [ ] SQL Editor 重跑 `supabase/schema.sql`（2026-10-03 起含额度制列 `ai_credits`/`ai_credit_logs`，脚本可重复执行）
-  - [ ] SQL Editor 执行 `supabase/migrations/2026-10-10-batch5-admin.sql`（ai_usage_logs + app_settings，幂等）
-  - [ ] 复制 URL / anon key / service_role key → 填 `.env.local` 与生产平台环境变量
-  - [ ] 本地实测：注册 → 登录 → /admin 建码（含 AI 次数）→ 兑换 → AI 余额到账
-  - 说明：未配置时登录/兑换/后台/内置 AI 均不可用（BYOK 不受影响）
+- [x] Supabase 建项目（Dashboard）—— **✅ 2026-10-11 已完成**
+- [x] 复制 URL / anon key / service_role key → `.env.local` —— **✅ 已填齐**（URL 为纯 base URL）
+- [ ] **验证建表齐全**（差这一步，2026-10-11）
+  - 网络通：`pnpm check:db`（探 10 项表/列 + 4 个 RPC + 2 个开关种子 + 行数）
+  - 网络不通：Dashboard → SQL Editor → 粘贴 `scripts/check-supabase.sql`（同一份清单，只读）
+  - ⚠️ 本机（Windows，走 `https_proxy=127.0.0.1:1779`）到所有 `*.supabase.co` 项目域名
+    TLS 握手失败，不存在的子域对照同样失败，`api.supabase.com` 却正常 401
+    → 是出网放行问题，**别再往"配置错了/库没建"的方向查**
+- [ ] 若体检报缺：SQL Editor 执行 `supabase/schema.sql`（幂等，含额度制列
+      `ai_credits`/`ai_credit_logs`）+ `supabase/migrations/2026-10-10-batch5-admin.sql`
+      （ai_usage_logs + app_settings + dev_sessions，幂等）。已建过再跑一遍无副作用
+- [ ] 本地实测：注册 → 登录 → /admin 建码（含 AI 次数）→ 兑换 → AI 余额到账
+- 说明：未配置时登录/兑换/后台/内置 AI 均不可用（BYOK 不受影响）
 - [ ] **生产构建验证**（0.5 小时，必须做）
   - [ ] 停掉 dev server → `pnpm build` → `pnpm start` 全路由走查
   - 说明：全部改动至今只在 dev server 上验证过；build 会暴露 dev 模式掩盖的问题
