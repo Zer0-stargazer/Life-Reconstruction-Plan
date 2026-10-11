@@ -69,6 +69,7 @@ const ALL_MODULES = [
   "/simulation",
   "/windows",
   "/luck",
+  "/health",
 ];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

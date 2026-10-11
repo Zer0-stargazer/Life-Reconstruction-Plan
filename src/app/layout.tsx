@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s | 人生重构计划",
   },
   description:
-    "基于AI的人生规划与决策辅助工具。从姓名、职业、规律、窗口、努力、运气、命运七大维度重构你的未来。",
+    "基于AI的人生规划与决策辅助工具。从姓名、职业、规律、窗口、努力、运气、命运、健康八大维度重构你的未来。",
   keywords: [
     "人生规划",
     "命运",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     siteName: "人生重构计划",
     title: "人生重构计划 · 不是算命，是算概率",
     description:
-      "七个模块 + 一条时间轴，用数据、概率和规则重新整理你手里的牌。",
+      "八个模块 + 一条时间轴，用数据、概率和规则重新整理你手里的牌。",
     images: [
       {
         url: "/og.png",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "人生重构计划 · 不是算命，是算概率",
     description:
-      "七个模块 + 一条时间轴，用数据、概率和规则重新整理你手里的牌。",
+      "八个模块 + 一条时间轴，用数据、概率和规则重新整理你手里的牌。",
     images: ["/og.png"],
   },
 };

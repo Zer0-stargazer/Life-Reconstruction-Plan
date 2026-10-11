@@ -26,6 +26,7 @@ const modules = [
   { name: '努力', path: '/simulation', icon: '05' },
   { name: '运气', path: '/luck', icon: '06' },
   { name: '命运', path: '/destiny', icon: '07' },
+  { name: '健康', path: '/health', icon: '08' },
 ];
 
 // ---- AI provider types ----

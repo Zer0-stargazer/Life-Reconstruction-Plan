@@ -40,11 +40,11 @@ const CHAPTER_SECTIONS = CHAPTERS.map((chapter, index) => ({
 
 const HERO_STATS = [
   { en: 'Windows', value: WINDOW_DENSITY_META.total, zh: '扇人生窗口' },
-  { en: 'Dimensions', value: 7, zh: '大决策维度' },
+  { en: 'Dimensions', value: MODULE_IDENTITIES.length, zh: '大决策维度' },
   { en: 'Careers', value: careers.length, zh: '个职业画像' },
 ];
 
-const MARQUEE_WORDS = ['姓名', '职业', '规律', '窗口', '努力', '运气', '命运', 'DECISION ATLAS'];
+const MARQUEE_WORDS = ['姓名', '职业', '规律', '窗口', '努力', '运气', '命运', '健康', 'DECISION ATLAS'];
 
 const MANIFESTO_DIMENSIONS = [
   { zh: '姓名', en: 'Name' },
@@ -54,6 +54,7 @@ const MANIFESTO_DIMENSIONS = [
   { zh: '努力', en: 'Effort' },
   { zh: '运气', en: 'Luck' },
   { zh: '命运', en: 'Destiny' },
+  { zh: '健康', en: 'Health' },
 ];
 
 const faqs = [
@@ -380,7 +381,7 @@ export default function HomePage() {
               是一个基于概率和数据的决策框架。我们不预测未来，我们帮你计算概率、识别窗口。
             </p>
             <p className="mt-8 max-w-2xl text-[15px] leading-[1.9] text-muted-foreground">
-              从姓名、职业、规律、窗口、努力、运气、命运七大维度，重新整理你手里的牌。
+              从姓名、职业、规律、窗口、努力、运气、命运、健康八大维度，重新整理你手里的牌。
             </p>
             <blockquote className="mt-12 border-l border-primary pl-6">
               <p className="font-serif text-lg leading-[1.9] text-foreground/80">

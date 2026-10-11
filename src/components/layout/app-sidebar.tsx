@@ -26,6 +26,7 @@ import { SealMark } from '@/components/shared/seal-mark';
 import {
   CareerIcon,
   DestinyIcon,
+  HealthIcon,
   LawsIcon,
   LuckIcon,
   NameIcon,
@@ -48,6 +49,7 @@ const chapterItems: Record<string, { href: string; label: string; icon: NavIcon 
   '/laws': { href: '/laws', label: '规律', icon: LawsIcon },
   '/luck': { href: '/luck', label: '运气', icon: LuckIcon },
   '/simulation': { href: '/simulation', label: '努力', icon: SimulationIcon },
+  '/health': { href: '/health', label: '健康', icon: HealthIcon },
   '/destiny': { href: '/destiny', label: '命运', icon: DestinyIcon },
 };
 

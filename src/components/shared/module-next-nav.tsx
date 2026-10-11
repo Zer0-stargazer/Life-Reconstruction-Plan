@@ -9,10 +9,10 @@ import { type ModuleIconComponent } from './module-icons';
 import { Reveal } from './reveal';
 
 /**
- * 阅读路径：时间轴 → 01 名字 → 02 职业 → … → 07 命运 → 回到时间轴。
+ * 阅读路径：时间轴 → 01 名字 → 02 职业 → … → 07 命运 → 08 健康 → 回到时间轴。
  *
  * 以前每个模块页是"信息孤岛"——看完一个不知道下一个该看什么，
- * 于是整站看起来就是一堆散着的卡片。这里把七个模块串成一条能走完的路。
+ * 于是整站看起来就是一堆散着的卡片。这里把八个模块串成一条能走完的路。
  *
  * 新增模块只改 module-identity.ts，这条路径自动跟上。
  */
@@ -84,7 +84,7 @@ export function ModuleNextNav() {
         <Reveal>
           <div className="mb-4 flex items-baseline gap-2.5">
             <span className="font-mono text-[10px] tracking-[0.15em] text-primary/70">NEXT</span>
-            <span className="text-xs text-muted-foreground">按顺序走完七个模块，就是一次完整的自我盘点</span>
+            <span className="text-xs text-muted-foreground">按顺序走完八个模块，就是一次完整的自我盘点</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <TrailCard step={prev} dir="prev" />

@@ -6,22 +6,24 @@ import {
   SimulationIcon,
   LuckIcon,
   DestinyIcon,
+  HealthIcon,
   TimeIcon,
   type ModuleIconComponent,
 } from '@/components/shared/module-icons';
 import { LAW_DIMENSIONS } from '@/data/laws';
 import { WINDOW_DENSITY_META } from '@/data/window-density';
 import { CAREER_COUNT } from '@/data/career-count';
+import { HEALTH_ALL_ITEMS } from '@/data/health';
 
 /**
- * 七个模块的「视觉身份」——全站唯一真源。
+ * 八个模块的「视觉身份」——全站唯一真源。
  *
  * 以前模块名/编号/图标/配色散落在首页、侧栏、各页面头部，
  * 加一个模块要改四五处，改着改着就不一致了。
  * 新增模块只改这里。
  */
 export interface ModuleIdentity {
-  /** 编号，01–07 */
+  /** 编号，01–08 */
   tag: string;
   href: string;
   title: string;
@@ -131,12 +133,25 @@ export const MODULE_IDENTITIES: ModuleIdentity[] = [
     ring: 'group-hover:border-foreground/30',
     tagColor: 'text-foreground/60',
   },
+  {
+    tag: '08',
+    href: '/health',
+    title: '健康',
+    question: '身体这台机器，哪个零件正在悄悄磨损？',
+    desc: '体检、睡眠、饮食、运动、精力、情绪——7 个子域，一次自评照出最该先补的短板。',
+    metric: String(HEALTH_ALL_ITEMS.length),
+    unit: '条信号',
+    icon: HealthIcon,
+    iconGradient: 'bg-foreground/5 text-foreground',
+    ring: 'group-hover:border-foreground/30',
+    tagColor: 'text-foreground/60',
+  },
 ];
 
-/** 时间轴：个性化主线入口，不属于七大模块，编号为 ★ */
+/** 时间轴：个性化主线入口，不属于八大模块，编号为 ★ */
 export const TIMELINE_IDENTITY = {
   href: '/me',
-  /** 编号注记（不是 01–07，是 ★，所以单独放这里，避免页面里手写） */
+  /** 编号注记（不是 01–08，是 ★，所以单独放这里，避免页面里手写） */
   tag: '★',
   /** 页头右上注记 */
   note: '时间轴',
@@ -146,13 +161,14 @@ export const TIMELINE_IDENTITY = {
   iconGradient: 'bg-foreground/5 text-foreground',
 };
 
-/** 序章 + 五章 + 终章的目录结构，侧栏、首页目录、模块页头共用 */
+/** 序章 + 六章 + 终章的目录结构，侧栏、首页目录、模块页头共用 */
 export const CHAPTERS: { num: string; title: string; hrefs: string[] }[] = [
   { num: '序', title: '你现在几岁', hrefs: ['/me'] },
   { num: '壹', title: '你在哪', hrefs: ['/windows'] },
   { num: '贰', title: '你的底色', hrefs: ['/name', '/career'] },
   { num: '叁', title: '看不见的齿轮', hrefs: ['/laws', '/luck'] },
   { num: '肆', title: '你能改什么', hrefs: ['/simulation'] },
+  { num: '伍', title: '你的硬件', hrefs: ['/health'] },
   { num: '终', title: '一页手记', hrefs: ['/destiny'] },
 ];
 

@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: '人生重构计划 · LIFE RECONSTRUCTION PLAN',
     short_name: '人生重构',
     description:
-      '七个模块拆解人生：名字、职业、规律、窗口、努力、运气、命运。不是算命，是算概率。',
+      '八个模块拆解人生：名字、职业、规律、窗口、努力、运气、命运、健康。不是算命，是算概率。',
     start_url: '/',
     display: 'standalone',
     background_color: '#faf6ee',

@@ -12,6 +12,7 @@ const TRACKABLE_PATHS = [
   '/simulation',
   '/windows',
   '/luck',
+  '/health',
 ];
 
 /**

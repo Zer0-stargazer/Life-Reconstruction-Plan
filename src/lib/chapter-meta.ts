@@ -10,6 +10,7 @@ export const CHAPTER_META: Record<string, { en: string; lede: string }> = {
   贰: { en: 'CHAPTER II', lede: '名字与职业，是你带到牌桌上的底色。' },
   叁: { en: 'CHAPTER III', lede: '那些在暗处转动的齿轮，以及概率里的运气。' },
   肆: { en: 'CHAPTER IV', lede: '哪些事是你能动手改的，改了会怎样。' },
+  伍: { en: 'CHAPTER V', lede: '你手里所有的牌，都得有一副能扛的身体来打。' },
   终: { en: 'EPILOGUE', lede: '把以上叠起来，看清手里的牌面。' },
 };
 

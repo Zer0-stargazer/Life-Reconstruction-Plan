@@ -764,7 +764,7 @@ export default function MePage() {
         <div className="relative w-full max-w-6xl mx-auto px-6 sm:px-8 pt-5 sm:pt-6 pb-8 sm:pb-10">
           {/* HUD 行 */}
           <div className="flex items-center gap-3 mb-5 sm:mb-6 animate-fade-in-up">
-            {/* ★ 不是 01–07，从 module-identity 取，别手写编号 */}
+            {/* ★ 不是 01–08，从 module-identity 取，别手写编号 */}
             <span className="text-[10px] tracking-[0.2em] text-primary/70 shrink-0">
               {TIMELINE_IDENTITY.tag} {TIMELINE_IDENTITY.note}
             </span>

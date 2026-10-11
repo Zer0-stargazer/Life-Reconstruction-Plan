@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { MOTION, gsap, prefersReducedMotion, registerGsap } from '@/lib/motion';
 
 /**
- * 七个模块页的统一页头：章节大号朱砂数字 + 英文小标 + 大标题 + 一句问题 + 细线与印点。
+ * 八个模块页的统一页头：章节大号朱砂数字 + 英文小标 + 大标题 + 一句问题 + 细线与印点。
  *
  * 编号、问题、章节全部从 `module-identity.ts` 取，页面只提供自己特有的部分。
  * 页面仍可自定义大标题与描述——「人生规律引擎」这类产品文案不该被「规律」两个字替换掉。
@@ -119,7 +119,7 @@ export function ModulePageHead({
             className="relative h-2.5 w-2.5 shrink-0 rounded-[1px] bg-primary"
           />
           <span className="relative ml-auto bg-card pl-4 font-serif text-[11px] tabular-nums tracking-[0.2em] text-muted-foreground">
-            {m.tag} / 07
+            {m.tag} / 08
           </span>
         </div>
 

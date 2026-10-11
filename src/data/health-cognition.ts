@@ -1,0 +1,27 @@
+import type { HealthSignal } from './health';
+
+/**
+ * 认知情绪（cognition）—「情绪成本与大脑保养」
+ * 18 条。只写主流心理学/神经科学共识范围内的常识性建议，
+ * 不写诊断结论、不替代就医；涉及抑郁/焦虑倾向一律引导「就医」而非自诊。
+ */
+export const HEALTH_COGNITION_ITEMS: HealthSignal[] = [
+  { id: 'cg-01', domain: 'cognition', name: '情绪稳定性', description: '情绪的大幅、频繁波动会消耗精力并影响判断和关系。', metric: '情绪波动程度', healthyRange: '情绪大致平稳，能自我调节', warning: '长期起伏剧烈，已影响工作或生活', strategies: ['规律作息、运动、见光都能稳定情绪基线', '学会识别情绪触发点，提前应对', '重大压力期主动寻求支持', '长期情绪失控应就医或寻求心理帮助'], tag: 'risk', intensity: 4 },
+  { id: 'cg-02', domain: 'cognition', name: '焦虑水平', description: '适度焦虑有助于行动，持续过高的焦虑则损害睡眠、专注和健康。', metric: '焦虑程度与频率', healthyRange: '偶有焦虑，能自行平复', warning: '长期焦虑、难以自控、影响生活', strategies: ['用呼吸、运动、规律作息缓解焦虑', '把担忧写下来、拆解成可行动的小步', '减少无止境地刷信息带来的情绪刺激', '焦虑持续影响生活应就医或寻求心理咨询'], tag: 'risk', intensity: 4 },
+  { id: 'cg-03', domain: 'cognition', name: '情绪低落', description: '持续的情绪低落、失去兴趣和愉悦感，是需要认真对待的信号。', metric: '低落持续时间与程度', healthyRange: '偶有低落，能恢复', warning: '持续两周以上低落、兴趣减退', strategies: ['持续两周以上的低落和兴趣丧失应就医评估', '维持规律作息、运动和社交，别自我隔离', '不要用"想开点"苛责自己', '抑郁是可治疗的，求助不是软弱'], tag: 'risk', intensity: 5 },
+  { id: 'cg-04', domain: 'cognition', name: '注意力与专注', description: '注意力涣散、容易分心常与睡眠、压力和过度使用屏幕相关。', metric: '日常注意力水平', healthyRange: '能维持日常工作所需的专注', warning: '长期注意力严重涣散、影响生产力', strategies: ['优先改善睡眠——注意力最直接受其影响', '减少手机和通知的持续干扰', '用"单任务+短休息"的节奏训练专注', '明显且持续的分心可就医排查'], tag: 'watch', intensity: 4 },
+  { id: 'cg-05', domain: 'cognition', name: '记忆力', description: '偶发健忘常见也多为正常，但持续明显的记忆下降值得关注。', metric: '记忆下降程度', healthyRange: '偶有遗忘，不影响功能', warning: '持续、明显遗忘且影响日常', strategies: ['睡眠、运动、社交是保护记忆的三大支柱', '持续学习新技能维持大脑可塑性', '偶发健忘不焦虑，明显下降要就医', '控制心血管风险等于保护大脑'], tag: 'watch', intensity: 3 },
+  { id: 'cg-06', domain: 'cognition', name: '认知负荷与多任务', description: '长期多任务和信息轰炸会削弱专注力和深度思考能力。', metric: '信息/任务过载程度', healthyRange: '任务和信息量大致可控', warning: '长期被信息和任务淹没', strategies: ['主动做减法，减少同时处理的事', '设定信息摄入边界，定时查看而非随时刷', '给大脑留出空白和深度思考的时间', '减少决策次数，为重要决策省下脑力'], tag: 'watch', intensity: 3 },
+  { id: 'cg-07', domain: 'cognition', name: '社会连接', description: '孤独对健康的伤害堪比吸烟，稳定的社会连接是认知和情绪的保护因素。', metric: '社会连接质量', healthyRange: '有可依靠的关系和互动', warning: '长期孤独、缺乏深度连接', strategies: ['主动维护重要关系，别等有空才联系', '质量高于数量——深度连接最护脑护心', '参与社群或集体活动', '长期孤独应主动寻求改变，别默默忍受'], tag: 'risk', intensity: 4 },
+  { id: 'cg-08', domain: 'cognition', name: '压力管理', description: '慢性压力会损害睡眠、免疫、心血管和认知，关键在于能否恢复。', metric: '慢性压力水平', healthyRange: '压力可承受且有恢复', warning: '长期高压且无恢复', strategies: ['识别压力的来源，能改的改，改不了的调整应对', '运动、呼吸、社交是有效的减压途径', '主动安排恢复，而非硬扛到崩溃', '长期高压导致身心症状应就医'], tag: 'risk', intensity: 4 },
+  { id: 'cg-09', domain: 'cognition', name: '睡眠与情绪', description: '睡眠和情绪互相影响：睡不好让情绪更差，情绪差又更难睡好。', metric: '睡眠对情绪的影响', healthyRange: '睡眠大致稳定、情绪平稳', warning: '互相拖累的恶性循环', strategies: ['优先稳住睡眠，情绪往往随之改善', '睡前减少情绪刺激和反刍', '规律作息是情绪稳定的地基', '长期失眠伴情绪问题应就医'], tag: 'watch', intensity: 3 },
+  { id: 'cg-10', domain: 'cognition', name: '反刍与过度思虑', description: '反复咀嚼负面想法、过度担忧，是消耗精力和加剧低落的重要机制。', metric: '反刍/思虑频率', healthyRange: '能觉察并放下反复的念头', warning: '长期陷入反复思虑难以自拔', strategies: ['给担忧设"专门时段"，其余时间觉察并放下', '把念头写下来，把它从脑中移出去', '用行动打断反刍——去做一件小事', '持续反刍影响生活可寻求心理帮助'], tag: 'watch', intensity: 3 },
+  { id: 'cg-11', domain: 'cognition', name: '屏幕与注意力', description: '持续刷手机和短视频在碎片化注意力的同时，也消耗情绪和睡眠。', metric: '每日屏幕时间与使用方式', healthyRange: '屏幕时间可控、以主动使用为主', warning: '大量无意识刷屏、影响睡眠和专注', strategies: ['关闭非必要通知，减少被动刷屏', '设定屏幕使用时间，尤其在睡前', '用主动的娱乐替代被动滑动', '留意刷屏后的情绪——常是空虚和疲惫'], tag: 'watch', intensity: 3 },
+  { id: 'cg-12', domain: 'cognition', name: '持续学习', description: '学习新技能是维持认知储备、延缓衰退的有效方式。', metric: '学习新事物的频率', healthyRange: '经常接触新知识或技能', warning: '长期不学习新东西', strategies: ['持续学习新技能可提升认知储备', '语言、乐器、新运动都是好的选择', '保持好奇心，主动接触新领域', '学习本身就是大脑的保养'], tag: 'good', intensity: 3 },
+  { id: 'cg-13', domain: 'cognition', name: '情绪表达与求助', description: '把情绪合理表达出来、在需要时求助，比一味压抑更健康。', metric: '情绪表达与求助习惯', healthyRange: '能表达情绪、必要时求助', warning: '长期压抑情绪、从不求助', strategies: ['给情绪合适的出口：倾诉、书写、运动', '需要时寻求朋友、家人或专业帮助', '压抑不能消化情绪，只会累积', '求助是成熟的表现，不是负担别人'], tag: 'watch', intensity: 3 },
+  { id: 'cg-14', domain: 'cognition', name: '正念与放松', description: '规律的正念或放松练习能降低压力、改善情绪和专注。', metric: '正念/放松练习频率', healthyRange: '有规律的放松或正念习惯', warning: '从不放松、长期紧绷', strategies: ['每天几分钟呼吸或正念练习即有效', '把放松融入日常：散步、深呼吸、冥想', '温和拉伸和渐进式肌肉放松同样有效', '关键是规律，而非每次都做很久'], tag: 'watch', intensity: 2 },
+  { id: 'cg-15', domain: 'cognition', name: '意义感与目标', description: '清晰的意义感和生活目标与更好的心理健康和更低的死亡风险相关。', metric: '意义感/目标清晰度', healthyRange: '大致清楚自己想要什么', warning: '长期感到空虚、没有方向', strategies: ['花时间想清楚对自己真正重要的事', '把长期目标拆成近期可行动的小步', '意义感来自投入，而非等它出现', '长期空虚感值得认真对待'], tag: 'watch', intensity: 3 },
+  { id: 'cg-16', domain: 'cognition', name: '成瘾性行为', description: '对酒精、尼古丁、游戏、赌博等的依赖，会侵蚀健康和情绪。', metric: '成瘾性行为程度', healthyRange: '无行为依赖', warning: '难以自控的依赖并影响生活', strategies: ['警惕"停不下来"的信号', '依赖影响生活时应主动求助', '用健康的行为替代成瘾性行为', '成瘾是健康问题，不是单纯意志力问题'], tag: 'watch', intensity: 4 },
+  { id: 'cg-17', domain: 'cognition', name: '情绪与身体健康', description: '情绪与身体是双向的：长期情绪问题会显化为躯体症状，反之亦然。', metric: '情绪-身体互动的觉察', healthyRange: '能觉察情绪与身体反应的关联', warning: '长期情绪问题被忽视成躯体不适', strategies: ['身体反复不适却查不出原因时，考虑情绪因素', '规律运动同时改善情绪和身体', '不要割裂地看情绪和身体', '身心同治往往才是最有效的路径'], tag: 'watch', intensity: 3 },
+  { id: 'cg-18', domain: 'cognition', name: '认知保护与就医', description: '对认知和情绪问题的科学认知与及时就医，本身就是一种保护。', metric: '对心理健康的认知与行动', healthyRange: '了解基本知识，问题出现时及时求助', warning: '讳疾忌医、对心理问题污名化', strategies: ['把心理健康和身体健康同等对待', '出现持续的症状及时就医，别拖延', '了解常见问题的基本知识，减少误解', '科学求助是对自己最负责的选择'], tag: 'watch', intensity: 4 },
+];

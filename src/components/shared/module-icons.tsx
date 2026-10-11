@@ -145,3 +145,14 @@ export function DestinyIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+/** 健：一颗手画的心，心口横过一道脉搏线 */
+export function HealthIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...BASE} {...props}>
+      <path d="M12 20.3C7.7 17.2 4.3 14.2 4.3 10.5C4.3 7.7 6.3 5.9 8.6 5.9C10.2 5.9 11.4 6.9 12 8C12.6 6.9 13.8 5.9 15.4 5.9C17.7 5.9 19.7 7.7 19.7 10.5C19.7 14.2 16.3 17.2 12 20.3Z" />
+      <path d="M6.4 11.1H9.1L10.5 8.9L12.4 13.5L13.8 11.1H17.6" opacity="0.75" />
+      <InkDot />
+    </svg>
+  );
+}
