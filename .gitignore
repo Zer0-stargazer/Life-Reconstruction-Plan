@@ -85,6 +85,16 @@ Desktop.ini
 .tmp/
 .temp/
 
+# 明文凭据草稿目录（2026-10-11 已清理，留规则防止再次被 `git add -A` 带进来）
+# 配置一律写 .env.local；Supabase 的 URL/key/令牌/数据库密码不要放进仓库
+_dbsetup/
+dbsetup-*/
+
+# 临时审计脚本与输出：一次性检查用完即删，不入库
+scripts/_*.ts
+scripts/_*.mjs
+*-urls.txt
+
 # Optional files
 *.tgz
 *.gz

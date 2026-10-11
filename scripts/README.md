@@ -1,5 +1,22 @@
 # scripts/
 
+## check-career-resources.ts
+
+职业资源体检（只读，不写文件）：覆盖率 / 孤儿键 / 链接协议。
+
+```bash
+pnpm check:resources
+```
+
+- **覆盖率**：888 个职业是否都有专属资源（新增职业忘配资源是静默发生的，页面上看不出来）
+- **孤儿键**：`career-resources.ts` 里有没有写了不存在的职业名（拼错就永远命中不到）
+- **链接**：必须 https；疑似搜索页/平台首页会被标出（`bilibili.com/search?keyword=x` 这类
+  "看起来像链接但没内容"的地址，2026-09 刚清理过一批）
+
+退出码 0 = 全通过，1 = 有问题（明细打印在上方）。
+由 2026-10-10 补资源时的临时脚本 `_cov.ts` / `_orph.ts` 合并而来——那批脚本当时说
+"跑完即删"，但这两项检查每次改职业数据都要跑，所以留成正经脚本，临时文件已清。
+
 ## archive/
 
 > 2026-09-28：原先的 `prepare.sh / dev.sh / build.sh / start.sh / validate.sh`
