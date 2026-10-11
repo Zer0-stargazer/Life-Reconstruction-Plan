@@ -129,8 +129,10 @@ shadcn/ui 组件在 `src/components/ui/`, 不要从外部引入新 UI 库。如�
 
 ### 职业数据 (careers.ts, 192KB)
 
-- **757** 个职业对象, 类型: `Career`
-  （2026-09-26 去重 1539→1535；2026-09-28 移除 778 条机器生成模板条目 → **757**，历史数据在 git `f8edce0` / `8945efe`）
+- **888** 个职业对象, 类型: `Career`
+  （2026-09-26 去重 1539→1535；2026-09-28 移除 778 条机器生成模板条目 → 757；
+  2026-10-10 新增 131 个现代职业 → **888**。历史数据在 git `f8edce0` / `8945efe`）
+- 职业总数常量在 `data/career-count.ts`（由 `career-count.test.ts` 断言与 `careers.length` 一致，改数据要同步）
 - 每个职业含 `salary` / `trend` / `aiRisk` / `selfStudyScore` / `keySkill`；
   学习资源：职业专属在 `data/resources/*.ts`（按类别拆分，合并入口 `data/career-resources.ts`），无专属时回落到分类（`getTutorials` / `getBooks` / `getLearningChannels`）
 - **新增职业资源**：只能填 curl 实测 200/403 的 https 链接，不要写搜索页；格式见 `career-resources.ts` 头注释；新文件要在合并入口 import 并展开；`pnpm test` 会校验
@@ -138,7 +140,7 @@ shadcn/ui 组件在 `src/components/ui/`, 不要从外部引入新 UI 库。如�
 
 ### 规律数据 (laws-*.ts)
 
-- 8 个文件各 36 条, 共 288 条
+- 8 个文件, 共 **267** 条（2026-10-10 删掉两组同名重复条目：269→267；各文件条数不等，不是整齐的 36×8）
 - `laws.ts` 是聚合入口, 从各子文件 import
 - 标签: `critical` / `danger` / `opportunity` / `neutral`
 - 每条含 `intensity`(1-5) / `breakthrough`(挽回概率%) / `strategies[]`，`/laws` 的聚焦层按
@@ -151,10 +153,21 @@ shadcn/ui 组件在 `src/components/ui/`, 不要从外部引入新 UI 库。如�
 
 ### 人生窗口 (windows.ts, 240KB)
 
-- **473** 个窗口（2026-09-26 已去重，原 7 组重名）, 按 `age` 字段分组；文件含两批格式：
+- **488** 个窗口（2026-09-26 去重 479→473，原 7 组重名；2026-10-10 补 15 个现代窗口 → 488）, 按 `age` 字段分组；文件含两批格式：
   顶格单行批（原始 id 1-365）+ 缩进多行批（id 366-479，内容更详细），批量处理脚本需同时兼容两种格式
 - `status`: current/past/future/elite
 - `/me` 的「正在开启」聚焦层按 `lockForceScore` 降序取 3 条
+
+### 健康数据 (health.ts + health-*.ts)
+
+- `health.ts` 是聚合入口（导出 `HEALTH_ALL_ITEMS` / 评分纯函数），
+  7 个子域文件各 18 条 = **126** 条：`health-checkup` / `health-sleep-cycle` /
+  `health-sleep-quality` / `health-diet` / `health-exercise` / `health-energy` / `health-cognition`
+- 字段：`name` / `description` / `metric` / `healthyRange` / `warning` / `strategies` /
+  `tag`(`risk|watch|good|neutral`) / `intensity`(1-5)
+- 评分函数：`tierOf` / `scoreDomains` / `overallScore` / `weakestDomains` / `keySignals`（纯函数，无副作用）
+- **内容红线**：只写主流医学与运动科学共识范围内的常识性建议，
+  **不写诊断结论、不替代就医**；涉及症状一律引导就医（页面与 AI 提示词都有边界说明）
 
 ## 踩坑记录（2026-07 原版，经验仍有效）
 
