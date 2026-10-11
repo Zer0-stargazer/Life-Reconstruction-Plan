@@ -12,16 +12,13 @@
 
 - [x] Supabase 建项目（Dashboard）—— **✅ 2026-10-11 已完成**
 - [x] 复制 URL / anon key / service_role key → `.env.local` —— **✅ 已填齐**（URL 为纯 base URL）
-- [ ] **验证建表齐全**（差这一步，2026-10-11）
-  - 网络通：`pnpm check:db`（探 10 项表/列 + 4 个 RPC + 2 个开关种子 + 行数）
-  - 网络不通：Dashboard → SQL Editor → 粘贴 `scripts/check-supabase.sql`（同一份清单，只读）
-  - ⚠️ 本机（Windows，走 `https_proxy=127.0.0.1:1779`）到所有 `*.supabase.co` 项目域名
-    TLS 握手失败，不存在的子域对照同样失败，`api.supabase.com` 却正常 401
-    → 是出网放行问题，**别再往"配置错了/库没建"的方向查**
-- [ ] 若体检报缺：SQL Editor 执行 `supabase/schema.sql`（幂等，含额度制列
-      `ai_credits`/`ai_credit_logs`）+ `supabase/migrations/2026-10-10-batch5-admin.sql`
-      （ai_usage_logs + app_settings + dev_sessions，幂等）。已建过再跑一遍无副作用
+- [x] **验证建表齐全** —— ✅ 2026-10-12：Dashboard → SQL Editor 跑 `scripts/check-supabase.sql`，
+      **16 项全 ✅**（10 项表/列 + 4 个 RPC + 2 个开关种子）。库是空库
+      （app_users 0 / invite_codes 0），没有存量数据要迁移，直接可用
 - [ ] 本地实测：注册 → 登录 → /admin 建码（含 AI 次数）→ 兑换 → AI 余额到账
+  - ⚠️ 注意：本机到 `*.supabase.co` 被出网放行拦着（见 DEVLOG 2026-10-11），如果
+    dev 起来后注册/登录报 500 或 `fetch failed`，先别查代码——大概率是同一网络问题，
+    在代理软件里给 `supabase.co` 加规则（或开全局/TUN 模式）再试
 - 说明：未配置时登录/兑换/后台/内置 AI 均不可用（BYOK 不受影响）
 - [ ] **生产构建验证**（0.5 小时，必须做）
   - [ ] 停掉 dev server → `pnpm build` → `pnpm start` 全路由走查

@@ -329,6 +329,25 @@ README / AGENTS / PROJECT-BRIEF / 接手文档 / DEVLOG 这五份；历史提交
 
 ---
 
+## 2026-10-12 ｜ 数据库验证通过：16 项全 ✅
+
+主人按 SQL 版在 Dashboard 跑了 `scripts/check-supabase.sql`，截图回传：
+
+- **表与列 10 项全 ✅**（含 `app_users.ai_credits` / `ai_credits_total` / `invite_codes.ai_credits`
+  三个额度制列——老库最容易漏的就是它们，这个库没漏）
+- **RPC 4 个全 ✅**：`consume_ai_credit` / `refund_ai_credit` / `hit_rate_limit` / `admin_adjust_credits`
+- **开关种子 ✅**：`builtin_ai_enabled = true`、`redeem_enabled = true`
+- **行数**：全空库（app_users 0 / invite_codes 0 / ai_credit_logs 0），
+  只有 `app_settings` 2 行种子和 `rate_limits` 3 行历史限流桶。**无存量数据要迁移**，
+  上线时第一批邀请码要现场建。
+
+结论：**上线硬门槛第 1 条里"数据库"这一半完成了**。剩：本地闭环手测
+（注册→登录→建码→兑换→余额到账），以及注意本机网络放行问题可能同样影响
+dev server 的服务端 fetch（Next.js/undici 默认不走 `https_proxy` 环境变量，
+若直连也被拦，注册会报 `fetch failed`——届时在代理软件加 `supabase.co` 规则或开 TUN）。
+
+---
+
 ## 附录 B · 未决事项（承接 ROADMAP）
 
 - ~~Supabase 三件套配置~~（项目已建、env 已填）；**剩下：验证建表齐全**
