@@ -435,4 +435,50 @@ export async function* streamChatAuto(
   }
 }
 
+/**
+ * 主源 + 备用源的容错入口。
+ *
+ * 语义：只有主源**在产出任何内容之前**就失败（HTTP 错误 / 连接失败 / 空响应）才切备用源。
+ * 一旦主源已吐出正文或思维链，就不再切换——否则会把两段不同来源的正文拼接给用户。
+ *
+ * - 主源抛异常（多为超时 abort、客户端断开、网络错误）不在此处吞掉，原样上抛，
+ *   交给 analyze 路由按既有错误路径处理（超时文案、退还额度）。
+ * - fallback 为 null 时行为与 streamChatAuto 完全一致。
+ */
+export async function* streamChatWithFallback(
+  messages: { role: string; content: string }[],
+  primary: ResolvedAiSource,
+  fallback: ResolvedAiSource | null,
+  options?: { temperature?: number; signal?: AbortSignal }
+): AsyncGenerator<StreamChunk> {
+  if (!fallback || fallback.kind === "invalid") {
+    yield* streamChatAuto(messages, primary, options);
+    return;
+  }
+
+  let produced = false;
+  for await (const chunk of streamChatAuto(messages, primary, options)) {
+    if (chunk.error) {
+      if (produced) {
+        yield chunk; // 已流给用户内容：透传错误，不再切换（避免拼接半截正文）
+        return;
+      }
+      break; // 未产出内容即失败 → 落到下方尝试备用源
+    }
+    if (chunk.content || chunk.reasoning) produced = true;
+    yield chunk;
+  }
+  if (produced) return;
+
+  // 主源失败，切备用源
+  console.warn("内置 AI 主源失败，切换备用源");
+  for await (const chunk of streamChatAuto(messages, fallback, options)) {
+    if (chunk.error) {
+      yield { error: `${chunk.error}（备用源同样失败）` };
+      return;
+    }
+    yield chunk;
+  }
+}
+
 export type { AiSourceConfig };

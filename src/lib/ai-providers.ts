@@ -156,3 +156,21 @@ export function resolveAiSource(cfg?: AiSourceConfig): ResolvedAiSource {
       return { kind: "openai", baseUrl, apiKey, model, provider, protocol: "openai" };
   }
 }
+
+/**
+ * 内置 AI 的备用源（env：AI_FALLBACK_URL / AI_FALLBACK_KEY / AI_FALLBACK_MODEL）。
+ * 只有三件套齐全才视为已配置，否则返回 null（调用方即不启用容错）。
+ * 备用源只在内置 AI 主源"未产出内容即失败"时启用；BYOK 自定义源不参与容错。
+ * 返回与自定义源同构的 openai kind，直接复用 streamChatAuto 的 openai 分支。
+ */
+export function resolveFallbackSource(): ResolvedAiSource | null {
+  const baseUrl = (process.env.AI_FALLBACK_URL || "").trim();
+  const apiKey = (process.env.AI_FALLBACK_KEY || "").trim();
+  const model = (process.env.AI_FALLBACK_MODEL || "").trim();
+  if (!baseUrl || !apiKey || !model) return null;
+  if (!isSafeBaseUrl(baseUrl)) {
+    console.error("备用 AI 源地址不安全，已忽略:", baseUrl);
+    return null;
+  }
+  return { kind: "openai", baseUrl: normalizeBaseUrl(baseUrl), apiKey, model, provider: "fallback" };
+}
