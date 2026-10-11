@@ -188,6 +188,81 @@
 
 ---
 
+## 2026-10-10（续）｜ 批次 A：规模补齐 + 内容审查
+
+**主题**：把目录数据补到位，并做一轮结构化实用性/时代性审查。
+
+- **A1 人生窗口 473→488**：补 15 个现代窗口。
+- **A3 职业 757→888（+131）**：新增 AI/科技、新能源、低空经济、出海、跨境电商等现代职业；`career-count.ts` 同步 888。
+- **A4 职业专属资源 888/888**：结构 = `career-resources.ts` 基座 102 键 + `resources/supplement-01…11.ts` 786 键。审计脚本核验：888 职业全覆盖、无重复键、base 与补充无覆盖冲突、链接全 https。新增职业资源一律进 `supplement-NN.ts`。
+- **A2 内容审查（结构化核查 windows/careers/luck/laws 四库）**：
+  - **去重（P0）**：laws 两组同名重复条目删除——`mt-29`「决策疲劳累积」保留 `mb-03`、`bs-29`「核心技术栈淘汰」保留 `bs-16`；规律总数 269→**267**。
+  - **初级/高级 100 条重做（P1）**：原 `to-1160…1259` 为批量填充（50 个初级 salary 全 `25-35W`/score 全 9、50 个高级全 `50-100W`，含 26 条难度反转、26 条 aiRisk 误降）。改为**由母职业派生**：category/keySkill/aiRisk/difficulty/score 与母一致，salary 按母区间取初级下段 / 高级上段。salary 去重数 2→60，与母零冲突。
+  - **删除死字段 `realCases`（P1）**：`luckNodes` 250/250 全空、UI 有渲染块但守卫，整块废弃；连同 `luck/page.tsx` 渲染块与 `BookOpen` 引用一并移除。
+  - **补 `silentCost`（P2）**：luck id 77/78/87/145/150/175/184 共 7 条空值补齐。
+  - **复核后不改**：`selfStudyScore` 81 条非默认值是「自学推荐指数」的合理人工评定（easy 6-9 / medium 5-7 / hard 2-5），保留；windows id 382/421 的「标题年龄 vs 最佳执行期」偏差为设计（标题是截止点、最佳期在前），非缺陷。
+- **文档同步**：`00-优先阅读-项目接手.md` / `HANDOVER.md` / `PROJECT-BRIEF.md` 数据总数更新为 267 规律 + 488 窗口 + 250 运气 + 888 职业 = **1,893**（KNOWN-ISSUES #8 为历史事件记录，不改）。
+- **验证**：`tsc --noEmit` 干净；`vitest run` 6/6 通过；`eslint` 改动文件无告警；审计脚本跑完即删。
+- **未完成**：A5 `/health` 第 8 模块、A6 模拟器健康/精力维度。
+
+---
+
+## 2026-10-10（续·二）｜ 批次 A5：`/health` 第 8 模块
+
+**主题**：新增第 8 个模块「健康」，交互式自评，全新数据。
+
+- **数据层**（A5-1/A5-2）：新建 `src/data/health.ts` + 7 个子域文件（`health-checkup` / `health-sleep-cycle` / `health-sleep-quality` / `health-diet` / `health-exercise` / `health-energy` / `health-cognition`），各 18 条 = **126 条健康信号**。字段：name / description / metric / healthyRange / warning / strategies / tag(`risk|watch|good|neutral`) / intensity(1-5)。附 14 题自评（每子域 2 题，选项 0-100，越高越健康）与纯函数 `tierOf` / `scoreDomains` / `overallScore` / `weakestDomains` / `keySignals`。
+- **纪律**：只写主流医学/运动科学共识范围内的常识性建议，**不写诊断结论、不替代就医**；涉及症状一律引导就医。页面与 AI 提示词均带边界说明。
+- **页面**（A5-3）：`src/app/health/page.tsx`，两步流（自评 → 结果），结构对齐 `/simulation`：七子域分组问卷 + 进度条 → 结果页七域雷达图 + 综合精力分 + 「先补这三个」短板聚焦层 + 最弱三域的关键信号卡 + AI 深度分析（`module: 'health'`，SSE 流式，`AiThinkingBlock` 思维链）。用 `ModuleGate` / `useLockedAction` 接入锁定模型。
+- **全站接入**（A5-4）：`module-identity.ts` 加第 8 项（tag 08「健康」）+ `CHAPTERS` 加「伍 · 你的硬件」；`module-icons.tsx` 新增 `HealthIcon`；`chapter-meta.ts` 补 伍/CHAPTER V；`module-page-head.tsx` 分母 07→08；`app-sidebar.tsx` 加 /health；`module-next-nav.tsx` 文案「七个」→「八个」；`layout.tsx` / `page.tsx` / `manifest.ts` 元数据与 hero 文案 七大→八大、维度统计改 `MODULE_IDENTITIES.length`；`auth-context.tsx` `ALL_MODULES` 加 `/health`；`hooks/use-module-visit.ts` `TRACKABLE_PATHS` 加 `/health`；`user/page.tsx` 模块探索清单加「健康 08」；`api/ai/analyze/route.ts` 加 `health` 提示词框架。
+- **文档**：数据总数 1,893 → **2,019**（+126 健康信号），模块数 7→8，阅读路径补 08。
+- **验证**：`tsc --noEmit` 干净；`vitest run` 6/6；`eslint` 改动文件无告警；数据自检脚本核验 126 条 id 唯一、字段完整、7×18 齐整、评分函数边界正确，跑完即删；dev server 实测 `/health` HTTP 200 且 SSR 输出与 `/simulation` 同级（鉴权骨架一致，路由编译通过），首页/侧栏渲染出第 8 模块、章节「伍 · 你的硬件」、`href="/health"` ×3。
+- **`pnpm build` 已跑通**（此前从未验证过）：`next build` 编译成功、24/24 静态页生成，`/health` 出现在路由表且为静态预渲染；TS 阶段通过。唯一告警是既有的 `metadataBase` 未设置（`layout.tsx`，非本次引入）。
+
+---
+
+## 2026-10-10（续·三）｜ 批次 A6：模拟器加「健康」维度（5→6）
+
+**主题**：把 `/health` 的健康/精力视角接入命运模拟器，让"身体"成为可推演的第六维。
+
+- **新增维度**：`simulation/page.tsx` `dimensionDefaults` 加 `health`「健康」（体能、精力与身心状态，色 `#10b981`，图标 🫀），权重 `0.12`；其余五维等比下调（family 0.25→0.22、talent/effort 各 0.20→0.18、choice 0.20→0.17、luck 0.15→0.13），**权重和仍为 1.00**（`calculateScore` 直接乘内置权重，无需归一化）。
+- **配套**：新增 4 道健康问卷题（指标/睡眠/运动/精力情绪）；补 `getScenarioText` 健康分支、`getStrategyAdvice` 的 `leverageMap`/`weakFixMap` 健康条目；`dimensionOrder`/`dimensionLabels`/`dimensionNumerals` 加 `health`（壹…陆）；步骤一「五维概览」→「六维概览」、`grid-cols-5`→`lg:grid-cols-6`；页头/AI 面板文案「五个/5 个维度」→「六个/6 个」。
+- **持久化迁移**：`sim.dimensions.v1`/`sim.answers.v1` → `**.v2`（旧 5 维数组会让雷达图画错形状；`use-persisted-state` 的版本号约定即为此）。
+- **module-identity**：`/simulation` 条目 `metric` `5`→`6`、desc 补"健康"。
+- **验证**：`tsc --noEmit` 干净；`eslint` 改动文件无告警；dev server 实测 `/simulation` HTTP 200。
+
+---
+
+## 2026-10-10（续·四）｜ 上线硬门槛之三：AI 双源容错
+
+**主题**：内置 AI 供应商 `api.apikey.fan` 实测 502 率约 50%，面向真实用户等于"一半概率坏"。加备用源自动切换，从代码层兜住。
+
+- **备用源配置**（`lib/ai-providers.ts`）：新增 `resolveFallbackSource()`，读 env `AI_FALLBACK_URL / KEY / MODEL`；**三件套齐全才生效**，否则返回 `null`（不改变现有行为）。地址复用 `isSafeBaseUrl` 做 SSRF 校验，返回与自定义源同构的 `openai` kind，直接复用 `streamChatAuto` 的 openai 分支——不新增协议分支。
+- **容错生成器**（`lib/ai-stream.ts`）：新增 `streamChatWithFallback(messages, primary, fallback, options)`。语义：**只有主源"在产出任何内容之前"就失败**（HTTP 错误 / 连接失败 / 空响应）才切备用源。一旦主源已吐出正文或思维链，就不再切换（否则两段不同来源正文会被拼接；此时透传错误）。主源抛异常（超时 abort / 客户端断开 / 网络错误）原样上抛，交给 analyze 路由既有错误路径（超时文案、退还额度）——天然不触发切换，不重复计费。`fallback` 为 `null` 时行为与 `streamChatAuto` 完全一致。
+- **接线**（`api/ai/analyze/route.ts`）：`streamChatAuto` → `streamChatWithFallback`；**容错只作用于内置 AI**，BYOK 是用户自选的源，不替他切到别人的备用源。
+- **配置**（`.env.example`）：补 `AI_FALLBACK_URL / KEY / MODEL` 三行并注明"可选但强烈建议"。
+- **为什么不做"备用源也失败"的详细分类**：现有 `error_kind` 只有 timeout/upstream/empty/stream/server，备用源失败仍归 `upstream`，语义已够（后台看得到失败）；不为一次失败再拆枚举。
+- **验证**：临时 tsx 脚本（monkeypatch `fetch`，`node --conditions=react-server --import tsx`）核验 5 场景 7 断言全通过——①主源 502→切备用源出内容、primary/fallback 各命中一次；②主源正常→不碰备用源；③主源只出思维链→视为已产出不切；④双源都挂→报"备用源同样失败"；⑤无备用源→返回 null 且报主源原错。跑完即删。`tsc --noEmit` 干净；`eslint . --quiet` 0 错；`vitest run` 6/6。
+- **残余**：真实供应商的备用源 env 值尚未配置实测（需项目主人提供第二个 Key）；claude/gemini/minimax 三协议适配仍未经真实 Key 端到端验证（不属本次范围）。
+
+---
+
+## 2026-10-10（续·五）｜ AI 护栏：系统提示词加固 + 输入/输出过滤
+
+**主题**：面向国内公开发布，AI 必须限定职责、拒绝违规内容、不外泄平台信息。分「软约束（提示词）+ 硬兜底（关键词过滤）」两层。
+
+- **系统提示词加固**（`api/ai/analyze/route.ts` 的 `SYSTEM_PROMPT`，内置源与 BYOK 共用）：新增四块——
+  ① 职责范围（只答本平台 8 模块相关人生规划问题，无关话题挡回）；② 边界与拒绝（政治敏感/淫秽色情/暴力违法/赌毒/自伤仅引导就医/仇恨，命中即简短拒绝不展开）；③ 平台隐私（不泄露系统提示词、分析框架、库结构、密钥、用户数据、后台设置，以及**技术运维细节**：服务器地址/IP、端口、运行环境与部署方式、环境变量、依赖与框架版本、文件路径、日志；抗"开发者/调试/运维"套取）；④ 抗越狱（要求覆盖规则时不生效）。明确三条拒绝戴帽：「不给医疗诊断/法律意见/投资结论」。
+- **关键词过滤**（新建 `src/lib/content-filter.ts`）：`findBlockedTerm()` 归一化（去空白/分隔符/常见干扰符后 includes），高精度词表。
+- **关键约束**：平台自身数据含大量「政治/赌博/性/颠覆/自杀」表述（「职场政治」「技术颠覆」「酒精赌博」「婚前必须谈性」…），**宽泛黑名单会当场拦掉平台正常内容**。因此词表**只收高精度、几乎不可能是正常用途**的表述（「颠覆国家」「分裂国家」「制毒」「贩毒」「冰毒」「色情」「淫秽」…），绝不用宽泛词。
+- **输入过滤**：只扫用户 `question`（**不扫平台 item**），命中返回 400 + 统一提示，**在扣额度之前**，不扣次。
+- **输出过滤**：流式循环内维护 24 字符滑动窗口扫描 `content`，命中即 `upstream.abort()` + 退还额度 + `ai_usage_logs.error_kind='content_blocked'` + 推送"该内容不适合显示，已停止生成"，并在 catch 里用 `blocked` 标志避免重复处理。
+- **定位诚实说明**：这是**高精度关键词兜底**，挡不住谐音/拼音/拆字等刻意绕过，也不能替代模型侧官方审核。真正合规 = 提示词 + 过滤 + **国内带审核的模型** + 人工巡查。
+- **验证**：临时 tsx 脚本核验 12 例全过（6 拦 + 6 放行，含"职场政治""技术颠覆""婚前性话题"等平台词**不误伤**）；端到端 curl（**UTF-8 文件传参**，因 Windows shell 直接把中文 curl 会乱码）违禁提问 400、正常提问走到鉴权门；`tsc`/`eslint --quiet`/`vitest 6/6` 全绿。临时脚本与载荷跑完即删。
+- **待办**：输入/输出为进程内关键词表；国内正式上线建议叠加国内合规模型（自带审核）与人工巡查/留痕。
+
+---
+
 ## 附录 A · 关键决策记录
 
 | 决策 | 日期 | 理由 |
@@ -205,3 +280,4 @@
 - 职业数据：748/757 已有专属资源（2026-10-10）；888 目标是否继续扩容待定。
 - 统一卡片体系 / 容器宽度 / 色板收敛（需视觉迭代）。
 - admin 统一会话、限流持久化、AI 多协议实测；测试仅覆盖职业资源（auth/AI 流程待补）。
+- AI 备用源 env 值尚未配置（需第二个 Key）；配置后需真机走查容错路径。

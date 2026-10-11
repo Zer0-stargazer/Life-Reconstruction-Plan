@@ -33,10 +33,10 @@ src/lib/module-identity.ts          ← 唯一真源
                           icon, iconGradient, ring, tagColor }
   TIMELINE_IDENTITY     { href:'/me', tag:'★', note:'TIMELINE', title, question, ... }
         │
-        ├─► 首页 Hero 的「MAP · 01–07」索引 + 7 张导览卡
+        ├─► 首页 Hero 的「MAP · 01–08」索引 + 8 张导览卡
         ├─► app-sidebar.tsx 侧栏顺序
         ├─► components/shared/module-next-nav.tsx 页尾「上一步 / 下一步」
-        └─► components/shared/module-page-head.tsx 七个模块页的页头
+        └─► components/shared/module-page-head.tsx 八个模块页的页头
               （编号/图标/配色/question 自动取；页面仍自定义 H1、描述、
                右侧 aside 插槽、下方 children）
 

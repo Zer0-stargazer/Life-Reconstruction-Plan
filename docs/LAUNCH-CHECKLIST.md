@@ -32,7 +32,7 @@
 - [ ] **更换或增备稳定供应商**（0.5-1 天）
   - [ ] 实测记录在案：api.apikey.fan 502 率约 50%，忽略 `thinking:disabled`，单次 13s 起步——面向真实用户等于"一半概率坏"
   - [ ] 方案 A：换稳定供应商，改 `.env.local` 三行即可（代码已兼容）
-  - [ ] 方案 B（推荐同时做）：代码加**多源容错**——主源失败自动切备用源（改 `lib/ai-stream.ts`，配置加 `AI_FALLBACK_URL/KEY/MODEL`）
+  - [x] 方案 B：代码加**多源容错**——内置 AI 主源"未产出内容即失败"自动切备用源（2026-10-10，`lib/ai-stream.ts` `streamChatWithFallback` + `lib/ai-providers.ts` `resolveFallbackSource`）；**还需在 `.env.local`/生产填 `AI_FALLBACK_URL/KEY/MODEL` 才真正生效**（三件套齐全才启用）
   - [ ] 想体验好：换一个非推理快模型（思维链占总时长 60% 的根因）
 - [ ] **额度定价核算**：按真实单价算清"每码 200 次"的成本（当前默认值 200 未经核算）
 - [ ] claude / gemini / minimax 三个协议适配仍未经真实 Key 实测（上线前在 /user 页各测一次）
