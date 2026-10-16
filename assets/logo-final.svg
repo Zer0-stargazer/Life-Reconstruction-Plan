@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="人生沙盘">
+  <title>人生沙盘 · 定稿标志</title>
+  <desc>轨迹进入窗口后分叉：淡墨原路继续，朱红轨迹跃升。四角为 HUD 括号，右上为刻度注记环。</desc>
+  <style>
+    .ink { stroke: #35302b; fill: none; }
+    .red { stroke: #b2392b; fill: none; }
+    .dot { fill: #b2392b; }
+    .hair { stroke: #35302b; fill: none; opacity: 0.3; }
+    @media (prefers-color-scheme: dark) {
+      .ink { stroke: #e8e6df; }
+      .red { stroke: #e2674f; }
+      .dot { fill: #e2674f; }
+      .hair { stroke: #e8e6df; }
+    }
+  </style>
+
+  <!-- HUD 四角括号 -->
+  <g class="hair" stroke-width="2.5" stroke-linecap="square">
+    <path d="M8 22 V8 H22"/>
+    <path d="M98 8 H112 V22"/>
+    <path d="M112 98 V112 H98"/>
+    <path d="M22 112 H8 V98"/>
+  </g>
+
+  <!-- 刻度注记环（右上，呼应 FIG 注记语言） -->
+  <g class="hair" stroke-width="1.6">
+    <circle cx="92" cy="26" r="13"/>
+    <path d="M92 13 V17.5"/><path d="M92 34.5 V39"/>
+    <path d="M79 26 H83.5"/><path d="M100.5 26 H105"/>
+  </g>
+  <circle cx="92" cy="26" r="3" class="dot" opacity="0.85"/>
+
+  <!-- 轨迹分叉：来路 → 窗口 → 原路 / 跃升 -->
+  <path class="ink" d="M14 78 H48" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <rect class="red" x="48.5" y="70" width="14" height="14" rx="2.6" stroke-width="3.4"/>
+  <path class="ink" d="M63 79.5 C 74 81, 86 84.5, 98 88.5" stroke-width="3" stroke-linecap="round" opacity="0.32"/>
+  <path class="red" d="M63 76 C 74 74.5, 80 58, 87 34" stroke-width="4.4" stroke-linecap="round"/>
+  <circle class="dot" cx="87" cy="33" r="4.6"/>
+</svg>

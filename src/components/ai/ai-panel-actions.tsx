@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Brain, Check, Copy, Loader2 } from 'lucide-react';
+import { getAiPrompts } from '@/data/ai-prompts';
+import { getAiErrorText, shouldShowTopUpLink, type AiErrorInfo } from '@/lib/ai-error-copy';
 
 /**
  * AI 面板通用操作件：停止生成 / 复制最近回复。
@@ -54,7 +57,7 @@ export function AiCopyButton({ getText }: { getText: () => string }) {
  * AI 加载气泡：转圈 + 已等待秒数。
  * 首字延迟可能十几秒，一个会跳动的计数器比静止的"正在分析..."更让人安心。
  */
-export function AiLoadingBubble() {
+export function AiLoadingBubble({ thinking = false }: { thinking?: boolean }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -67,8 +70,88 @@ export function AiLoadingBubble() {
       <div className="flex items-center gap-2 rounded-lg px-4 py-3 bg-card border border-border">
         <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
         <span className="text-xs text-muted-foreground">
-          正在分析<span className="tabular-nums"> · {elapsed}s</span>
+          {thinking ? '正在思考…' : '正在分析'}<span className="tabular-nums"> · {elapsed}s</span>
         </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 流式输出末尾的朱砂细竖光标：2px × 1em，1s steps 闪烁；reduced-motion 下常亮。
+ * 样式内联（不依赖全局 CSS）。
+ */
+export function AiCursor() {
+  return (
+    <>
+      <style>{`.ai-cursor{display:inline-block;width:2px;height:1em;margin-left:2px;vertical-align:text-bottom;background:var(--primary);animation:ai-cursor-blink 1s steps(1,end) infinite}
+@keyframes ai-cursor-blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.ai-cursor{animation:none;opacity:1}}`}</style>
+      <span aria-hidden className="ai-cursor" />
+    </>
+  );
+}
+
+/**
+ * 预填追问：hairline 列表，点击即发送。
+ * 由调用方控制 visible（通常：未在流式、无报错、用户还没发过追问），发送后自然隐藏。
+ */
+export function AiPromptChips({ module, visible, onPick }: { module: string; visible: boolean; onPick: (question: string) => void }) {
+  const prompts = getAiPrompts(module);
+  if (!visible || prompts.length === 0) return null;
+  return (
+    <div className="pt-1">
+      <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground/75">可以这样问</p>
+      <ul className="border-t border-border/60">
+        {prompts.map((q, i) => (
+          <li key={q} className="border-b border-border/60">
+            <button
+              type="button"
+              onClick={() => onPick(q)}
+              className="group flex w-full items-baseline gap-3 py-2.5 text-left text-[13px] leading-relaxed text-foreground/85 transition-colors hover:text-primary"
+            >
+              <span className="font-mono text-[11px] tabular-nums text-muted-foreground/70">0{i + 1}</span>
+              <span className="flex-1">{q}</span>
+              <span aria-hidden className="text-muted-foreground/60 transition-colors group-hover:text-primary">→</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** 用户中途停止后，附在已保存的不完整回复下方的灰色小字 */
+export function AiStoppedNote() {
+  return <p className="mt-2 text-[11px] text-muted-foreground/70">（已停止生成）</p>;
+}
+
+/**
+ * AI 错误提示：独立于对话历史展示（不会作为 history 发给下一次请求），带「重试」。
+ * 文案统一来自 lib/ai-error-copy.ts。
+ */
+export function AiErrorNotice({ error, onRetry }: { error: AiErrorInfo; onRetry?: () => void }) {
+  const text = getAiErrorText(error);
+  return (
+    <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+      <p className="text-xs leading-relaxed text-foreground">{text}</p>
+      <div className="mt-2 flex items-center gap-2">
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="h-7 px-3 rounded-md border border-border bg-background text-xs text-foreground hover:bg-accent/60 transition-colors btn-press"
+          >
+            重试
+          </button>
+        )}
+        {shouldShowTopUpLink(error) && (
+          <Link
+            href="/user"
+            className="h-7 px-3 inline-flex items-center rounded-md bg-primary text-xs text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            前往「我的」页
+          </Link>
+        )}
       </div>
     </div>
   );

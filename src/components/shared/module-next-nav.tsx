@@ -42,6 +42,14 @@ const TRAIL: TrailStep[] = [
   })),
 ];
 
+const JOURNEY_STEP: TrailStep = {
+  href: '/journey',
+  tag: '终',
+  title: '这一圈，你走完了',
+  question: '回看八章，再决定下一步。',
+  icon: TIMELINE_IDENTITY.icon,
+};
+
 function TrailCard({ step, dir }: { step: TrailStep; dir: 'prev' | 'next' }) {
   const Icon = step.icon;
   const Arrow = dir === 'prev' ? ArrowLeft : ArrowRight;
@@ -76,7 +84,8 @@ export function ModuleNextNav() {
   if (i < 0) return null;
 
   const prev = TRAIL[(i - 1 + TRAIL.length) % TRAIL.length];
-  const next = TRAIL[(i + 1) % TRAIL.length];
+  // 最后一个模块读完 -> 先到收尾页 /journey，再由它回到时间轴
+  const next = i === TRAIL.length - 1 ? JOURNEY_STEP : TRAIL[i + 1];
 
   return (
     <div className="border-t border-border bg-muted/10">

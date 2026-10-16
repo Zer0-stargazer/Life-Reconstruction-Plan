@@ -14,6 +14,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { prefersReducedMotion, scrollToEl } from '@/lib/motion';
 
 export interface JumpSection {
   /** 目标元素的 DOM id，页面里必须真的存在 */
@@ -83,7 +84,7 @@ export function SectionJumper({
     const el = chipRefs.current[active];
     if (!container || !el) return;
     const target = el.offsetLeft - container.clientWidth / 2 + el.offsetWidth / 2;
-    container.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+    container.scrollTo({ left: Math.max(0, target), behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }, [active]);
 
   if (sections.length === 0) return null;
@@ -105,10 +106,7 @@ export function SectionJumper({
           onClick={() => {
             const target = document.getElementById(s.id);
             if (!target) return;
-            window.scrollTo({
-              top: target.getBoundingClientRect().top + window.scrollY - offset,
-              behavior: 'smooth',
-            });
+            scrollToEl(target, { offset });
           }}
           className={cn(
             'shrink-0 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors',

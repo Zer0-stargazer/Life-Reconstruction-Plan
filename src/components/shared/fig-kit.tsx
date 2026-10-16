@@ -72,7 +72,17 @@ export function HudCorners() {
  * 刻度尺：一条细线 + 下方等距短刻度。
  * 用来替代纯 border-t——同样是分隔，但带上了"人生刻度"的语义。
  */
-export function TickRule({ label, className }: { label?: string; className?: string }) {
+export function TickRule({
+  label,
+  trailing,
+  className,
+}: {
+  /** 左端注记 */
+  label?: string;
+  /** 右端注记（如 `01 / 08 · 888 条赛道`） */
+  trailing?: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={cn('flex items-center gap-3', className)}>
       {label && (
@@ -88,7 +98,32 @@ export function TickRule({ label, className }: { label?: string; className?: str
           }}
         />
       </span>
+      {trailing && (
+        <span className="shrink-0 font-mono text-[11px] tabular-nums tracking-[0.15em] text-muted-foreground">
+          {trailing}
+        </span>
+      )}
     </div>
+  );
+}
+
+/**
+ * 印格：56px 方格，虚线内框，左上角一枚朱砂角，中间放模块图标。
+ * 页头标题旁与首页目录条目共用；hover 边框变朱砂需父级带 `group`。
+ */
+export function IconPlate({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'relative flex h-14 w-14 shrink-0 items-center justify-center rounded-sm border border-border bg-card transition-colors duration-500 group-hover:border-primary/60',
+        className
+      )}
+    >
+      <span className="absolute inset-[3px] rounded-[2px] border border-dashed border-border/80" />
+      <span className="absolute -left-px -top-px h-2 w-2 bg-primary" />
+      {children}
+    </span>
   );
 }
 

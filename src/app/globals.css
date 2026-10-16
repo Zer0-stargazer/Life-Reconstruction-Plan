@@ -64,6 +64,17 @@
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
 }
 
+/* 动效 / 形态 token（与 src/lib/motion.ts 的 MOTION_CSS 同步）
+   微交互统一 150 / 250 / 400ms（--duration-fast/normal/slow）+ --ease-out-expo；
+   例外：按压 80ms、进度条生长 700ms。 */
+:root {
+  --dur-press: 80ms;
+  --dur-meter: 700ms;
+  --rise: 8px;
+  --focus-width: 2px;
+  --focus-offset: 2px;
+}
+
 :root {
   --background: oklch(0.975 0.012 85);
   --foreground: oklch(0.22 0.012 60);
@@ -83,21 +94,22 @@
   --destructive: oklch(0.55 0.22 25);
   --border: oklch(0.88 0.012 75);
   --input: oklch(0.88 0.02 80);
-  --ring: oklch(0.62 0.17 55);
-  --chart-1: oklch(0.85 0.15 90);
-  --chart-2: oklch(0.75 0.16 70);
-  --chart-3: oklch(0.65 0.17 55);
-  --chart-4: oklch(0.55 0.15 45);
-  --chart-5: oklch(0.45 0.12 40);
+  --ring: var(--primary);
+  --chart-1: var(--primary);
+  --chart-2: color-mix(in oklch, var(--primary) 60%, transparent);
+  --chart-3: var(--ink-accent);
+  --chart-4: color-mix(in oklch, var(--ink-accent) 50%, transparent);
+  --chart-5: color-mix(in oklch, var(--foreground) 25%, transparent);
   --sidebar: oklch(0.96 0.015 85);
   --sidebar-foreground: oklch(0.18 0.02 60);
-  --sidebar-primary: oklch(0.62 0.17 55);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.99 0.02 95);
   --sidebar-accent: oklch(0.92 0.025 80);
   --sidebar-accent-foreground: oklch(0.2 0.04 50);
   --sidebar-border: oklch(0.88 0.02 80);
-  --sidebar-ring: oklch(0.62 0.17 55);
+  --sidebar-ring: var(--primary);
   --radius: 0.25rem;
+  --paper: #f6efe2;
 }
 
 .dark {
@@ -119,20 +131,20 @@
   --destructive: oklch(0.58 0.18 25);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.75 0.15 65);
-  --chart-1: oklch(0.75 0.14 80);
-  --chart-2: oklch(0.65 0.15 65);
-  --chart-3: oklch(0.55 0.14 55);
-  --chart-4: oklch(0.45 0.12 45);
-  --chart-5: oklch(0.38 0.10 40);
+  --ring: var(--primary);
+  --chart-1: var(--primary);
+  --chart-2: color-mix(in oklch, var(--primary) 60%, transparent);
+  --chart-3: var(--ink-accent);
+  --chart-4: color-mix(in oklch, var(--ink-accent) 50%, transparent);
+  --chart-5: color-mix(in oklch, var(--foreground) 25%, transparent);
   --sidebar: oklch(0.16 0.015 55);
   --sidebar-foreground: oklch(0.96 0.008 80);
-  --sidebar-primary: oklch(0.75 0.15 65);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.15 0.04 50);
   --sidebar-accent: oklch(0.22 0.02 55);
   --sidebar-accent-foreground: oklch(0.96 0.01 80);
   --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.75 0.15 65);
+  --sidebar-ring: var(--primary);
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -167,34 +179,16 @@
   to { opacity: 1; }
 }
 
-/* Scale in */
+/* 详情卡 / 弹层翻开：只做 8px 上浮 + 淡入（不用 scale，避免文字发糊）。名字沿用 scale-in 以免改动调用点 */
 @keyframes scale-in {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: translateY(var(--rise));
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
-}
-
-/* Slide in from left */
-@keyframes slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Number counter pulse */
-@keyframes counter-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
 }
 
 
@@ -221,10 +215,6 @@
 
 .animate-scale-in {
   animation: scale-in var(--duration-normal) var(--ease-out-expo) both;
-}
-
-.animate-slide-in-left {
-  animation: slide-in-left var(--duration-normal) var(--ease-out-expo) both;
 }
 
 .animate-slide-in-right {
@@ -315,20 +305,23 @@ input[type="range"]::-webkit-slider-thumb:active {
   transform: scale(1.05);
 }
 
-/* /me 的年龄控制：滑块直接压在时间分布曲线上，避免“孤点 + 另一块图表”的割裂感 */
-.age-timeline-slider {
+/* /me 的年龄控制：滑块直接压在时间分布曲线上，避免“孤点 + 另一块图表”的割裂感。
+   ⚠️ 双类提特异性：压过全局 input[type="range"] 的 height:6px（否则 input 被压扁贴顶） */
+.age-timeline-slider.age-timeline-slider {
   height: 100%;
   border-radius: 0.5rem;
   background: transparent;
 }
 
-.age-timeline-slider::-webkit-slider-runnable-track {
+.age-timeline-slider.age-timeline-slider::-webkit-slider-runnable-track {
   height: 100%;
   background: transparent;
 }
 
-/* 原生拇指隐身：可见的圆点由 TimelineSlider 绘制，避免与竖线错位 */
-.age-timeline-slider::-webkit-slider-thumb {
+/* 原生拇指隐身：可见的圆点由 TimelineSlider 绘制，避免与竖线错位。
+   ⚠️ 必须双类提特异性：(0,2,0) 才能压过全局 input[type="range"]::-webkit-slider-thumb
+   的 18px 红点规则（(0,1,1)），否则浏览器原生 thumb 会显示出来和竖条错位 */
+.age-timeline-slider.age-timeline-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 2px;
   height: 100%;
@@ -337,7 +330,7 @@ input[type="range"]::-webkit-slider-thumb:active {
   cursor: pointer;
 }
 
-.age-timeline-slider::-moz-range-thumb {
+.age-timeline-slider.age-timeline-slider::-moz-range-thumb {
   width: 2px;
   height: 100%;
   background: transparent;
@@ -357,24 +350,30 @@ input[type="range"]::-webkit-slider-thumb:active {
 
 /* Selection color */
 ::selection {
-  background: oklch(0.62 0.17 55 / 20%);
+  background: oklch(0.52 0.16 30 / 14%);
   color: inherit;
 }
 
 .dark ::selection {
-  background: oklch(0.75 0.15 65 / 25%);
+  background: oklch(0.66 0.14 32 / 22%);
 }
 
-/* Focus ring for keyboard navigation */
-:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-  border-radius: 4px;
+/* 统一焦点环：键盘聚焦时 2px --ring，offset 2px；不改 border-radius，圆形按钮焦点保持圆形。
+   .focus-ring 供需要显式声明的元素使用（与全局规则同值）。 */
+:focus-visible,
+.focus-ring:focus-visible {
+  outline: var(--focus-width) solid var(--ring);
+  outline-offset: var(--focus-offset);
 }
 
 /* Smooth page transitions */
 main {
-  animation: fade-in var(--duration-slow) var(--ease-out-expo);
+  animation: page-in var(--duration-slow) var(--ease-out-expo) backwards;
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ========== Second Pass: Micro-interactions & Polish ========== */
@@ -382,10 +381,6 @@ main {
 /* Smooth dark mode transition */
 html {
   transition: color-scheme 0.3s ease;
-}
-
-body, .bg-background, .bg-card, .bg-sidebar, .bg-muted {
-  transition: background-color 0.3s ease, color 0.2s ease;
 }
 
 /* Subtle link underline animation */
@@ -406,15 +401,50 @@ body, .bg-background, .bg-card, .bg-sidebar, .bg-muted {
   width: 100%;
 }
 
-/* Button press feedback */
+/* 按钮按压：只做透明度变化（不 scale），80ms */
 .btn-press {
-  transition: transform 100ms ease, box-shadow 150ms ease;
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: var(--duration-fast), var(--duration-fast), var(--duration-fast), var(--dur-press);
+  transition-timing-function: var(--ease-out-expo);
 }
-.btn-press:active {
-  transform: scale(0.97);
+.btn-press:active:not(:disabled) {
+  opacity: 0.85;
 }
 
-/* Subtle grain texture for depth */
+/* 卡片悬停：只做边框色过渡（border -> foreground/30），不位移、不加阴影，150ms */
+.card-lift {
+  transition: border-color var(--duration-fast) var(--ease-out-expo);
+}
+@media (hover: hover) {
+  .card-lift:hover {
+    border-color: color-mix(in oklab, var(--foreground) 30%, transparent);
+  }
+}
+
+/* 进度条：scaleX 生长（MeterBar） */
+.meter-fill {
+  transition: transform var(--dur-meter) var(--ease-out-expo);
+}
+
+/* 加载骨架：只用 transform 的微光，1.6s */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--muted);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--foreground) 6%, transparent), transparent);
+  transform: translateX(-100%);
+  animation: skeleton-sheen 1.6s var(--ease-out-expo) infinite;
+}
+@keyframes skeleton-sheen {
+  to { transform: translateX(100%); }
+}
+
+/* 纸张颗粒：局部使用（扉页、/journey、/about、/me），父级需 relative。亮色 0.015 / 暗色 0.03 */
 .grain-texture::before {
   content: '';
   position: absolute;
@@ -422,6 +452,9 @@ body, .bg-background, .bg-card, .bg-sidebar, .bg-muted {
   opacity: 0.015;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+.dark .grain-texture::before {
+  opacity: 0.03;
 }
 
 /* Number counter style */
@@ -432,13 +465,6 @@ body, .bg-background, .bg-card, .bg-sidebar, .bg-muted {
 /* Smooth scroll offset for fixed sidebar */
 [id] {
   scroll-margin-top: 1rem;
-}
-
-/* Better hover states for interactive elements */
-@media (hover: hover) {
-  .hover-lift:hover {
-    transform: translateY(-1px);
-  }
 }
 
 /* Reduced motion preference */
@@ -578,7 +604,7 @@ body, .bg-background, .bg-card, .bg-sidebar, .bg-muted {
 }
 
 .home-marquee {
-  animation: home-marquee 38s linear infinite;
+  animation: home-marquee 60s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -589,10 +615,32 @@ body, .bg-background, .bg-card, .bg-sidebar, .bg-muted {
   .hero-rise,
   .seal-stamp,
   .seal-stamp-in,
-  .nav-rule {
+  .nav-rule,
+  .skeleton::after,
+  main {
     animation: none;
   }
+  .card-lift,
+  .btn-press {
+    transition: none;
+  }
   .ink-sweep::after {
+    transition: none;
+  }
+}
+
+
+/* ========== C-1：标志性动效与页面件（只追加） ========== */
+
+/* 机械计数器（Odometer）：每位数字一列，纵向 translateY 滚动，220ms --ease-out-expo */
+.odometer-reel {
+  display: block;
+  transition: transform 220ms var(--ease-out-expo);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .odometer-reel {
     transition: none;
   }
 }

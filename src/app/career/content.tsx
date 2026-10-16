@@ -1,0 +1,872 @@
+'use client';
+
+import { MeterBar } from '@/components/shared/meter-bar';
+import { AuthorNote } from '@/components/shared/author-note';
+import { EmptyArt } from '@/components/shared/empty-art';
+import { scrollToEl } from '@/lib/motion';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
+import { careers, CAREER_CATEGORIES, type Career, type CareerLink, getCareerResources, getAiAdvice } from '@/data/careers';
+import { cn } from '@/lib/utils';
+import {
+  Briefcase, TrendingUp, TrendingDown, Minus, Bot, Filter, X, BarChart3,
+  ArrowUpRight, ArrowDownRight, MinusCircle, Sparkles, Search,
+  GraduationCap, BookOpen, Video, FileText, ExternalLink, MessagesSquare, type LucideIcon,
+  ChevronDown, ChevronUp, Star, AlertTriangle,
+} from 'lucide-react';
+import { AIAnalysisPanel } from '@/components/ai/ai-analysis-panel';
+import { useLockedAction } from '@/hooks/use-locked-action';
+import { useModuleMarks } from '@/hooks/use-module-marks';
+import { useFreeDetailGuard } from '@/lib/free-preview';
+import { PreviewBanner } from '@/components/auth/module-gate';
+import { Reveal } from '@/components/shared/reveal';
+import { ModulePageHead } from '@/components/shared/module-page-head';
+
+// ============================================================
+// 常量
+// ============================================================
+
+const trendIcon = { up: TrendingUp, stable: Minus, down: TrendingDown };
+const trendColor = {
+  up: 'text-green-600 dark:text-green-400',
+  stable: 'text-amber-600 dark:text-amber-400',
+  down: 'text-red-600 dark:text-red-400',
+};
+const trendBg = {
+  up: 'bg-green-50 dark:bg-green-950/30',
+  stable: 'bg-amber-50 dark:bg-amber-950/30',
+  down: 'bg-red-50 dark:bg-red-950/30',
+};
+const trendLabel = { up: '上升', stable: '平稳', down: '下降' };
+const trendArrow = { up: ArrowUpRight, stable: MinusCircle, down: ArrowDownRight };
+
+const aiRiskColor = {
+  high: 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400',
+  medium: 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400',
+  low: 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400',
+};
+const aiRiskLabel = { high: '高风险', medium: '中风险', low: '低风险' };
+const aiRiskBar = { high: 85, medium: 50, low: 15 };
+
+const selfStudyColor = (score: number) => {
+  if (score >= 8) return 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400';
+  if (score >= 5) return 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400';
+  return 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400';
+};
+
+const selfStudyLabel = (score: number) => {
+  if (score >= 8) return '自学友好';
+  if (score >= 5) return '自学中等';
+  return '自学较难';
+};
+
+function resourceCount(c: Career): number {
+  const r = getCareerResources(c);
+  return r.videos.length + r.docs.length + r.books.length;
+}
+
+function ResourceGroup({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <Icon className="h-3 w-3 text-primary/60" />
+        <span className="text-[11px] font-semibold text-foreground">{title}</span>
+      </div>
+      <div className="space-y-1.5">{children}</div>
+    </div>
+  );
+}
+
+// ============================================================
+// 职业三态标记（想做 / 在做 / 做过）—— window-mark-bar 模式，
+// 数据存 localStorage(STORAGE_KEYS.careerMarks)，云同步键白名单已收录。
+// 命运模块的 AI 上下文也会读这份标记（use-user-profile → career 摘要）。
+// ============================================================
+
+export type CareerMark = 'want' | 'doing' | 'done';
+
+export const CAREER_MARK_META: Record<CareerMark, { label: string; short: string; tone: string }> = {
+  want: { label: '想做', short: '想做', tone: 'border-amber-500/45 bg-amber-500/12 text-amber-600 dark:text-amber-400' },
+  doing: { label: '已在做', short: '在做', tone: 'border-blue-500/45 bg-blue-500/12 text-blue-600 dark:text-blue-400' },
+  done: { label: '做过', short: '做过', tone: 'border-emerald-500/45 bg-emerald-500/12 text-emerald-600 dark:text-emerald-400' },
+};
+
+const CAREER_MARK_ORDER: CareerMark[] = ['want', 'doing', 'done'];
+
+/** 职业卡片/详情上的三态标记条（再点一次取消） */
+function CareerMarkBar({ id, className }: { id: number; className?: string }) {
+  const { marks, setMark } = useModuleMarks(STORAGE_KEYS.careerMarks);
+  const cur = marks[String(id)] as CareerMark | undefined;
+
+  return (
+    <div className={cn('flex flex-wrap items-center gap-1', className)} role="group" aria-label="标记这个职业">
+      {CAREER_MARK_ORDER.map((m) => {
+        const active = cur === m;
+        return (
+          <button
+            key={m}
+            type="button"
+            title={`${CAREER_MARK_META[m].label}（再点一次取消）`}
+            aria-pressed={active}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMark(id, active ? null : m);
+            }}
+            className={cn(
+              'rounded-[2px] border px-2.5 py-1 text-[11px] font-medium leading-none transition-colors',
+              active
+                ? CAREER_MARK_META[m].tone
+                : 'border-border bg-transparent text-muted-foreground/55 hover:border-primary/30 hover:text-foreground'
+            )}
+          >
+            {CAREER_MARK_META[m].short}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ResourceLinkItem({ link }: { link: CareerLink }) {
+  return (
+    <a
+      href={link.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="group flex items-start gap-2 rounded-md border border-border/50 bg-background/50 px-2.5 py-2 transition-colors hover:border-primary/30 hover:bg-primary/[0.03]"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">{link.title}</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground/75">
+          {link.source}{link.note ? ` · ${link.note}` : ''}
+        </p>
+      </div>
+      <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/70 transition-colors group-hover:text-primary" />
+    </a>
+  );
+}
+
+function CareerResourcePanel({ career }: { career: Career }) {
+  const { videos, docs, books } = getCareerResources(career);
+  if (videos.length + docs.length + books.length === 0) {
+    return (
+      <p className="rounded-md border border-dashed border-border px-3 py-2.5 text-[11px] leading-relaxed text-muted-foreground">
+        该职业的专属资源还在整理中。
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      {videos.length > 0 && (
+        <ResourceGroup icon={Video} title="视频">
+          {videos.map((l) => <ResourceLinkItem key={l.url} link={l} />)}
+        </ResourceGroup>
+      )}
+      {docs.filter((l) => l.kind !== 'community').length > 0 && (
+        <ResourceGroup icon={FileText} title="文档">
+          {docs.filter((l) => l.kind !== 'community').map((l) => <ResourceLinkItem key={l.url} link={l} />)}
+        </ResourceGroup>
+      )}
+      {docs.filter((l) => l.kind === 'community').length > 0 && (
+        <ResourceGroup icon={MessagesSquare} title="论坛与社区">
+          {docs.filter((l) => l.kind === 'community').map((l) => <ResourceLinkItem key={l.url} link={l} />)}
+        </ResourceGroup>
+      )}
+      {books.length > 0 && (
+        <ResourceGroup icon={BookOpen} title="书籍">
+          {books.map((b) => (
+            <div key={b.title} className="rounded-md border border-border/50 bg-background/50 px-2.5 py-2">
+              <p className="text-[11px] font-medium text-foreground">{b.title}</p>
+              <p className="text-[11px] text-muted-foreground/75">{b.author}</p>
+              {b.why && <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground/70">{b.why}</p>}
+            </div>
+          ))}
+        </ResourceGroup>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// 排序类型
+// ============================================================
+
+type SortKey = 'salary' | 'aiRisk' | 'trend' | 'selfStudy';
+
+const sortOptions: { value: SortKey; label: string }[] = [
+  { value: 'salary', label: '年收入' },
+  { value: 'selfStudy', label: '自学指数' },
+  { value: 'aiRisk', label: 'AI风险' },
+  { value: 'trend', label: '趋势' },
+];
+
+/** 解析薪资字符串中的下限（万为单位） */
+function parseSalaryLower(salary: string): number {
+  const match = salary.match(/(\d+)/);
+  return match ? parseInt(match[1]) : 0;
+}
+
+/** 排序比较函数 */
+function getSortValue(career: Career, key: SortKey): number {
+  switch (key) {
+    case 'salary': return parseSalaryLower(career.salary);
+    case 'selfStudy': return career.selfStudyScore;
+    case 'aiRisk': return career.aiRisk === 'high' ? 0 : career.aiRisk === 'medium' ? 1 : 2;
+    case 'trend': return career.trend === 'up' ? 0 : career.trend === 'stable' ? 1 : 2;
+  }
+}
+
+/** 风险排序分：趋势下行 +1、AI 替代高风险 +1（P2：纯函数提模块级，不再每次渲染重建） */
+function riskScore(c: Career): number {
+  return (c.trend === 'down' ? 1 : 0) + (c.aiRisk === 'high' ? 1 : 0);
+}
+
+/** 快看组：一眼能看到的两极——最好的和最危险的 */
+function QuickLookGroup({
+  tone,
+  title,
+  hint,
+  icon: Icon,
+  items,
+  reasonOf,
+  onPick,
+}: {
+  tone: 'good' | 'bad';
+  title: string;
+  hint: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: Career[];
+  reasonOf: (c: Career) => string;
+  onPick: (c: Career) => void;
+}) {
+  const shell = tone === 'good'
+    ? 'border-emerald-200/60 dark:border-emerald-800/40 bg-emerald-50/40 dark:bg-emerald-950/10'
+    : 'border-red-200/60 dark:border-red-800/40 bg-red-50/40 dark:bg-red-950/10';
+  const iconColor = tone === 'good' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
+
+  return (
+    <div className={cn('rounded-sm border p-4', shell)}>
+      <div className="mb-2.5 flex items-center gap-2">
+        <Icon className={cn('h-3.5 w-3.5', iconColor)} />
+        <span className="text-xs font-semibold text-foreground">{title}</span>
+        <span className="truncate text-[11px] text-muted-foreground/70">{hint}</span>
+      </div>
+      <div className="space-y-1.5">
+        {items.map(c => (
+          <button
+            key={c.id}
+            onClick={() => onPick(c)}
+            className="w-full rounded-lg border border-border/60 bg-card/70 px-3 py-2 text-left hover:border-primary/30 hover:bg-card btn-press"
+          >
+            <span className="flex items-center gap-2">
+              <span className="truncate text-sm font-medium text-foreground">{c.name}</span>
+              <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">{c.salary}</span>
+            </span>
+            <span className="mt-0.5 block truncate text-[11px] text-muted-foreground/75">{reasonOf(c)}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// 主组件
+// ============================================================
+
+export default function CareerPage() {
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeSorts, setActiveSorts] = useState<SortKey[]>([]);
+  const [selectedCareer, setSelectedCareer] = useState<number | null>(null);
+  const [showResources, setShowResources] = useState<number | null>(null);
+  const [aiPanel, setAiPanel] = useState<{ open: boolean; career: Career | null }>({ open: false, career: null });
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const { guard } = useLockedAction();
+  const guardDetail = useFreeDetailGuard('career');
+  // 职业三态标记（想做/在做/做过），存 career-marks.v1
+  const { markedCount: careerMarkedCount, clearAll: clearCareerMarks } = useModuleMarks(STORAGE_KEYS.careerMarks);
+
+  /** 详情是锁定点（每模块首条免费）；收起不计次 */
+  const openCareerDetail = (id: number) => {
+    if (selectedCareer === id) {
+      setSelectedCareer(null);
+      setShowResources(null);
+      return;
+    }
+    guardDetail(() => {
+      setSelectedCareer(id);
+      setShowResources(null);
+    });
+  };
+
+  // 移动端（<lg 单列布局）详情面板渲染在整片卡片网格之后，
+  // 选中后不滚过去的话，用户点了卡片却看不到任何反馈
+  useEffect(() => {
+    if (!selectedCareer || typeof window === 'undefined') return;
+    if (!window.matchMedia('(max-width: 1023px)').matches) return;
+    const timer = window.setTimeout(() => {
+      scrollToEl(detailPanelRef.current, { offset: 64 });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [selectedCareer]);
+
+  // 排序切换
+  const toggleSort = (key: SortKey) => {
+    setActiveSorts(prev => {
+      if (prev.includes(key)) return prev.filter(k => k !== key);
+      return [...prev, key];
+    });
+  };
+
+  // 过滤 + 排序
+  const filtered = useMemo(() => {
+    let result = selectedCategory === 'all'
+      ? careers
+      : careers.filter(c => c.category === selectedCategory);
+
+    // 搜索：名称 > 技能 > 描述/分类，任一字段命中即保留
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      result = result.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.keySkill.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.category.toLowerCase().includes(q)
+      );
+    }
+
+    if (activeSorts.length > 0) {
+      result = [...result].sort((a, b) => {
+        for (const sortKey of activeSorts) {
+          const va = getSortValue(a, sortKey);
+          const vb = getSortValue(b, sortKey);
+          if (va !== vb) {
+            // salary 和 selfStudy 降序（高→低），aiRisk 和 trend 升序（好→坏）
+            if (sortKey === 'salary' || sortKey === 'selfStudy') return vb - va;
+            return va - vb;
+          }
+        }
+        return 0;
+      });
+    } else {
+      // 默认口径（全站统一：前面几条必须是最要紧的）：
+      // 趋势上升 → AI 风险低 → 年薪高。选了排序 chip 就以用户选择为准。
+      result = [...result].sort((a, b) =>
+        getSortValue(a, 'trend') - getSortValue(b, 'trend') ||
+        getSortValue(b, 'aiRisk') - getSortValue(a, 'aiRisk') ||
+        parseSalaryLower(b.salary) - parseSalaryLower(a.salary)
+      );
+    }
+
+    return result;
+  }, [selectedCategory, activeSorts, searchQuery]);
+
+  /**
+   * 快看组：黄金赛道（趋势上升 + AI 低风险，按薪资取前 6）与
+   * 高危赛道（趋势下行或 AI 高风险，风险因子多者优先）。
+   * 高危原口径「down 且 high」全库只有 1 条，是口径过严不是数据缺失。
+   */
+  const goldenAll = useMemo(
+    () => filtered.filter(c => c.trend === 'up' && c.aiRisk === 'low'),
+    [filtered]
+  );
+  const goldenCareers = useMemo(
+    () => [...goldenAll].sort((a, b) => parseSalaryLower(b.salary) - parseSalaryLower(a.salary)).slice(0, 6),
+    [goldenAll]
+  );
+  const riskyAll = useMemo(
+    () => filtered.filter(c => c.trend === 'down' || c.aiRisk === 'high'),
+    [filtered]
+  );
+  const riskyCareers = useMemo(
+    () => [...riskyAll].sort((a, b) =>
+      riskScore(b) - riskScore(a) || parseSalaryLower(b.salary) - parseSalaryLower(a.salary)
+    ).slice(0, 6),
+    [riskyAll]
+  );
+
+  /** 快看组逐项理由：直接从数据字段推导，不编故事 */
+  const goldenReason = (c: Career) => `趋势上升 · AI 替代风险低 · 自学可行度 ${c.selfStudyScore}/10`;
+  const riskyReason = (c: Career) => {
+    const parts: string[] = [];
+    if (c.aiRisk === 'high') parts.push('AI 替代风险高');
+    if (c.trend === 'down') parts.push('赛道在收缩');
+    if (c.trend === 'up') parts.push('是风口但内卷重');
+    return parts.join(' · ');
+  };
+
+  // 全量渲染会卡：先渲染一小页，点击"加载更多"再追加
+  const PAGE_SIZE = 24;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [selectedCategory, activeSorts, searchQuery]);
+  const visibleCareers = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hiddenCount = filtered.length - visibleCareers.length;
+
+  const aiHighRisk = careers.filter(c => c.aiRisk === 'high').length;
+  const trendingUp = careers.filter(c => c.trend === 'up').length;
+  const aiLowRisk = careers.filter(c => c.aiRisk === 'low').length;
+
+  const selected = selectedCareer !== null ? careers.find(c => c.id === selectedCareer) : null;
+
+  // Salary distribution
+  const salaryBuckets = useMemo(() => {
+    const buckets = { '0-15W': 0, '15-30W': 0, '30-50W': 0, '50W+': 0 };
+    careers.forEach(c => {
+      const low = parseSalaryLower(c.salary);
+      if (low < 15) buckets['0-15W']++;
+      else if (low < 30) buckets['15-30W']++;
+      else if (low < 50) buckets['30-50W']++;
+      else buckets['50W+']++;
+    });
+    return buckets;
+  }, []);
+  const maxBucket = Math.max(...Object.values(salaryBuckets));
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header —— 编号/图标/提问统一从 module-identity 取 */}
+      <ModulePageHead
+        href="/career"
+        title="职业遍历"
+        desc="选对赛道比努力更重要。浏览各行各业的薪资、趋势和AI替代风险，找到你的最优职业策略。"
+      >
+        {/* Stats */}
+        <div className="flex items-center gap-6 mt-6 flex-wrap animate-fade-in-up stagger-3">
+          <div className="flex items-center gap-2">
+            <Bot className="h-4 w-4 text-red-500" />
+            <span className="text-lg font-semibold font-mono tabular-nums">{aiHighRisk}</span>
+            <span className="text-xs text-muted-foreground">个AI高风险</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-green-500" />
+            <span className="text-lg font-semibold font-mono tabular-nums">{trendingUp}</span>
+            <span className="text-xs text-muted-foreground">个趋势上升</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Bot className="h-4 w-4 text-green-500" />
+            <span className="text-lg font-semibold font-mono tabular-nums">{aiLowRisk}</span>
+            <span className="text-xs text-muted-foreground">个AI低风险</span>
+          </div>
+        </div>
+      </ModulePageHead>
+
+      <PreviewBanner />
+
+      {/* Salary Distribution */}
+      <div className="border-b border-border bg-muted/10">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-5">
+          <div className="flex items-center gap-2 mb-3">
+            <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-[11px] font-semibold text-muted-foreground/75 uppercase tracking-wider">薪资分布</span>
+          </div>
+          <div className="flex items-end gap-3">
+            {Object.entries(salaryBuckets).map(([range, count]) => (
+              <div key={range} className="flex-1 flex flex-col items-center gap-1.5">
+                <span className="text-[11px] font-mono text-muted-foreground tabular-nums">{count}</span>
+                <div className="w-full bg-muted rounded-sm overflow-hidden" style={{ height: '40px' }}>
+                  <div
+                    className="w-full bg-primary/30 rounded-sm transition-colors duration-500"
+                    style={{ height: `${(count / maxBucket) * 100}%`, marginTop: `${100 - (count / maxBucket) * 100}%` }}
+                  />
+                </div>
+                <span className="text-[11px] text-muted-foreground">{range}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Filters
+          top-12：移动端有一条 fixed 的 h-12 顶栏，写 top-0 会被它盖住（见 app-sidebar） */}
+      <div className="sticky top-12 md:top-0 z-10 border-b border-border bg-background/90">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-8 py-3">
+          {/* 分类多，小屏一行放不下：横向滚动而不是挤成一团 */}
+          <div className="flex items-center gap-2 mb-2 overflow-x-auto scrollbar-hide sm:flex-wrap sm:overflow-visible">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1 shrink-0" />
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={cn(
+                'shrink-0 rounded-md px-3 py-2 sm:py-1.5 text-xs font-medium transition-colors',
+                selectedCategory === 'all' ? 'bg-primary/10 text-primary shadow-sm' : 'text-muted-foreground hover:bg-accent/60'
+              )}
+            >
+              全部
+            </button>
+            {CAREER_CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={cn(
+                  'shrink-0 rounded-md px-3 py-2 sm:py-1.5 text-xs font-medium transition-colors',
+                  selectedCategory === cat ? 'bg-primary/10 text-primary shadow-sm' : 'text-muted-foreground hover:bg-accent/60'
+                )}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          {/* 搜索：近千个职业靠翻页找不到目标，按名称/技能/描述直接定位 */}
+          <div className="relative mb-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="搜索职业、技能关键词（如：心理咨询 / Python）..."
+              className="w-full rounded-lg border border-border bg-background pl-9 pr-9 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:border-ring"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                aria-label="清除搜索"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground/70 hover:text-foreground transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          {/* 排序 chip：手机上 py-0.5 的点击区按不住，加大到 32px 高 */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide sm:overflow-visible">
+            <span className="shrink-0 text-[11px] text-muted-foreground/70">
+              {activeSorts.length === 0 ? '默认：趋势上升 → AI 低风险 → 年薪高' : '排序（可多选）'}
+            </span>
+            {sortOptions.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => toggleSort(opt.value)}
+                className={cn(
+                  'shrink-0 rounded-sm px-2.5 py-1.5 sm:py-0.5 text-[11px] font-medium transition-colors flex items-center gap-1',
+                  activeSorts.includes(opt.value) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-accent/60'
+                )}
+              >
+                {opt.label}
+                {activeSorts.includes(opt.value) && (
+                  <span className="text-[11px] text-primary/60">
+                    {activeSorts.indexOf(opt.value) + 1}
+                  </span>
+                )}
+              </button>
+            ))}
+            {activeSorts.length > 0 && (
+              <button
+                onClick={() => setActiveSorts([])}
+                className="rounded-sm px-1.5 py-0.5 text-[11px] text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+              >
+                清除
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-8">
+        {/* 快看：近千条里先看两极 */}
+        {(goldenCareers.length > 0 || riskyCareers.length > 0) && (
+          <Reveal className="mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {goldenCareers.length > 0 && (
+                <QuickLookGroup
+                  tone="good"
+                  title="黄金赛道"
+                  hint={`共 ${goldenAll.length} 个 · 按薪资取前 6`}
+                  icon={Sparkles}
+                  items={goldenCareers}
+                  reasonOf={goldenReason}
+                  onPick={(c) => openCareerDetail(c.id)}
+                />
+              )}
+              {riskyCareers.length > 0 && (
+                <QuickLookGroup
+                  tone="bad"
+                  title="高危赛道"
+                  hint={`共 ${riskyAll.length} 个 · AI 替代或收缩风险`}
+                  icon={AlertTriangle}
+                  items={riskyCareers}
+                  reasonOf={riskyReason}
+                  onPick={(c) => openCareerDetail(c.id)}
+                />
+              )}
+            </div>
+          </Reveal>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Career Grid */}
+          <div className={cn('lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 content-start')}>
+            {/* 显示进度读数 */}
+            <div className="col-span-full flex items-center justify-between text-[11px] text-muted-foreground/75 mb-1">
+              <span>显示 <span className="font-mono tabular-nums">{visibleCareers.length} / {filtered.length}</span></span>
+              <div className="flex items-center gap-3">
+                {careerMarkedCount > 0 && (
+                  <button
+                    onClick={clearCareerMarks}
+                    title="清除全部职业标记"
+                    className="inline-flex items-center gap-1 rounded-[2px] border border-primary/25 bg-primary/[0.06] px-3 py-1 font-medium text-primary transition-colors hover:bg-primary/10"
+                  >
+                    已标记 <span className="tabular-nums">{careerMarkedCount}</span> 个 · 全部清除
+                  </button>
+                )}
+                {filtered.length !== careers.length && (
+                  <span>
+                    筛选：{searchQuery ? `"${searchQuery}"` : selectedCategory === 'all' ? '全部' : selectedCategory}
+                  </span>
+                )}
+              </div>
+            </div>
+            {/* 空态：搜索词 + 分类 + 排序叠加后可能一条都不剩，
+                原先只显示「0 / 0」和一片空白，用户不知道该往哪退 */}
+            {filtered.length === 0 && (
+              <div className="col-span-full rounded-sm border border-dashed border-border/70 bg-muted/20 px-6 py-12 text-center">
+                <EmptyArt kind="search" className="mx-auto mb-3" />
+                <p className="text-sm font-medium text-foreground/80">没有符合当前条件的职业</p>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  搜索词、分类和排序是叠加生效的，放宽任意一个就能重新出结果
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setSearchQuery(''); setSelectedCategory('all'); setActiveSorts([]); }}
+                  className="mt-4 rounded-lg border border-primary/25 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                >
+                  清空全部筛选
+                </button>
+              </div>
+            )}
+            {visibleCareers.map((career, ci) => {
+              const TrendIcon = trendIcon[career.trend];
+              const isExpanded = showResources === career.id;
+              return (
+                <Reveal key={career.id} delay={Math.min(ci, 11) * 35}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openCareerDetail(career.id)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCareerDetail(career.id); } }}
+                    className={cn(
+                      'group w-full text-left rounded-sm border border-border/70 bg-card p-4 card-lift cursor-pointer',
+                      selectedCareer === career.id ? 'border-primary/30 ring-1 ring-primary/10' : 'border-border'
+                    )}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                        {career.name}
+                        <ArrowUpRight className="h-3.5 w-3.5 text-primary opacity-0 -translate-x-1 transition-[transform,opacity] duration-300 group-hover:translate-x-0 group-hover:opacity-100" />
+                      </h3>
+                      <TrendIcon className={cn('h-4 w-4 shrink-0', trendColor[career.trend])} />
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2">{career.description}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="rounded-md border border-border/50 bg-muted/40 px-2 py-0.5 text-[11px] font-mono text-foreground tabular-nums">
+                        {career.salary}
+                      </span>
+                      <span className={cn('rounded-md px-2 py-0.5 text-[11px] font-medium', aiRiskColor[career.aiRisk])}>
+                        AI{aiRiskLabel[career.aiRisk]}
+                      </span>
+                      <span className={cn('rounded-md px-1.5 py-0.5 text-[11px] font-medium flex items-center gap-0.5', selfStudyColor(career.selfStudyScore))}>
+                        <Star className="h-2.5 w-2.5" />
+                        自学{career.selfStudyScore}
+                      </span>
+                      <span className="rounded-md bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground">
+                        {career.category}
+                      </span>
+                      <span
+                        onClick={(e) => { e.stopPropagation(); guard(() => setAiPanel({ open: true, career })); }}
+                        className="ml-auto rounded-md border border-primary/15 bg-primary/5 px-2 py-0.5 text-[11px] text-primary/60 hover:text-primary hover:bg-primary/10 transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <Sparkles className="h-2.5 w-2.5" />
+                        分析
+                      </span>
+                    </div>
+                    {/* 资源入口 + 三态标记 */}
+                    <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between gap-2 flex-wrap">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowResources(isExpanded ? null : career.id); }}
+                        className="flex items-center gap-1 text-[11px] text-primary/60 hover:text-primary transition-colors"
+                      >
+                        <GraduationCap className="h-3 w-3" />
+                        <span>学习资源 · {resourceCount(career)} 项</span>
+                        {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+                      <CareerMarkBar id={career.id} />
+                    </div>
+                  </div>
+
+                  {/* 展开的资源面板 */}
+                  {isExpanded && (
+                    <div className="rounded-b-lg border border-t-0 border-border bg-muted/50 px-4 pb-4 pt-2 animate-fade-in-up">
+                      <CareerResourcePanel career={career} />
+                    </div>
+                  )}
+                </Reveal>
+              );
+            })}
+            {/* 加载更多 */}
+            {hiddenCount > 0 && (
+              <button
+                onClick={() => setVisibleCount(v => v + PAGE_SIZE * 2)}
+                className="col-span-full rounded-lg border border-dashed border-border py-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+              >
+                加载更多 · 还有 <span className="font-mono tabular-nums">{hiddenCount}</span> 个
+              </button>
+            )}
+            {hiddenCount === 0 && filtered.length > PAGE_SIZE && (
+              <div className="col-span-full py-2 text-center text-[11px] text-muted-foreground/70">
+                已显示全部 <span className="font-mono tabular-nums">{filtered.length}</span> 个职业
+              </div>
+            )}
+          </div>
+
+          {/* Detail Panel */}
+          <div ref={detailPanelRef} className="lg:col-span-1 scroll-mt-14">
+            {selected ? (
+              <div className="rounded-lg border border-primary/20 bg-card p-5 sticky top-20 animate-scale-in">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-serif font-semibold text-foreground">{selected.name}</h3>
+                  <button onClick={() => setSelectedCareer(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="mb-4">
+                  <CareerMarkBar id={selected.id} />
+                </div>
+
+                <p className="text-sm text-muted-foreground leading-relaxed mb-5">{selected.description}</p>
+
+                <div className="space-y-3">
+                  {/* Salary */}
+                  <div className="flex items-center justify-between py-2 border-b border-border/50">
+                    <span className="text-xs text-muted-foreground">薪资范围</span>
+                    <span className="text-sm font-mono font-semibold text-foreground tabular-nums">{selected.salary}</span>
+                  </div>
+
+                  {/* Self Study Score */}
+                  <div className="py-2 border-b border-border/50">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-muted-foreground">自学推荐指数</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn('rounded-sm px-2 py-0.5 text-[11px] font-medium', selfStudyColor(selected.selfStudyScore))}>
+                          {selected.selfStudyScore}/10
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">{selfStudyLabel(selected.selfStudyScore)}</span>
+                      </div>
+                    </div>
+                    <MeterBar value={selected.selfStudyScore / 10} barClassName={cn(selected.selfStudyScore >= 8 ? 'bg-green-500/60' : selected.selfStudyScore >= 5 ? 'bg-amber-500/60' : 'bg-red-500/60')} />
+                    <p className="text-[11px] text-muted-foreground/70 mt-1">
+                      {selected.selfStudyDifficulty === 'easy' ? '自学门槛低，适合自学入门' :
+                       selected.selfStudyDifficulty === 'medium' ? '需要一定基础，自学可行' : '自学门槛高，建议系统学习'}
+                    </p>
+                  </div>
+
+                  {/* Trend with visual */}
+                  <div className="py-2 border-b border-border/50">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-muted-foreground">趋势</span>
+                      <span className={cn('text-sm font-medium flex items-center gap-1', trendColor[selected.trend])}>
+                        {trendLabel[selected.trend]}
+                        {(() => { const ArrowIcon = trendArrow[selected.trend]; return <ArrowIcon className="h-3.5 w-3.5" />; })()}
+                      </span>
+                    </div>
+                    <MeterBar className={trendBg[selected.trend]} value={selected.trend === 'up' ? 0.8 : selected.trend === 'stable' ? 0.5 : 0.2} barClassName={cn(selected.trend === 'up' ? 'bg-green-500/50' : selected.trend === 'down' ? 'bg-red-500/50' : 'bg-amber-500/50')} />
+                  </div>
+
+                  {/* AI Risk with visual bar */}
+                  <div className="py-2 border-b border-border/50">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-muted-foreground">AI替代风险</span>
+                      <span className={cn('rounded-sm px-2 py-0.5 text-[11px] font-medium', aiRiskColor[selected.aiRisk])}>
+                        {aiRiskLabel[selected.aiRisk]}
+                      </span>
+                    </div>
+                    <MeterBar value={aiRiskBar[selected.aiRisk] / 100} barClassName={cn(selected.aiRisk === 'high' ? 'bg-red-500/50' : selected.aiRisk === 'medium' ? 'bg-amber-500/50' : 'bg-green-500/50')} />
+                  </div>
+
+                  {/* Category */}
+                  <div className="flex items-center justify-between py-2 border-b border-border/50">
+                    <span className="text-xs text-muted-foreground">行业</span>
+                    <span className="text-sm text-foreground">{selected.category}</span>
+                  </div>
+
+                  {/* Key Skill */}
+                  <div className="py-2">
+                    <span className="text-xs text-muted-foreground block mb-1.5">核心技能</span>
+                    <span className="rounded-sm bg-primary/5 border border-primary/10 px-2.5 py-1.5 text-xs text-foreground">
+                      {selected.keySkill}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 学习资源：视频 / 文档与论坛 / 书籍 */}
+                <div className="mt-5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="h-3.5 w-3.5 text-primary/60" />
+                    <h4 className="text-xs font-semibold text-foreground">推荐学习资源</h4>
+                  </div>
+                  <CareerResourcePanel career={selected} />
+                </div>
+
+                {/* Strategic insight */}
+                <div className="mt-4 p-3 rounded-md bg-muted/30 border border-border/50">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    {selected.aiRisk === 'high'
+                      ? '⚠ 这个职业面临较高的AI替代风险。建议提前布局转型或建立AI无法替代的差异化优势。'
+                      : selected.aiRisk === 'low'
+                      ? '✓ AI替代风险较低，职业稳定性较好。但也需要关注行业结构性变化。'
+                      : '◐ AI替代风险中等。部分工作内容可能被AI辅助，但核心价值仍然依赖人类判断。'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border bg-card/50 p-8 text-center sticky top-20">
+                <Briefcase className="h-8 w-8 text-muted-foreground/20 mx-auto mb-3" />
+                <p className="text-xs text-muted-foreground">点击任意职业查看详情</p>
+                <p className="text-[11px] text-muted-foreground/70 mt-1">包括薪资、趋势、AI风险分析</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom context */}
+      <div className="border-t border-border bg-muted/10">
+        <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Reveal delay={0}>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-semibold text-foreground mb-1.5">赛道 &gt; 努力</p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">在上升赛道里，普通人也能借势起飞。在下降赛道里，天才也会被趋势拖垮。选赛道是第一个关键决策。</p>
+            </div>
+            </Reveal>
+            <Reveal delay={80}>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-semibold text-foreground mb-1.5">AI是你的对手还是队友？</p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">AI不是来抢你工作的——它是来改变工作方式的。了解风险，提前布局，让AI成为你的加速器而非替代者。</p>
+            </div>
+            </Reveal>
+            <Reveal delay={160}>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-semibold text-foreground mb-1.5">自学是最大的杠杆</p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">自学推荐指数高的职业，意味着你不需要昂贵的学位就能入门。善用免费资源，把时间变成技能。</p>
+            </div>
+            </Reveal>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Analysis Panel */}
+      {aiPanel.career && (
+        <AIAnalysisPanel
+          open={aiPanel.open}
+          onClose={() => setAiPanel({ open: false, career: null })}
+          module="career"
+          moduleLabel="职业分析"
+          itemTitle={aiPanel.career.name}
+          itemDescription={`行业：${aiPanel.career.category} | 薪资：${aiPanel.career.salary} | 趋势：${trendLabel[aiPanel.career.trend]} | AI替代风险：${aiRiskLabel[aiPanel.career.aiRisk]}\n自学推荐指数：${aiPanel.career.selfStudyScore}/10 | 自学难度：${aiPanel.career.selfStudyDifficulty}\n核心技能：${aiPanel.career.keySkill}\n\n${aiPanel.career.description}\n\n${getAiAdvice(aiPanel.career)}`}
+        />
+      )}
+      <AuthorNote module="career" />
+    </div>
+  );
+}

@@ -1,0 +1,1127 @@
+'use client';
+
+import { MeterBar } from '@/components/shared/meter-bar';
+import { AuthorNote } from '@/components/shared/author-note';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import { ModulePageHead } from '@/components/shared/module-page-head';
+import { AiMarkdown } from '@/components/shared/ai-markdown';
+import { AiCursor, AiPromptChips, AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock, AiErrorNotice, AiStoppedNote } from '@/components/ai/ai-panel-actions';
+import { useAiChat, toApiHistory } from '@/components/ai/use-ai-chat';
+import { useLockedAction } from '@/hooks/use-locked-action';
+import { getActiveAiConfig } from '@/lib/active-ai-client';
+import { useAdvancedSettings } from '@/hooks/use-advanced-settings';
+import { usePersistedState } from '@/hooks/use-persisted-state';
+import { useEscapeKey } from '@/hooks/use-escape-key';
+import { useScrollLock } from '@/hooks/use-scroll-lock';
+import { ModuleGate } from '@/components/auth/module-gate';
+import { RotateCcw, Play, Sparkles, TrendingUp,
+  AlertTriangle, Lightbulb, ChevronRight,
+  Bot, X, Send, ClipboardCheck, ArrowRight, BarChart3,
+} from 'lucide-react';
+
+// ============================================================
+// 量化问卷体系
+// ============================================================
+
+interface QuestionOption {
+  label: string;
+  score: number; // 0-100
+}
+
+interface AssessmentQuestion {
+  id: string;
+  dimension: string; // 对应 dimension key
+  text: string;
+  options: QuestionOption[];
+}
+
+const assessmentQuestions: AssessmentQuestion[] = [
+  // === 出身 ===
+  {
+    id: 'family_1', dimension: 'family',
+    text: '你父母的最高学历是？',
+    options: [
+      { label: '初中及以下', score: 10 },
+      { label: '高中/中专', score: 25 },
+      { label: '大专', score: 45 },
+      { label: '本科', score: 65 },
+      { label: '硕士及以上', score: 85 },
+    ],
+  },
+  {
+    id: 'family_2', dimension: 'family',
+    text: '你成长阶段家庭的经济状况如何？',
+    options: [
+      { label: '经常为基本生活发愁', score: 10 },
+      { label: '勉强够用，没有余裕', score: 30 },
+      { label: '小康水平，偶尔有余', score: 55 },
+      { label: '较为宽裕，有一定积蓄', score: 75 },
+      { label: '优渥，投资和选择自由', score: 90 },
+    ],
+  },
+  {
+    id: 'family_3', dimension: 'family',
+    text: '你18岁前获得的教育资源（课外辅导、特长培养、优质学校）如何？',
+    options: [
+      { label: '几乎没有，全靠自学', score: 10 },
+      { label: '很少，只上过基本公立学校', score: 30 },
+      { label: '有一些，上过部分辅导班', score: 55 },
+      { label: '较多，有特长培养和择校', score: 75 },
+      { label: '非常丰富，一对一/国际路线', score: 90 },
+    ],
+  },
+  {
+    id: 'family_4', dimension: 'family',
+    text: '你的家庭能提供的社会人脉和职业引路人如何？',
+    options: [
+      { label: '完全没有，一切从零开始', score: 10 },
+      { label: '只有很基础的亲戚关系', score: 30 },
+      { label: '有一些行业内的参考意见', score: 55 },
+      { label: '有明确引路人，能内推或介绍', score: 75 },
+      { label: '人脉网络强大，多个方向都有资源', score: 90 },
+    ],
+  },
+
+  // === 天赋 ===
+  {
+    id: 'talent_1', dimension: 'talent',
+    text: '你在学生时代的整体学业排名通常是？',
+    options: [
+      { label: '后30%，明显吃力', score: 15 },
+      { label: '中游50%-70%', score: 35 },
+      { label: '前30%-50%', score: 55 },
+      { label: '前10%-30%', score: 75 },
+      { label: '前5%，轻松领跑', score: 90 },
+    ],
+  },
+  {
+    id: 'talent_2', dimension: 'talent',
+    text: '学习新技能时，你通常多快能上手？',
+    options: [
+      { label: '很慢，需要反复练习很久', score: 15 },
+      { label: '偏慢，但坚持能跟上', score: 35 },
+      { label: '一般速度，正常水平', score: 55 },
+      { label: '较快，往往领先同期', score: 75 },
+      { label: '极快，别人还在入门我已经精通', score: 90 },
+    ],
+  },
+  {
+    id: 'talent_3', dimension: 'talent',
+    text: '你的身体素质（体力、运动能力、健康）在同辈中如何？',
+    options: [
+      { label: '偏弱，容易疲劳或生病', score: 15 },
+      { label: '一般，偶尔运动', score: 40 },
+      { label: '中等，能保持基本健康', score: 55 },
+      { label: '较好，有运动习惯', score: 75 },
+      { label: '优秀，长期锻炼/运动员体质', score: 90 },
+    ],
+  },
+  {
+    id: 'talent_4', dimension: 'talent',
+    text: '你的外貌/形象在社交中的加成如何？',
+    options: [
+      { label: '几乎没有加成，甚至有减分', score: 15 },
+      { label: '普通，不增不减', score: 40 },
+      { label: '中等偏上，偶尔被夸', score: 60 },
+      { label: '明显有加成，社交容易', score: 80 },
+      { label: '非常突出，自带关注', score: 92 },
+    ],
+  },
+
+  // === 努力 ===
+  {
+    id: 'effort_1', dimension: 'effort',
+    text: '你过去一年中，有多少天在持续做一件有价值的事（学习/健身/副业）？',
+    options: [
+      { label: '基本没有，三天打鱼两天晒网', score: 10 },
+      { label: '偶尔做做，一个月坚持不了几天', score: 25 },
+      { label: '断断续续，大约一半时间在坚持', score: 50 },
+      { label: '大部分时间在坚持，偶尔中断', score: 72 },
+      { label: '几乎每天坚持，极少中断', score: 90 },
+    ],
+  },
+  {
+    id: 'effort_2', dimension: 'effort',
+    text: '面对困难和挫折时，你的典型反应是？',
+    options: [
+      { label: '很快放弃，觉得不适合自己', score: 10 },
+      { label: '挣扎一阵后放弃', score: 30 },
+      { label: '咬牙坚持，但效率下降', score: 50 },
+      { label: '调整策略继续推进', score: 72 },
+      { label: '越挫越勇，把困难当燃料', score: 90 },
+    ],
+  },
+  {
+    id: 'effort_3', dimension: 'effort',
+    text: '你每天的有效工作时间（专注、高产出）大约几小时？',
+    options: [
+      { label: '不到2小时，大量时间被浪费', score: 10 },
+      { label: '2-4小时，效率一般', score: 30 },
+      { label: '4-6小时，正常水平', score: 55 },
+      { label: '6-8小时，非常投入', score: 75 },
+      { label: '8小时+，极度自律', score: 92 },
+    ],
+  },
+  {
+    id: 'effort_4', dimension: 'effort',
+    text: '你有没有一个坚持超过1年的习惯（阅读/运动/写作等）？',
+    options: [
+      { label: '没有，什么都坚持不了1年', score: 10 },
+      { label: '有一个，但经常中断', score: 35 },
+      { label: '有一个，坚持还不错', score: 55 },
+      { label: '有1-2个稳定的长期习惯', score: 75 },
+      { label: '有3个以上深度长期习惯', score: 90 },
+    ],
+  },
+
+  // === 选择 ===
+  {
+    id: 'choice_1', dimension: 'choice',
+    text: '你人生中最重要的几次选择（专业/工作/城市/伴侣），结果如何？',
+    options: [
+      { label: '几乎都踩了坑，后悔居多', score: 10 },
+      { label: '大部分不太理想', score: 30 },
+      { label: '好坏参半，有对有错', score: 55 },
+      { label: '大部分选对了方向', score: 75 },
+      { label: '几乎都选对了，关键岔路很少失误', score: 90 },
+    ],
+  },
+  {
+    id: 'choice_2', dimension: 'choice',
+    text: '做重大决策时，你的信息收集和分析习惯如何？',
+    options: [
+      { label: '凭直觉或随大流', score: 10 },
+      { label: '简单了解一下就决定', score: 30 },
+      { label: '会查资料、问人，但不系统', score: 55 },
+      { label: '系统调研，列利弊清单', score: 75 },
+      { label: '深度研究+多角度验证+压力测试', score: 90 },
+    ],
+  },
+  {
+    id: 'choice_3', dimension: 'choice',
+    text: '你目前所在的城市/行业/赛道，与你个人优势的匹配度如何？',
+    options: [
+      { label: '很不匹配，感觉在逆风走', score: 10 },
+      { label: '匹配度一般，没什么特别优势', score: 30 },
+      { label: '还行，能发挥一部分优势', score: 55 },
+      { label: '比较匹配，大部分优势能用上', score: 75 },
+      { label: '高度匹配，找到了自己的主场', score: 90 },
+    ],
+  },
+
+  // === 运气 ===
+  {
+    id: 'luck_1', dimension: 'luck',
+    text: '你是否遇到过改变命运的机会（贵人、风口、偶然发现）？',
+    options: [
+      { label: '从来没有', score: 10 },
+      { label: '好像有过，但没抓住', score: 30 },
+      { label: '有1-2次，抓住了部分', score: 55 },
+      { label: '有几次关键的好运气', score: 75 },
+      { label: '运气经常眷顾我', score: 90 },
+    ],
+  },
+  {
+    id: 'luck_2', dimension: 'luck',
+    text: '你出生和成长的年代/地区，对个人发展是红利还是阻碍？',
+    options: [
+      { label: '严重阻碍，生错时代和地方', score: 10 },
+      { label: '偏阻碍，机会少', score: 30 },
+      { label: '不好不坏，正常水平', score: 55 },
+      { label: '偏红利，赶上好时候', score: 75 },
+      { label: '大红利，站在时代浪潮上', score: 90 },
+    ],
+  },
+  {
+    id: 'luck_3', dimension: 'luck',
+    text: '你遇到重大危机（失业/疾病/意外）时，结果如何？',
+    options: [
+      { label: '每次都损失惨重，很难恢复', score: 10 },
+      { label: '大多损失较大', score: 30 },
+      { label: '有惊无险，能撑过去', score: 55 },
+      { label: '总能化险为夷', score: 75 },
+      { label: '危机反而变成转机', score: 90 },
+    ],
+  },
+
+  // === 健康 ===
+  {
+    id: 'health_1', dimension: 'health',
+    text: '你最近的身体指标与体检情况如何？',
+    options: [
+      { label: '很久没体检，已有指标异常且没控制', score: 10 },
+      { label: '疏于体检，有点小毛病不太管', score: 32 },
+      { label: '基本正常，偶尔关注一下', score: 55 },
+      { label: '规律体检，指标大致正常', score: 75 },
+      { label: '各项指标长期正常且稳定', score: 90 },
+    ],
+  },
+  {
+    id: 'health_2', dimension: 'health',
+    text: '你的睡眠质量如何（睡得着、睡够、醒来有精神）？',
+    options: [
+      { label: '长期睡不好，靠咖啡撑白天', score: 10 },
+      { label: '经常熬夜或睡不实，醒来偏累', score: 32 },
+      { label: '基本够睡，偶尔失眠', score: 55 },
+      { label: '睡眠规律，多数时候不错', score: 75 },
+      { label: '沾枕就着、一觉到天亮', score: 90 },
+    ],
+  },
+  {
+    id: 'health_3', dimension: 'health',
+    text: '你的运动与身体活动习惯如何？',
+    options: [
+      { label: '几乎不运动，久坐为主', score: 10 },
+      { label: '偶尔动动，谈不上规律', score: 32 },
+      { label: '有零星运动，每周一两次', score: 55 },
+      { label: '规律有氧+力量，每周数次', score: 78 },
+      { label: '长期规律训练，体能出色', score: 92 },
+    ],
+  },
+  {
+    id: 'health_4', dimension: 'health',
+    text: '你白天的精力与情绪状态如何？',
+    options: [
+      { label: '全天疲惫或长期焦虑低落', score: 10 },
+      { label: '容易累，情绪起伏较大', score: 32 },
+      { label: '总体够用，午后有低谷', score: 55 },
+      { label: '精力稳定，情绪基本平稳', score: 78 },
+      { label: '精力充沛，情绪稳定能自调', score: 92 },
+    ],
+  },
+];
+
+// ============================================================
+// 维度定义与计算
+// ============================================================
+
+interface SimDimension {
+  key: string;
+  label: string;
+  description: string;
+  value: number;
+  weight: number;
+  color: string;
+  icon: string;
+}
+
+const dimensionDefaults: Omit<SimDimension, 'value'>[] = [
+  { key: 'family', label: '出身', description: '家庭经济与文化资本', weight: 0.22, color: '#ef4444', icon: '🏠' },
+  { key: 'talent', label: '天赋', description: '智商、体能、外貌等先天禀赋', weight: 0.18, color: '#a855f7', icon: '🧬' },
+  { key: 'effort', label: '努力', description: '时间投入、自律、坚持', weight: 0.18, color: '#22c55e', icon: '💪' },
+  { key: 'choice', label: '选择', description: '赛道、城市、伴侣等关键决策', weight: 0.17, color: '#3b82f6', icon: '🧭' },
+  { key: 'luck', label: '运气', description: '时代红利、偶遇、随机事件', weight: 0.13, color: '#f59e0b', icon: '🍀' },
+  { key: 'health', label: '健康', description: '体能、精力与身心状态', weight: 0.12, color: '#10b981', icon: '🫀' },
+];
+
+function createDefaultDimensions(): SimDimension[] {
+  return dimensionDefaults.map(d => ({ ...d, value: 50 }));
+}
+
+function calculateScore(dims: SimDimension[], weightMap?: Record<string, number>): number {
+  if (weightMap) {
+    // Apply custom weights from advanced settings, normalized to sum=1
+    const customWeights: Record<string, number> = {};
+    let totalW = 0;
+    for (const d of dims) {
+      const w = weightMap[d.key] ?? d.weight;
+      customWeights[d.key] = w;
+      totalW += w;
+    }
+    return Math.round(dims.reduce((s, d) => s + d.value * (customWeights[d.key] / totalW), 0));
+  }
+  return Math.round(dims.reduce((s, d) => s + d.value * d.weight, 0));
+}
+
+function getScoreLabel(score: number): { label: string; tier: string; color: string; desc: string } {
+  if (score >= 80) return { label: 'S', tier: '顶级', color: 'text-primary', desc: '天时地利人和——大部分人在这个区间需要至少两个维度极高' };
+  if (score >= 65) return { label: 'A', tier: '优秀', color: 'text-green-600 dark:text-green-400', desc: '大部分维度在线，少数短板不影响大局' };
+  if (score >= 50) return { label: 'B', tier: '中等', color: 'text-blue-600 dark:text-blue-400', desc: '有亮点有短板，关键看选择是否踩对了点' };
+  if (score >= 35) return { label: 'C', tier: '偏弱', color: 'text-amber-600 dark:text-amber-400', desc: '需要更多努力弥补，但仍有翻盘可能' };
+  return { label: 'D', tier: '困难', color: 'text-red-600 dark:text-red-400', desc: '人生难度模式——但历史上逆风翻盘的故事比比皆是' };
+}
+
+function getScenarioText(dims: SimDimension[]): string {
+  const d = Object.fromEntries(dims.map(dim => [dim.key, dim.value])) as Record<string, number>;
+  const parts: string[] = [];
+
+  if (d.family >= 70) parts.push('你出生在优越的家庭，有充足的资源支持');
+  else if (d.family >= 40) parts.push('你出身普通，没有特别的资源优势');
+  else parts.push('你出生在经济困难的家庭，一切要靠自己');
+
+  if (d.talent >= 70) parts.push('。你天赋出众，学什么都比人快');
+  else if (d.talent >= 40) parts.push('。你资质平平，但也不算差');
+  else parts.push('。你天资有限，需要比别人付出更多');
+
+  if (d.effort >= 70) parts.push('。你极其自律，是那种别人眼中的狠人');
+  else if (d.effort >= 40) parts.push('。你有时努力有时摆烂，普通人水平');
+  else parts.push('。你缺乏自律，经常在关键时刻掉链子');
+
+  if (d.choice >= 70) parts.push('。关键岔路口你都选对了方向');
+  else if (d.choice >= 40) parts.push('。你有些选择做对了，有些后悔莫及');
+  else parts.push('。你的关键决策几乎都踩了坑');
+
+  if (d.luck >= 70) parts.push('。运气总站在你这边，贵人不断');
+  else if (d.luck >= 40) parts.push('。运气不好不坏，该有的机会也有');
+  else parts.push('。运气似乎总和你作对，生不逢时');
+
+  if (d.health >= 70) parts.push('。你身体和精神状态都在线，是长期作战的本钱');
+  else if (d.health >= 40) parts.push('。身体状况还行，偶尔透支但能缓过来');
+  else parts.push('。身体和精力已经在亮红灯，正拖累其他所有维度');
+
+  return parts.join('');
+}
+
+function getStrategyAdvice(dims: SimDimension[]): { strategy: string; leverage: string; weakFix: string } {
+  const sorted = dims.slice().sort((a, b) => b.value - a.value);
+  const strongest = sorted[0];
+  const weakest = sorted[sorted.length - 1];
+
+  const strategy = `你最强的维度是「${strongest.label}」(${strongest.value})，最弱的是「${weakest.label}」(${weakest.value})。${weakest.value < 40 ? '短板明显，但短板恰恰是最大的增长空间。' : '维度比较均衡，寻找杠杆点来突破。'}`;
+
+  const leverageMap: Record<string, string> = {
+    family: '利用家庭资源作为安全网，大胆尝试高风险高回报的选择——你的兜底能力比别人强。',
+    talent: '把天赋转化为不可替代的技能——天赋不兑现就是浪费，兑现了就是护城河。',
+    effort: '用努力建立复利——坚持做一件事10000小时，你的对手就不是普通人了。',
+    choice: '继续做对选择——你已经有好判断力，关键是找到更大的决策杠杆（更大的城市、更好的赛道）。',
+    luck: '运气好的时候要加仓——贵人、时机、红利，来的时候要敢于All in。',
+    health: '身体和精力是其他一切维度的底座——状态好的时候，你的努力、判断和运气都会被放大。',
+  };
+
+  const weakFixMap: Record<string, string> = {
+    family: '出身无法改变，但人脉可以重建。主动寻找导师、加入高质量社群，用"后天人脉"弥补"先天人脉"。',
+    talent: '天赋不够，策略来凑。找到你的细分优势（不需要全面碾压，在一个点上做深就够了），用差异化竞争代替正面硬刚。',
+    effort: '努力是最可控的维度。从最小的习惯开始——每天30分钟专注做一件事，坚持100天后你就超越了80%的人。不需要意志力，需要系统。',
+    choice: '提升决策质量的方法是增加信息量。每周花2小时研究一个新领域，3年后你的视野和判断力会质变。关键是"多看"才能"选对"。',
+    luck: '运气无法控制，但可以增加运气的表面积。多尝试、多社交、多暴露在新环境中——运气是概率游戏，增加尝试次数就是增加好运的期望值。',
+    health: '健康是所有维度的地板。先补睡眠——7 小时是底线；再加规律运动（每周 150 分钟有氧 + 2-3 次力量）。精力回来了，努力和判断力才用得上力。',
+  };
+
+  return {
+    strategy,
+    leverage: leverageMap[strongest.key] || '',
+    weakFix: weakFixMap[weakest.key] || '',
+  };
+}
+
+// Radar chart constants
+const CHART_SIZE = 220;
+const CHART_CENTER = CHART_SIZE / 2;
+const CHART_RADIUS = 85;
+
+function polarToCartesian(angle: number, radius: number): { x: number; y: number } {
+  const rad = (angle - 90) * (Math.PI / 180);
+  return { x: CHART_CENTER + radius * Math.cos(rad), y: CHART_CENTER + radius * Math.sin(rad) };
+}
+
+// ============================================================
+// 步骤枚举
+// ============================================================
+
+type Step = 'assessment' | 'result';
+
+// ============================================================
+// 主组件
+// ============================================================
+
+export default function SimulationPage() {
+  const { defaultAge, loaded } = useAdvancedSettings();
+  const { guard } = useLockedAction();
+  const [step, setStep] = useState<Step>('assessment');
+  // 用户填的维度与答案持久化：刷新后不再从头来过（原来是纯 useState，刷新即丢）
+  const [dimensions, setDimensions] = usePersistedState<SimDimension[]>(
+    STORAGE_KEYS.simDimensions,
+    createDefaultDimensions,
+    // P1：形状校验——旧数据损坏（对象/缺字段）时回退默认值，防白屏
+    (v) => Array.isArray(v) && v.length > 0 && v.every(d => d && typeof d === 'object' && typeof (d as SimDimension).value === 'number')
+  );
+  const [answers, setAnswers] = usePersistedState<Record<string, string>>(STORAGE_KEYS.simAnswers, {});
+  const [simulated, setSimulated] = useState(false);
+  const [animatedScore, setAnimatedScore] = useState(0);
+
+  // AI 面板
+  const [aiOpen, setAiOpen] = useState(false);
+  const {
+    messages: aiMessages, setMessages: setAiMessages,
+    content: aiContent, thinking: aiThinking, thinkingBeat: aiBeat,
+    streaming: aiStreaming, error: aiError,
+    abortRef, run: runAi, retry: retryAi,
+  } = useAiChat();
+  const [aiQuestion, setAiQuestion] = useState('');
+  const aiEndRef = useRef<HTMLDivElement>(null);
+
+  // 按 Esc 关 AI 面板（先中止流式请求再关），键盘用户不用去找那个 ×
+  const closeAi = useCallback(() => {
+    if (abortRef.current) abortRef.current.abort();
+    setAiOpen(false);
+  }, [abortRef]);
+  useEscapeKey(closeAi, aiOpen);
+  useScrollLock(aiOpen);
+
+  // P0：组件卸载时兜底中止流式请求（与 laws/luck 一致），避免切页后孤儿连接继续消耗 AI 额度
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  // 模拟器六维（出身/天赋/努力/健康/选择/运气）用内置权重，与 /user 偏好权重（健康/财富等）是两个不同概念
+  const score = calculateScore(dimensions);
+  const scoreInfo = getScoreLabel(score);
+  const scenarioText = simulated ? getScenarioText(dimensions) : '';
+  const advice = simulated ? getStrategyAdvice(dimensions) : null;
+
+  // 问卷完成度
+  const answeredCount = Object.keys(answers).length;
+  const totalQuestions = assessmentQuestions.length;
+  const assessmentComplete = answeredCount === totalQuestions;
+
+  // 按维度分组题目
+  const questionsByDimension = useMemo(() => {
+    const groups: Record<string, AssessmentQuestion[]> = {};
+    for (const q of assessmentQuestions) {
+      if (!groups[q.dimension]) groups[q.dimension] = [];
+      groups[q.dimension].push(q);
+    }
+    return groups;
+  }, []);
+
+  const dimensionOrder = ['family', 'talent', 'effort', 'health', 'choice', 'luck'];
+  const dimensionLabels: Record<string, string> = {
+    family: '出身', talent: '天赋', effort: '努力', health: '健康', choice: '选择', luck: '运气',
+  };
+  const dimensionNumerals: Record<string, string> = {
+    family: '壹', talent: '贰', effort: '叁', health: '肆', choice: '伍', luck: '陆',
+  };
+
+  // 从问卷答案计算维度分数
+  const calculateFromAnswers = useCallback(() => {
+    const dimScores: Record<string, number[]> = {};
+    for (const q of assessmentQuestions) {
+      if (!dimScores[q.dimension]) dimScores[q.dimension] = [];
+      const answer = answers[q.id];
+      if (answer) {
+        const opt = q.options.find(o => o.label === answer);
+        if (opt) dimScores[q.dimension].push(opt.score);
+      }
+    }
+    return dimensionDefaults.map(d => {
+      const scores = dimScores[d.key] || [];
+      const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 50;
+      return { ...d, value: avg };
+    });
+  }, [answers]);
+
+  // 完成问卷（评估结果属于锁定内容：预览态弹解锁引导）
+  const handleCompleteAssessment = useCallback(() => {
+    guard(() => {
+      const dims = calculateFromAnswers();
+      setDimensions(dims);
+      setStep('result');
+    });
+  }, [calculateFromAnswers, setDimensions, guard]);
+
+  // 手动微调滑块
+  const handleSliderChange = useCallback((key: string, value: number) => {
+    setDimensions(prev => prev.map(d => d.key === key ? { ...d, value } : d));
+  }, [setDimensions]);
+
+  // 重置
+  const handleReset = useCallback(() => {
+    setDimensions(createDefaultDimensions());
+    setSimulated(false);
+    setAnswers({});
+  }, [setDimensions, setAnswers]);
+
+  // 重新评估
+  const handleReassess = useCallback(() => {
+    setStep('assessment');
+    setSimulated(false);
+  }, []);
+
+  // 推演
+  const handleSimulate = useCallback(() => {
+    guard(() => setSimulated(true));
+  }, [guard]);
+
+  useEffect(() => {
+    setAnimatedScore(score);
+  }, [score]);
+
+  // Radar chart
+  const angles = dimensions.map((_, i) => (360 / dimensions.length) * i);
+  const radarPoints = dimensions.map((d, i) => {
+    const r = (d.value / 100) * CHART_RADIUS;
+    const point = polarToCartesian(angles[i], r);
+    return `${point.x},${point.y}`;
+  });
+  const radarPath = `M ${radarPoints.join(' L ')} Z`;
+  const gridLevels = [0.25, 0.5, 0.75, 1.0];
+
+  // ============================================================
+  // AI 流式分析
+  // ============================================================
+  const startAIAnalysis = useCallback(async (question?: string) => {
+    const dimSummary = dimensions.map(d => {
+      const wPct = Math.round(d.weight * 100);
+      return `${d.label}：${d.value}/100（权重${wPct}%）`;
+    }).join('\n');
+    const contextStr = `综合评分：${score}分（${scoreInfo.tier}）\n${dimSummary}\n\n${scenarioText}\n${advice ? `\n策略：${advice.strategy}\n杠杆：${advice.leverage}\n短板修复：${advice.weakFix}` : ''}`;
+
+    const systemContext = `你是一位人生战略顾问，专注于命运维度的深度分析与破局方案。用户刚完成了命运模拟器的量化评估。
+${defaultAge !== null && defaultAge > 0 ? `\n用户当前年龄：${defaultAge}岁` : ''}
+
+${contextStr}
+
+请从以下维度给出深度分析：
+1. **维度画像**：当前六个维度的组合，构成什么样的人生画像
+2. **关键瓶颈**：哪个维度是当前最大的限制因素，为什么
+3. **破局路径**：针对最弱维度，给出3条具体可执行的提升方案（不是鸡汤，要可操作）
+4. **杠杆策略**：如何用最强维度撬动最弱维度的改善
+5. **执行时间表**：30天/90天/1年的具体行动里程碑
+
+要求：直接、有力度、不说废话。用数据和逻辑说话，不要鸡汤。`;
+
+    await runAi({
+      module: 'simulation',
+      item: systemContext,
+      question: question || '请给出我当前人生维度的深度分析和破局方案',
+      history: toApiHistory(aiMessages),
+      ai: getActiveAiConfig(),
+    });
+  }, [dimensions, score, scoreInfo, scenarioText, advice, aiMessages, defaultAge, runAi]);
+
+  const handleAISend = () => {
+    const trimmed = aiQuestion.trim();
+    if (!trimmed || aiStreaming) return;
+    setAiMessages(prev => [...prev, { role: 'user', content: trimmed }]);
+    setAiQuestion('');
+    startAIAnalysis(trimmed);
+  };
+
+  useEffect(() => {
+    aiEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [aiContent, aiMessages]);
+
+  // ============================================================
+  // 渲染
+  // ============================================================
+
+  return (
+    <ModuleGate modulePath="/simulation">
+    <div className="min-h-screen bg-background">
+      {/* Header —— 编号/图标/提问统一从 module-identity 取 */}
+      <ModulePageHead
+        href="/simulation"
+        title="命运模拟器"
+        desc={
+          <>
+            {step === 'assessment'
+              ? '先回答量化问卷，客观评估你的六个维度。无法评判自己？选项替你量化。'
+              : '问卷结果已出。微调滑块推演你的人生画像，或让AI给出深度分析与行动方案。'
+            }
+            {loaded && defaultAge !== null && defaultAge > 0 && (
+              <span className="ml-2 text-xs text-muted-foreground/70">
+                (当前年龄 {defaultAge} 岁)
+              </span>
+            )}
+          </>
+        }
+      >
+        {/* 步骤指示器 */}
+        <div className="flex items-center gap-3 mt-5 animate-fade-in-up stagger-3">
+          {[
+            { key: 'assessment', label: '量化评估', icon: ClipboardCheck },
+            { key: 'result', label: '结果与推演', icon: BarChart3 },
+          ].map((s, i) => {
+            const isActive = s.key === step;
+            const isDone = s.key === 'assessment' && step !== 'assessment';
+            return (
+              <div key={s.key} className="flex items-center gap-2">
+                <div className={cn(
+                  'flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold transition-colors',
+                  isActive ? 'bg-primary text-primary-foreground' :
+                  isDone ? 'bg-primary/20 text-primary' :
+                  'bg-muted/40 text-muted-foreground/70'
+                )}>
+                  {isDone ? '✓' : i + 1}
+                </div>
+                <span className={cn(
+                  'text-[11px] font-medium transition-colors',
+                  isActive ? 'text-foreground' : 'text-muted-foreground/70'
+                )}>{s.label}</span>
+                {i < 2 && <div className="w-6 h-px bg-border" />}
+              </div>
+            );
+          })}
+        </div>
+
+      </ModulePageHead>
+
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto px-6 sm:px-8 py-8">
+        {/* ==================== 步骤1: 量化问卷 ==================== */}
+        {step === 'assessment' && (
+          <div className="space-y-8 animate-fade-in-up">
+            {/* 六维概览：先看清要评估什么 */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-t border-b border-border">
+              {dimensionOrder.map((dimKey) => (
+                <div key={dimKey} className="flex flex-col gap-2 px-4 py-5 first:pl-0 sm:first:pl-0 [&:not(:first-child)]:border-l border-border">
+                  <span className="font-serif text-2xl text-primary">{dimensionNumerals[dimKey]}</span>
+                  <span className="font-serif text-sm font-semibold text-foreground">{dimensionLabels[dimKey]}</span>
+                  <span className="text-[11px] tracking-[0.15em] tabular-nums text-muted-foreground">
+                    {(questionsByDimension[dimKey] || []).length} 题
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* 进度条 */}
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-foreground">评估进度</span>
+                <span className="text-xs font-mono text-muted-foreground tabular-nums">{answeredCount}/{totalQuestions}</span>
+              </div>
+              <MeterBar className="h-2" value={answeredCount / totalQuestions} />
+            </div>
+
+            {/* 按维度分组 */}
+            {dimensionOrder.map(dimKey => {
+              const questions = questionsByDimension[dimKey] || [];
+              return (
+                <div key={dimKey} className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="font-serif text-base text-primary">{dimensionNumerals[dimKey]}</span>
+                    <h2 className="text-sm font-semibold text-foreground">{dimensionLabels[dimKey]}</h2>
+                    <span className="text-[11px] text-muted-foreground/70">
+                      <span className="font-mono tabular-nums">{questions.filter(q => answers[q.id]).length}/{questions.length}</span> 已答
+                    </span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+
+                  {questions.map(q => {
+                    const selected = answers[q.id];
+                    return (
+                      <div key={q.id} className="rounded-lg border border-border bg-card p-4 hover:border-border/80 transition-colors">
+                        <p className="text-sm text-foreground mb-3 font-medium">{q.text}</p>
+                        <div className="space-y-2">
+                          {q.options.map(opt => (
+                            <button
+                              key={opt.label}
+                              onClick={() => setAnswers(prev => ({ ...prev, [q.id]: opt.label }))}
+                              className={cn(
+                                'w-full flex items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors text-xs',
+                                selected === opt.label
+                                  ? 'border-primary/40 bg-primary/[0.06] text-foreground font-medium'
+                                  : 'border-border/50 bg-background text-muted-foreground hover:border-border hover:text-foreground'
+                              )}
+                            >
+                              <span className={cn(
+                                'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors',
+                                selected === opt.label
+                                  ? 'border-primary bg-primary text-primary-foreground'
+                                  : 'border-border'
+                              )}>
+                                {selected === opt.label && <span className="text-[11px]">✓</span>}
+                              </span>
+                              <span className="flex-1">{opt.label}</span>
+                              <span className={cn(
+                                'text-[11px] font-mono tabular-nums',
+                                opt.score >= 70 ? 'text-green-600 dark:text-green-400' :
+                                opt.score >= 40 ? 'text-amber-600 dark:text-amber-400' :
+                                'text-red-600 dark:text-red-400'
+                              )}>
+                                {opt.score}分
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+
+            {/* 提交按钮 */}
+            <div className="flex items-center gap-3 pt-2 pb-8">
+              <button
+                onClick={handleCompleteAssessment}
+                disabled={!assessmentComplete}
+                className="group inline-flex items-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 btn-press disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary"
+              >
+                查看评估结果
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </button>
+              {!assessmentComplete && (
+                <span className="text-xs text-muted-foreground/75">
+                  还需回答 {totalQuestions - answeredCount} 题
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ==================== 步骤2: 结果微调 ==================== */}
+        {step === 'result' && (
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 animate-fade-in-up">
+            {/* Left: Sliders */}
+            <div className="lg:col-span-3 space-y-5">
+              <div className="rounded-lg border border-primary/20 bg-primary/[0.02] p-4 mb-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">问卷评估结果</h3>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  以下分数基于你的问卷回答自动计算。你可以拖动滑块微调——比如你认为某个维度被低估了。
+                </p>
+              </div>
+
+              {dimensions.map((dim) => (
+                <div key={dim.key} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{dim.icon}</span>
+                      <span className="text-sm font-semibold text-foreground">{dim.label}</span>
+                      <span className="text-xs text-muted-foreground hidden sm:inline">{dim.description}</span>
+                    </div>
+                    <span className={cn(
+                      'text-sm font-mono font-semibold w-8 text-right tabular-nums',
+                      dim.value >= 70 ? 'text-green-600 dark:text-green-400' :
+                      dim.value >= 40 ? 'text-amber-600 dark:text-amber-400' :
+                      'text-red-600 dark:text-red-400'
+                    )}>
+                      {dim.value}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={dim.value}
+                      onChange={(e) => handleSliderChange(dim.key, parseInt(e.target.value))}
+                      className="w-full"
+                      style={{
+                        background: `linear-gradient(to right, ${dim.color} 0%, ${dim.color} ${dim.value}%, var(--muted) ${dim.value}%, var(--muted) 100%)`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-muted-foreground/70">
+                    <span>极低</span>
+                    <span>中等</span>
+                    <span>极高</span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-3 pt-4">
+                <button
+                  onClick={handleSimulate}
+                  className="group inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 btn-press"
+                >
+                  <Play className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  推演命运
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="inline-flex items-center gap-2 rounded-md border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-accent btn-press"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  重置
+                </button>
+                <button
+                  onClick={handleReassess}
+                  className="inline-flex items-center gap-2 rounded-md border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-accent btn-press"
+                >
+                  <ClipboardCheck className="h-4 w-4" />
+                  重新评估
+                </button>
+              </div>
+
+              {/* Scenario text */}
+              {simulated && (
+                <div className="space-y-4 mt-4">
+                  <div className="rounded-lg border border-primary/20 bg-primary/[0.02] p-5 animate-scale-in">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <h3 className="text-sm font-semibold text-foreground">你的人生推演</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{scenarioText}</p>
+                  </div>
+
+                  {/* Strategy advice */}
+                  {advice && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 animate-fade-in-up stagger-2">
+                      <div className="rounded-lg border border-border bg-card p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                          <h4 className="text-xs font-semibold text-foreground">现状分析</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{advice.strategy}</p>
+                      </div>
+                      <div className="rounded-lg border border-primary/10 bg-primary/[0.01] p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Lightbulb className="h-3.5 w-3.5 text-primary" />
+                          <h4 className="text-xs font-semibold text-foreground">杠杆策略</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{advice.leverage}</p>
+                      </div>
+                      <div className="rounded-lg border border-green-200/40 dark:border-green-800/30 bg-green-50/30 dark:bg-green-950/10 p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                          <h4 className="text-xs font-semibold text-foreground">短板修复</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{advice.weakFix}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Radar Chart + Score */}
+            <div className="lg:col-span-2 space-y-5">
+              {/* Radar Chart */}
+              <div className="rounded-lg border border-border bg-card p-5 flex flex-col items-center">
+                <svg width={CHART_SIZE} height={CHART_SIZE} className="mb-1">
+                  {gridLevels.map(level => {
+                    const r = level * CHART_RADIUS;
+                    const points = angles.map(a => {
+                      const p = polarToCartesian(a, r);
+                      return `${p.x},${p.y}`;
+                    });
+                    return (
+                      <polygon key={level} points={points.join(' ')} fill="none" stroke="currentColor" className="text-border" strokeWidth={1} />
+                    );
+                  })}
+                  {angles.map((a, i) => {
+                    const end = polarToCartesian(a, CHART_RADIUS);
+                    return <line key={i} x1={CHART_CENTER} y1={CHART_CENTER} x2={end.x} y2={end.y} stroke="currentColor" className="text-border/60" strokeWidth={0.5} />;
+                  })}
+                  <path d={radarPath} fill="currentColor" className="text-primary/10" stroke="currentColor" strokeWidth={2} style={{ stroke: 'var(--primary)' }} />
+                  {dimensions.map((d, i) => {
+                    const r = (d.value / 100) * CHART_RADIUS;
+                    const p = polarToCartesian(angles[i], r);
+                    return (
+                      <g key={d.key}>
+                        <circle cx={p.x} cy={p.y} r={6} fill={d.color} opacity={0.15} />
+                        <circle cx={p.x} cy={p.y} r={3.5} fill={d.color} />
+                        <circle cx={p.x} cy={p.y} r={1.5} fill="white" opacity={0.5} />
+                      </g>
+                    );
+                  })}
+                  {dimensions.map((d, i) => {
+                    const labelR = CHART_RADIUS + 20;
+                    const p = polarToCartesian(angles[i], labelR);
+                    return (
+                      <text key={d.key} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" className="fill-muted-foreground text-[11px]">
+                        {d.label}
+                      </text>
+                    );
+                  })}
+                </svg>
+                <div className="flex items-center gap-3 mt-1 flex-wrap justify-center">
+                  {dimensions.map(d => (
+                    <div key={d.key} className="flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: d.color }} />
+                      <span className="text-[11px] text-muted-foreground">{d.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Score */}
+              <div className="rounded-lg border border-border bg-card p-6 text-center">
+                <div className="text-[11px] text-muted-foreground/75 uppercase tracking-[0.15em] mb-2">综合评分</div>
+                <div className={cn('text-5xl font-serif font-bold mb-1 transition-colors duration-300', scoreInfo.color)}>
+                  {scoreInfo.label}
+                </div>
+                <div className="text-3xl font-mono font-light text-foreground mb-2 tabular-nums">{animatedScore}</div>
+                <div className="text-[11px] text-muted-foreground font-medium">{scoreInfo.tier}</div>
+                <div className="mt-3 text-[11px] text-muted-foreground/75 leading-relaxed">{scoreInfo.desc}</div>
+              </div>
+
+              {/* Dimension weights */}
+              <div className="rounded-lg border border-border bg-card p-4">
+                <h3 className="text-[11px] font-semibold text-muted-foreground/75 uppercase tracking-[0.15em] mb-3">维度权重</h3>
+                {dimensions.map(d => (
+                  <div key={d.key} className="flex items-center gap-2 py-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: d.color }} />
+                    <span className="text-xs text-muted-foreground flex-1">{d.label}</span>
+                    <MeterBar className="w-16 mr-1" value={d.weight} barColor={d.color} barOpacity={0.5} />
+                    <span className="text-[11px] font-mono text-foreground tabular-nums w-6 text-right">{Math.round(d.weight * 100)}%</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Insight */}
+              <div className="rounded-lg border border-border bg-muted/10 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="h-3.5 w-3.5 text-primary/60" />
+                  <span className="text-[11px] font-semibold text-muted-foreground/75 uppercase tracking-wider">破局思路</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  大多数人把所有精力花在「努力」这一个维度上，但提升一个弱维度20分，比提升一个强维度20分的收益更大。找到你的最弱维度，它就是你最大的增长空间。
+                </p>
+              </div>
+
+              {/* AI Analysis Button */}
+              {simulated && (
+                <button
+                  onClick={() => { setAiOpen(true); if (!aiMessages.some(m => m.role === 'assistant')) startAIAnalysis(); }}
+                  className="w-full group rounded-lg border border-primary/20 bg-primary/[0.03] p-4 flex items-center justify-between transition-colors hover:bg-primary/[0.06] hover:border-primary/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Bot className="h-4 w-4" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-foreground">AI 深度分析 + 解惑</p>
+                      <p className="text-[11px] text-muted-foreground">多维度人生战略、破局路径、行动时间表</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-primary/40 group-hover:text-primary transition-colors" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* ==================== AI 深度分析面板 ==================== */}
+      {aiOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/65 md:bg-black/55 animate-fade-in"
+            onClick={() => { if (abortRef.current) abortRef.current.abort(); setAiOpen(false); }}
+          />
+          {/* 居中模态（与 laws/luck 详情一致），不再是右侧抽屉 */}
+          <div className={cn(
+            'fixed z-50 animate-scale-in',
+            'inset-x-4 top-[5%] bottom-[5%] sm:inset-x-auto sm:left-1/2 sm:top-[5%] sm:-translate-x-1/2 sm:w-full sm:max-w-2xl sm:h-[90vh]'
+          )}>
+          <div role="dialog" aria-modal="true" aria-label="模拟器深度分析" className="h-full rounded-sm border border-primary/20 bg-background shadow-2xl flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Bot className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-foreground truncate">深度分析 + 解惑</h3>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0 ml-2">
+                <AiCopyButton getText={() => {
+                  if (aiStreaming) return aiContent;
+                  for (let i = aiMessages.length - 1; i >= 0; i--) {
+                    if (aiMessages[i].role === 'assistant') return aiMessages[i].content;
+                  }
+                  return '';
+                }} />
+                <button
+                  onClick={() => { if (abortRef.current) abortRef.current.abort(); setAiOpen(false); }}
+                  className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  aria-label="关闭分析面板"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div data-lenis-prevent className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+              {/* Context card */}
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <p className="text-xs text-foreground/80 leading-relaxed">
+                  基于你的量化评估结果，AI将从6个维度深度分析：维度画像、关键瓶颈、破局路径、杠杆策略、执行时间表。你可以追问任何维度或策略。
+                </p>
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                  {dimensions.map(d => (
+                    <span key={d.key} className="inline-flex items-center gap-1 rounded-sm bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                      {d.icon} {d.label}:{d.value}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chat messages */}
+              {aiMessages.map((msg, i) => (
+                <div key={i} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+                  <div
+                    className={cn(
+                      'max-w-[90%] rounded-lg px-4 py-3 text-sm leading-relaxed',
+                      msg.role === 'user'
+                        ? 'bg-primary/10 text-foreground'
+                        : 'bg-card border border-border text-foreground'
+                    )}
+                  >
+                    {msg.role === 'assistant' ? (
+                      <>
+                        <AiMarkdown content={msg.content} />
+                        {msg.stopped && <AiStoppedNote />}
+                      </>
+                    ) : (
+                      <div className="whitespace-pre-wrap">{msg.content}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {aiThinking && (
+                <AiThinkingBlock content={aiThinking} active={aiStreaming && !aiContent} />
+              )}
+
+              {/* Streaming content */}
+              {aiStreaming && aiContent && (
+                <div className="flex justify-start">
+                  <div className="max-w-[90%] rounded-lg px-4 py-3 text-sm leading-relaxed bg-card border border-border text-foreground">
+                    <div className="flex items-end gap-1">
+                      <AiMarkdown content={aiContent} />
+                      <AiCursor />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading */}
+              {aiStreaming && !aiContent && <AiLoadingBubble thinking={aiBeat && !aiThinking} />}
+
+              {!aiStreaming && aiError && <AiErrorNotice error={aiError} onRetry={retryAi} />}
+
+              <AiPromptChips module="simulation" visible={!aiStreaming && !aiError && !aiMessages.some(x => x.role === 'user')} onPick={(q) => { if (aiStreaming) return; setAiMessages(prev => [...prev, { role: 'user', content: q }]); startAIAnalysis(q); }} />
+              <div ref={aiEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="border-t border-border bg-card px-4 py-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={aiQuestion}
+                  maxLength={500}
+                  onChange={e => setAiQuestion(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAISend(); } }}
+                  placeholder="追问：我的努力维度怎么提升？/ 短板如何弥补？"
+                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/70 focus-visible:border-ring"
+                  disabled={aiStreaming}
+                />
+                {aiStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}
+                <button
+                  onClick={handleAISend}
+                  disabled={aiStreaming || !aiQuestion.trim()}
+                  className="h-8 w-8 flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                 aria-label="发送追问">
+                  <Send className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+          </div>
+        </>
+      )}
+      <AuthorNote module="simulation" />
+    </div>
+    </ModuleGate>
+  );
+}

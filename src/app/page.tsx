@@ -9,10 +9,19 @@ import { SealMark } from '@/components/shared/seal-mark';
 import { HeroAtlas } from '@/components/home/hero-atlas';
 import type { ModuleIconComponent } from '@/components/shared/module-icons';
 import { WINDOW_DENSITY_META } from '@/data/window-density';
-import { careers } from '@/data/careers';
+import { CAREER_COUNT } from '@/data/career-count';
 import { CHAPTERS, MODULE_IDENTITIES, TIMELINE_IDENTITY } from '@/lib/module-identity';
 import { chapterMeta } from '@/lib/chapter-meta';
 import { MOTION, gsap, ScrollTrigger, prefersReducedMotion, registerGsap } from '@/lib/motion';
+import { VisitorLoginNudge } from '@/components/auth/visitor-login-nudge';
+import { DailyPageCard } from '@/components/home/daily-page-card';
+import { IconPlate } from '@/components/shared/fig-kit';
+import { CONTENT_TOTAL } from '@/data/content-total';
+// 只取 version（具名导入，打包器会摇掉其余字段，不会把依赖清单带进公开 bundle）
+import { version as APP_VERSION } from '../../package.json';
+
+/** 构建日期（由构建环境注入，如 2026-10-15）；未设置时页脚不显示「最后更新」 */
+const BUILD_DATE = (process.env.NEXT_PUBLIC_BUILD_DATE ?? '').trim();
 
 /** 首页条目的统一形状：时间轴没有 metric / desc，模块有 */
 interface Entry {
@@ -41,7 +50,8 @@ const CHAPTER_SECTIONS = CHAPTERS.map((chapter, index) => ({
 const HERO_STATS = [
   { en: 'Windows', value: WINDOW_DENSITY_META.total, zh: '扇人生窗口' },
   { en: 'Dimensions', value: MODULE_IDENTITIES.length, zh: '大决策维度' },
-  { en: 'Careers', value: careers.length, zh: '个职业画像' },
+  { en: 'Careers', value: CAREER_COUNT, zh: '个职业画像' },
+  { en: 'Entries', value: CONTENT_TOTAL, zh: '条内容' },
 ];
 
 const MARQUEE_WORDS = ['姓名', '职业', '规律', '窗口', '努力', '运气', '命运', '健康', 'DECISION ATLAS'];
@@ -58,9 +68,12 @@ const MANIFESTO_DIMENSIONS = [
 ];
 
 const faqs = [
-  { q: '这是算命吗？', a: '不是。这是一个基于概率和数据的决策框架。我们不预测未来，我们帮你计算概率、识别窗口。' },
-  { q: '数据来源是什么？', a: '数据来自发展心理学、职业研究、社会流动性研究等学术文献的综合整理。' },
-  { q: '我应该从哪个模块开始？', a: '建议先从"序章"开始：在时间轴页（/me）告诉我们你的年龄，再看"窗口"模块了解你当前处于哪些关键时机。' },
+  { q: '这是算命吗？', a: '不是。这是一个基于概率和数据的决策框架。这里不预测未来，只帮你估算概率、标出窗口。' },
+  { q: '数据从哪来？', a: '内容由作者整理汇编，参考公开资料与常识，不是权威数据库，也没有经过机构审定。个别条目可能有出入，读的时候请留一分余地。' },
+  { q: '我应该从哪个模块开始？', a: '先从序章开始：在时间轴页（/me）填上你的年龄，再看窗口，了解你现在处于哪些关键时机。' },
+  { q: 'AI 分析可信吗？', a: '仅供参考。AI 会根据你给出的信息和页面里的数据生成分析，可能出错，也不能替代医生、律师、财务顾问等专业意见。健康相关的内容尤其如此，有症状请就医。' },
+  { q: '我的数据存在哪？', a: '年龄、标记等偏好先存在你自己的浏览器里；登录后会同步到云端，换设备也在。退出登录时，本机上同步过的数据会被清掉。不需要填真实姓名。' },
+  { q: '要花钱吗？', a: '不用。站内内容登录后全部可读，不设试用与正式之分。只有内置 AI 分析有成本——注册送 50 次，用完可输入续码，或填自己的 Key（不扣次数）。' },
 ];
 
 function StartButton({ className }: { className?: string }) {
@@ -91,11 +104,9 @@ function EntryRow({ item }: { item: Entry }) {
       data-entry
       className="group grid grid-cols-[3.5rem_minmax(0,1fr)_auto] items-start gap-x-5 gap-y-2 border-b border-border py-7 sm:gap-x-6"
     >
-      <span className="relative mt-0.5 flex h-14 w-14 items-center justify-center rounded-sm border border-border bg-card transition-colors duration-500 group-hover:border-primary/60">
-        <span aria-hidden className="absolute inset-[3px] rounded-[2px] border border-dashed border-border/80" />
-        <span aria-hidden className="absolute -left-px -top-px h-2 w-2 bg-primary" />
+      <IconPlate className="mt-0.5">
         <Icon className="relative h-7 w-7 text-foreground/85 transition-colors duration-500 group-hover:text-primary" />
-      </span>
+      </IconPlate>
 
       <div className="min-w-0">
         <div className="flex items-baseline gap-3">
@@ -274,17 +285,17 @@ export default function HomePage() {
 
           <div className="grid flex-1 items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-4">
             <div>
-              <h1 className="font-serif text-[clamp(3.5rem,7.5vw,7.5rem)] font-bold leading-[1.0] tracking-[-0.015em] text-foreground">
+              <h1 className="font-serif text-[clamp(3.5rem,7.5vw,7.5rem)] font-bold leading-[1.0] tracking-[0.02em] text-foreground">
                 <span className="block overflow-hidden pb-[0.06em]">
-                  <span data-hero="line" className="block">人生重构</span>
+                  <span data-hero="line" className="block">人生沙盘</span>
                 </span>
                 <span className="block overflow-hidden pb-[0.06em] pl-[1.1em]">
-                  <span data-hero="line" className="block">计划</span>
+                  <span data-hero="line" className="block">推演</span>
                 </span>
               </h1>
               <p className="mt-7 flex items-center gap-4 text-[11px] uppercase tracking-[0.42em] text-primary" data-hero="kicker">
                 <span className="h-px w-12 bg-primary" aria-hidden />
-                Life Reconstruction Plan
+                Life Sandbox
               </p>
             </div>
 
@@ -295,7 +306,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:items-end">
-            <div className="lg:col-span-5">
+            <div className="lg:col-span-4">
               <p data-hero="quote" className="font-serif text-xl leading-[1.9] text-foreground/80 sm:text-2xl">
                 <span className="block">命是你拿到的牌，</span>
                 <span className="mb-3 block text-[11px] uppercase tracking-[0.3em] text-muted-foreground/70">Fate is the hand you are dealt</span>
@@ -306,17 +317,17 @@ export default function HomePage() {
               </p>
             </div>
 
-            <dl data-hero="quote" className="grid grid-cols-3 gap-6 border-t border-border pt-6 lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+            <dl data-hero="quote" className="grid grid-cols-2 gap-6 border-t border-border pt-6 sm:grid-cols-4 lg:col-span-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
               {HERO_STATS.map((s) => (
                 <div key={s.en}>
                   <dt className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{s.en}</dt>
-                  <dd className="mt-2 font-serif text-3xl font-bold tabular-nums text-foreground">{s.value}</dd>
+                  <dd className="mt-2 font-serif text-3xl font-bold tabular-nums text-foreground">{s.value.toLocaleString('en-US')}</dd>
                   <dd className="mt-1 text-xs text-muted-foreground">{s.zh}</dd>
                 </div>
               ))}
             </dl>
 
-            <div data-hero="cta" className="lg:col-span-3 lg:justify-self-end">
+            <div data-hero="cta" className="lg:col-span-3 lg:justify-self-end lg:self-end">
               <StartButton />
             </div>
           </div>
@@ -349,13 +360,20 @@ export default function HomePage() {
               {MARQUEE_WORDS.map((w) => (
                 <span key={`${k}-${w}`} className="flex items-center gap-10">
                   {w}
-                  <span className="h-1.5 w-1.5 rotate-45 bg-primary-foreground/70" />
+                  <span className="text-primary-foreground/70">·</span>
                 </span>
               ))}
             </div>
           ))}
         </div>
       </div>
+
+      {/* ===== 今日一页：确定性每日一条（摘要级数据，访客点「去看」会被登录门拦下） ===== */}
+      <section className="border-b border-border">
+        <div data-reveal className="mx-auto max-w-7xl 2xl:max-w-[1600px] px-6 py-10 sm:px-10 lg:px-16">
+          <DailyPageCard className="mx-auto max-w-3xl" />
+        </div>
+      </section>
 
       {/* ===== 手记 ===== */}
       <section className="border-b border-border bg-card">
@@ -378,7 +396,7 @@ export default function HomePage() {
               <span className="float-left mr-3 mt-2 font-serif text-[5.5rem] font-bold leading-[0.8] text-primary sm:text-[6.5rem]">
                 这
               </span>
-              是一个基于概率和数据的决策框架。我们不预测未来，我们帮你计算概率、识别窗口。
+              是一个基于概率和数据的决策框架。这里不预测未来，只帮你估算概率、标出窗口。
             </p>
             <p className="mt-8 max-w-2xl text-[15px] leading-[1.9] text-muted-foreground">
               从姓名、职业、规律、窗口、努力、运气、命运、健康八大维度，重新整理你手里的牌。
@@ -392,9 +410,9 @@ export default function HomePage() {
               {[
                 { zh: '概率', en: 'PROBABILITY', text: '给出可能性区间，不给确定答案。', tone: 'border-primary/25 bg-primary/[0.05] text-primary' },
                 { zh: '窗口', en: 'WINDOWS', text: '标出哪些机会正开着、何时会关上。', tone: 'border-ink-accent/30 bg-ink-accent/[0.06] text-ink-accent' },
-                { zh: '框架', en: 'FRAMEWORK', text: '把判断拆成可以反复使用的步骤。', tone: 'border-amber-500/25 bg-amber-500/[0.05] text-amber-700 dark:text-amber-400' },
+                { zh: '框架', en: 'FRAMEWORK', text: '把判断拆成可以反复使用的步骤。', tone: 'border-foreground/20 bg-foreground/[0.04] text-foreground/80' },
               ].map((p) => (
-                <div key={p.en} data-principle className={cn('rounded-lg border p-4', p.tone)}>
+                <div key={p.en} data-principle className={cn('rounded-sm border p-4', p.tone)}>
                   <div className="flex items-baseline justify-between">
                     <span className="font-serif text-xl font-semibold">{p.zh}</span>
                     <span className="text-[11px] tracking-[0.2em] opacity-70">{p.en}</span>
@@ -509,7 +527,7 @@ export default function HomePage() {
           <span className="text-[11px] uppercase tracking-[0.32em] text-muted-foreground">Epilogue</span>
           <SealMark className="mt-8 h-12 w-12 text-lg" />
           <p className="mt-10 font-serif text-2xl leading-[1.9] text-foreground/85 sm:text-3xl">
-            人生没有标准答案，但有更好的决策框架。
+            45 岁之前有 {meta.before45} 扇门，之后只剩 {meta.after45} 扇。先看清，再决定走哪一扇。
           </p>
           <div className="mt-12">
             <StartButton />
@@ -519,10 +537,16 @@ export default function HomePage() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl 2xl:max-w-[1600px] items-center justify-between gap-4 px-6 py-7 text-xs text-muted-foreground sm:px-10 lg:px-16">
-          <span className="font-serif">人生重构计划 · 不是算命，是算概率</span>
-          <span className="hidden text-[11px] uppercase tracking-[0.3em] sm:inline">Vol. 01</span>
+          <span className="font-serif">人生沙盘 · 不是算命，是算概率</span>
+          <span className="font-mono text-[11px] tabular-nums tracking-[0.1em]">
+            v{APP_VERSION}
+            {BUILD_DATE && ` · 最后更新 ${BUILD_DATE}`}
+            {` · ${CONTENT_TOTAL.toLocaleString('en-US')} 条`}
+          </span>
         </div>
       </footer>
+
+      <VisitorLoginNudge />
     </div>
   );
 }

@@ -20,6 +20,7 @@
 
 import { useCallback, useSyncExternalStore } from 'react';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { notifyStateDirty } from '@/lib/user-state-sync';
 
 export type WindowMark = 'doing' | 'done' | 'skip';
 export type WindowMarkMap = Record<number, WindowMark>;
@@ -56,6 +57,7 @@ function write(next: WindowMarkMap) {
   cache = next;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    notifyStateDirty(); // 登录用户的数据云同步（batch8）：写入点统一广播
   } catch {
     /* 隐私模式 / 配额满：内存里仍然生效，只是刷新后丢 */
   }

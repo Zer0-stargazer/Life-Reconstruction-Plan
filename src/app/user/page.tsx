@@ -6,17 +6,22 @@ import {
   User, Settings, Shield, Moon, Sun, Palette, Clock, BarChart3,
   CheckCircle2, Circle, Loader2, CheckCircle,
   XCircle, Zap, ChevronRight, Cpu, ArrowRight,
-  LogOut, RotateCcw, Weight, Milestone, Lock, Crown, Ticket,
+  LogOut, RotateCcw, Weight, Milestone, Lock, Crown, Ticket, Gift,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useScrollLock } from '@/hooks/use-scroll-lock';
 import { useTheme } from 'next-themes';
 import { useAuth, ALL_MODULES, NORMAL_USER_MODULES } from '@/contexts/auth-context';
 import { AiSourceManager } from '@/components/ai/ai-source-manager';
 import { STORAGE_KEY_ACTIVE, type AiSource } from '@/lib/ai-sources';
-import { readDefaultAge, writeDefaultAge } from '@/lib/default-age';
+import { readDefaultAge, writeDefaultAge, AGE_MAX } from '@/lib/default-age';
+import { sanitizeLifeStages, sanitizeWeights } from '@/hooks/settings-shape';
+import { notifyStateDirty } from '@/lib/user-state-sync';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
 import { getAuthHeader } from '@/lib/client-auth';
+import { BUSINESS_MODE } from '@/lib/business-mode';
+import { TurnstileWidget, TURNSTILE_ENABLED } from '@/components/auth/turnstile-widget';
 
 const modules = [
   { name: '名字', path: '/name', icon: '01' },
@@ -49,7 +54,8 @@ interface KeyStatus {
   responseSnippet?: string;
 }
 
-const AVATAR_OPTIONS = ['🧑‍💻', '👩‍🚀', '🧙‍♂️', '🦊', '🐺', '🦁', '🐉', '🦅', '🐋', '🦉', '🌵', '🔥'];
+// 汉字首字印格（单字，serif，方形 2px 圆角描边）。历史上存过 emoji 头像：旧值仍当普通文本显示，不迁移。
+const AVATAR_OPTIONS = ['沙', '途', '舟', '灯', '山', '川', '松', '鹤', '墨', '印', '岭', '渡'];
 
 const DEFAULT_LIFE_STAGES = [
   { id: 'childhood', label: '童年', range: [0, 12] },
@@ -62,12 +68,13 @@ const DEFAULT_LIFE_STAGES = [
 ];
 
 const DEFAULT_WEIGHTS = [
-  { id: 'health', label: '健康', value: 50, icon: '❤️' },
-  { id: 'wealth', label: '财富', value: 50, icon: '💰' },
-  { id: 'career', label: '事业', value: 50, icon: '📈' },
-  { id: 'relationship', label: '关系', value: 50, icon: '👥' },
-  { id: 'growth', label: '成长', value: 50, icon: '📚' },
-  { id: 'freedom', label: '自由', value: 50, icon: '🕊️' },
+  // icon 字段保留为空串（WeightItem 结构要求 string；已存的旧 emoji 值不再渲染）
+  { id: 'health', label: '健康', value: 50, icon: '' },
+  { id: 'wealth', label: '财富', value: 50, icon: '' },
+  { id: 'career', label: '事业', value: 50, icon: '' },
+  { id: 'relationship', label: '关系', value: 50, icon: '' },
+  { id: 'growth', label: '成长', value: 50, icon: '' },
+  { id: 'freedom', label: '自由', value: 50, icon: '' },
 ];
 
 // ---- Simple hash for local auth (kept for legacy compatibility) ----
@@ -76,9 +83,13 @@ const DEFAULT_WEIGHTS = [
 
 const REGISTRATION_OPEN = process.env.NEXT_PUBLIC_REGISTRATION_OPEN !== "false";
 
+// open 模式：登录即全功能，AI 额度区对所有登录用户显示；legacy 保持旧买断制口径
+const IS_OPEN_MODE = BUSINESS_MODE === 'open';
+
 export default function UserPage() {
   const pathname = usePathname();
-  const { user: authUser, login: authLogin, register: authRegister, logout: authLogout, redeemCode, isPremium, canAccessModule } = useAuth();
+  const router = useRouter();
+  const { user: authUser, login: authLogin, applySession, logout: authLogout, redeemCode, isPremium, canAccessModule } = useAuth();
   const [visitedPaths, setVisitedPaths] = useState<string[]>([]);
   const [activeAiSource, setActiveAiSource] = useState<AiSourceId>('builtin');
   // 用户自定义接入源（独立存储 ai-sources，供顶部"当前使用"显示）
@@ -90,7 +101,34 @@ export default function UserPage() {
 
   // User profile state no longer needed - authUser from AuthContext is used instead
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [loginMode, setLoginMode] = useState<'login' | 'register'>('login');
+  const [welcomeBonus, setWelcomeBonus] = useState(0);
+  const [loginMode, setLoginMode] = useState<'login' | 'register' | 'email' | 'forgot'>('login');
+  // 邮箱验证码 / 找回密码（账号体系 v2）
+  const [emailAddr, setEmailAddr] = useState('');
+  const [emailCode, setEmailCode] = useState('');
+  const [emailPurpose, setEmailPurpose] = useState<'login' | 'register'>('login');
+  const [codeSending, setCodeSending] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [newPassword, setNewPassword] = useState('');
+  const [debugCode, setDebugCode] = useState('');
+  // 注册收集联系方式（至少一项，不验证）+ 信息匹配找回
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  // 注册人机验证（Cloudflare Turnstile；未配置 site key 时组件不渲染、服务端跳过）
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const [forgotNickname, setForgotNickname] = useState('');
+  const [forgotContact, setForgotContact] = useState('');
+  // 找回密码两步流程（P0-1 修复）：match（昵称+联系方式校验，服务端发码）→ reset（输验证码+新密码）
+  const [forgotStep, setForgotStep] = useState<'match' | 'reset'>('match');
+  const [forgotMasked, setForgotMasked] = useState('');
+  // 资料联系方式编辑（需当前密码确认，防止会话被盗后联系方式被偷改）
+  const [showContactEdit, setShowContactEdit] = useState(false);
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactPwd, setContactPwd] = useState('');
+  const [contactMsg, setContactMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [contactPending, setContactPending] = useState(false);
   const [loginNickname, setLoginNickname] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -135,13 +173,17 @@ export default function UserPage() {
     // Load advanced settings
     try {
       const storedStages = localStorage.getItem(STORAGE_KEYS.lifeStages);
-      if (storedStages) setLifeStages(JSON.parse(storedStages));
+      if (storedStages) setLifeStages(sanitizeLifeStages(JSON.parse(storedStages), DEFAULT_LIFE_STAGES));
     } catch { /* ignore */ }
     try {
       const storedWeights = localStorage.getItem(STORAGE_KEYS.preferenceWeights);
-      if (storedWeights) setWeights(JSON.parse(storedWeights));
+      // P1：形状校验——历史数据损坏（对象/非数组）时保持默认权重，防渲染异常
+      const parsedWeights = storedWeights ? JSON.parse(storedWeights) : null;
+      if (parsedWeights) setWeights(sanitizeWeights(parsedWeights, DEFAULT_WEIGHTS));
     } catch { /* ignore */ }
   }, [pathname]);
+
+  useScrollLock(showLoginDialog);
 
   // 登录弹层：Esc 关闭（无键盘出口的弹层对键盘用户等于困住）
   useEffect(() => {
@@ -154,10 +196,23 @@ export default function UserPage() {
   }, [showLoginDialog]);
 
   const persist = useCallback((key: string, value: unknown) => {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      notifyStateDirty(); // P1 修复：写入后广播，否则登录用户的偏好改动不进云同步
+    } catch { /* ignore */ }
   }, []);
 
   // ---- Auth logic (delegated to AuthContext) ----
+
+  // 登录/注册成功后回跳 LoginGate 带来的原页面：仅接受站内路径（以 / 开头且不以 // 或 /\ 开头），防开放重定向
+  const goNextIfAny = () => {
+    try {
+      const next = new URLSearchParams(window.location.search).get('next');
+      if (next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')) {
+        router.replace(next);
+      }
+    } catch { /* ignore */ }
+  };
 
   const handleRegister = async () => {
     if (!loginNickname.trim() || !loginPassword.trim()) {
@@ -168,18 +223,69 @@ export default function UserPage() {
       setLoginError('昵称最多20个字符');
       return;
     }
-    if (loginPassword.length < 4) {
-      setLoginError('密码至少4位');
+    if (loginPassword.length < 8) {
+      setLoginError('密码至少8位');
+      return;
+    }
+    if (!regEmail.trim() && !regPhone.trim()) {
+      setLoginError('请至少填写邮箱或手机号其一，用于日后找回密码');
+      return;
+    }
+    if (regEmail.trim() && !/^\S+@\S+\.\S+$/.test(regEmail.trim())) {
+      setLoginError('邮箱格式不正确，例如 you@example.com');
+      return;
+    }
+    if (regPhone.trim() && !/^\d{7,15}$/.test(regPhone.replace(/[\s-]/g, ''))) {
+      setLoginError('手机号格式不正确，请填 7-15 位数字');
+      return;
+    }
+    if (TURNSTILE_ENABLED && !turnstileToken) {
+      setLoginError('请先完成人机验证');
       return;
     }
     setLoginPending(true);
-    const result = await authRegister(loginNickname.trim(), loginPassword);
+    // 直接请求 /api/auth（需携带 Turnstile token），成功后用 applySession 落地会话
+    let result: { success: boolean; error?: string; grantedCredits?: number };
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'register',
+          nickname: loginNickname.trim(),
+          password: loginPassword,
+          email: regEmail.trim() || undefined,
+          phone: regPhone.trim() || undefined,
+          turnstileToken: turnstileToken ?? undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.token && data.user) {
+        applySession(data.token, data.user);
+        result = { success: true, grantedCredits: data.grantedCredits };
+      } else {
+        result = { success: false, error: data.error };
+      }
+    } catch {
+      result = { success: false, error: '网络错误' };
+    }
     setLoginPending(false);
+    if (!result.success) {
+      // Turnstile token 一次性，失败后必须重新验证
+      setTurnstileToken(null);
+      setTurnstileReset(n => n + 1);
+    }
     if (result.success) {
       setShowLoginDialog(false);
       setLoginError('');
       setLoginNickname('');
       setLoginPassword('');
+      setRegEmail('');
+      setRegPhone('');
+      if (result.grantedCredits && result.grantedCredits > 0) {
+        setWelcomeBonus(result.grantedCredits);
+      }
+      goNextIfAny();
     } else {
       setLoginError(result.error || '注册失败');
     }
@@ -198,13 +304,189 @@ export default function UserPage() {
       setLoginError('');
       setLoginNickname('');
       setLoginPassword('');
+      goNextIfAny();
     } else {
       setLoginError(result.error || '登录失败');
     }
   };
 
+  // 验证码 60 秒倒计时
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
+  const resetEmailState = () => {
+    setEmailAddr(''); setEmailCode(''); setNewPassword(''); setDebugCode(''); setCountdown(0);
+    setForgotNickname(''); setForgotContact(''); setForgotStep('match'); setForgotMasked('');
+    setRegEmail(''); setRegPhone('');
+    setTurnstileToken(null); // 切换模式会卸载/重建 Turnstile，旧 token 作废
+    setLoginError('');
+  };
+
+  const handleSwitchMode = (mode: 'login' | 'register' | 'email' | 'forgot') => {
+    setLoginMode(mode);
+    resetEmailState();
+  };
+
+  const handleSendCode = async (purpose: 'login' | 'register' | 'reset') => {
+    if (!emailAddr.trim()) { setLoginError('请先输入邮箱'); return; }
+    setCodeSending(true);
+    setLoginError('');
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send_email_code', email: emailAddr.trim(), purpose }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCountdown(60);
+        // 本地 console 模式会回传调试验证码；真实邮件通道下为空
+        setDebugCode(data.debugCode ? String(data.debugCode) : '');
+      } else {
+        setLoginError(data.error || '发送失败');
+      }
+    } catch {
+      setLoginError('网络错误');
+    } finally {
+      setCodeSending(false);
+    }
+  };
+
+  const handleEmailSubmit = async () => {
+    if (!emailAddr.trim() || !emailCode.trim()) { setLoginError('请输入邮箱和验证码'); return; }
+    setLoginPending(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login_email', email: emailAddr.trim(), code: emailCode.trim(), purpose: emailPurpose }),
+      });
+      const data = await res.json();
+      if (data.success && data.token && data.user) {
+        applySession(data.token, data.user);
+        setShowLoginDialog(false);
+        resetEmailState();
+        setLoginError('');
+        goNextIfAny();
+      } else {
+        setLoginError(data.error || '验证失败');
+      }
+    } catch {
+      setLoginError('网络错误');
+    } finally {
+      setLoginPending(false);
+    }
+  };
+
+  // 找回密码第一步：昵称 + 注册联系方式校验（P0-1 修复后不再直接改密）。
+  // 邮箱账号由服务端直接向注册邮箱发验证码（明文邮箱不经过前端）；
+  // 仅手机号账号引导联系管理员。
+  const handleForgotMatch = async () => {
+    if (!forgotNickname.trim() || !forgotContact.trim()) { setLoginError('请输入昵称和注册时填写的邮箱或手机号'); return; }
+    setLoginPending(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset_password_info', nickname: forgotNickname.trim(), contact: forgotContact.trim() }),
+      });
+      const data = await res.json();
+      if (data.success && data.step === 'code_sent') {
+        setForgotMasked(String(data.masked ?? ''));
+        setForgotStep('reset');
+        setCountdown(60);
+        setDebugCode(data.debugCode ? String(data.debugCode) : '');
+        setLoginError('');
+      } else if (data.success && data.step === 'contact_admin') {
+        setLoginError(`该账号仅绑定了手机号（${data.masked ?? ''}），暂不支持自助找回，请联系管理员重置密码`);
+      } else {
+        setLoginError(data.error || '校验失败');
+      }
+    } catch {
+      setLoginError('网络错误');
+    } finally {
+      setLoginPending(false);
+    }
+  };
+
+  // 找回密码第二步：验证码 + 新密码（服务端按昵称定位注册邮箱校验验证码）
+  const handleForgotReset = async () => {
+    if (!emailCode.trim()) { setLoginError('请输入邮箱验证码'); return; }
+    if (newPassword.length < 8) { setLoginError('新密码至少 8 位'); return; }
+    setLoginPending(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset_password_email', nickname: forgotNickname.trim(), code: emailCode.trim(), newPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('密码已重置，请用新密码登录');
+        handleSwitchMode('login');
+      } else {
+        setLoginError(data.error || '重置失败');
+      }
+    } catch {
+      setLoginError('网络错误');
+    } finally {
+      setLoginPending(false);
+    }
+  };
+
   const handleLogout = () => {
     authLogout();
+  };
+
+  // 修改联系方式（update_contact：需当前密码，邮箱/手机至少填一项，变更后标记未验证）
+  const handleUpdateContact = async () => {
+    if (!contactEmail.trim() && !contactPhone.trim()) {
+      setContactMsg({ ok: false, text: '请填写要更新的邮箱或手机号' });
+      return;
+    }
+    if (!contactPwd) {
+      setContactMsg({ ok: false, text: '请输入当前密码确认' });
+      return;
+    }
+    const token = localStorage.getItem(STORAGE_KEYS.authToken);
+    if (!token) {
+      setContactMsg({ ok: false, text: '登录态已失效，请重新登录' });
+      return;
+    }
+    setContactPending(true);
+    setContactMsg(null);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-session-token': token },
+        body: JSON.stringify({
+          action: 'update_contact',
+          currentPassword: contactPwd,
+          email: contactEmail.trim() || undefined,
+          phone: contactPhone.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setContactMsg({ ok: true, text: '联系方式已更新' });
+        setContactPwd('');
+        setShowContactEdit(false);
+        // 同步刷新本地用户（applySession 会重写 localStorage 里的用户与令牌）
+        const token = localStorage.getItem(STORAGE_KEYS.authToken);
+        if (token && authUser) {
+          applySession(token, { ...authUser, email: data.email ?? null, phone: data.phone ?? null });
+        }
+      } else {
+        setContactMsg({ ok: false, text: data.error || '更新失败' });
+      }
+    } catch {
+      setContactMsg({ ok: false, text: '网络错误' });
+    } finally {
+      setContactPending(false);
+    }
   };
 
   const handleRedeemCode = async () => {
@@ -214,7 +496,11 @@ export default function UserPage() {
     const result = await redeemCode(inviteCode.trim());
     if (result.success) {
       setInviteStatus('success');
-      setInviteMessage('充电成功！已解锁全部模块');
+      // 按码类型给准确的到账说明（batch9：使用权 / AI 额度 / 套餐）
+      const parts: string[] = [];
+      if (result.grantedAccess && !IS_OPEN_MODE) parts.push('使用权已解锁全部功能');
+      if (result.grantedCredits && result.grantedCredits > 0) parts.push(`AI 额度 +${result.grantedCredits}`);
+      setInviteMessage(parts.length > 0 ? `兑换成功！${parts.join('，')}` : '兑换成功！');
       setInviteCode('');
       fetchCredits();
     } else {
@@ -234,6 +520,24 @@ export default function UserPage() {
   }, [authUser]);
 
   useEffect(() => { fetchCredits(); }, [fetchCredits]);
+
+  // P1 修复（头像假交互）：选择头像后调服务端持久化，并同步本地用户信息
+  const handleSelectAvatar = async (avatar: string) => {
+    if (!authUser) return;
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+        body: JSON.stringify({ action: 'update_avatar', avatar }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const token = localStorage.getItem(STORAGE_KEYS.authToken);
+        if (token) applySession(token, { ...authUser, avatar });
+      }
+    } catch { /* ignore */ }
+    setShowAvatarPicker(false);
+  };
 
   // ---- Theme / Age / API helpers ----
 
@@ -288,6 +592,8 @@ export default function UserPage() {
   };
 
   const resetAdvanced = () => {
+    // P1：恢复默认会覆盖自定义的阶段与权重，先确认
+    if (!window.confirm('确定恢复全部高级设置为默认值吗？')) return;
     setLifeStages(DEFAULT_LIFE_STAGES);
     setWeights(DEFAULT_WEIGHTS);
     persist(STORAGE_KEYS.lifeStages, DEFAULT_LIFE_STAGES);
@@ -338,6 +644,30 @@ export default function UserPage() {
 
       <div className="max-w-3xl mx-auto px-6 sm:px-8 py-8 space-y-6">
 
+        {/* ===== Welcome Bonus Banner ===== */}
+        {welcomeBonus > 0 && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 animate-fade-in-up flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Gift className="w-5 h-5 text-primary shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {IS_OPEN_MODE ? `${welcomeBonus} 次 AI 分析额度已到账。` : `注册赠送 ${welcomeBonus} 次 AI 分析额度`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {IS_OPEN_MODE ? '各模块里的 AI 分析会按次扣减；用完可输入续码，或填自己的 Key。' : '已自动到账，可前往各模块使用 AI 深度分析'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setWelcomeBonus(0)}
+              className="text-muted-foreground hover:text-foreground text-lg leading-none shrink-0"
+              aria-label="关闭"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* ===== Profile Card ===== */}
         <div className="rounded-lg border border-border bg-card p-6 animate-fade-in-up stagger-2">
           {authUser ? (
@@ -345,7 +675,7 @@ export default function UserPage() {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-                  className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-2xl ring-2 ring-primary/5 hover:ring-primary/20 transition-all cursor-pointer"
+                  className="flex h-14 w-14 items-center justify-center rounded-[2px] border border-primary/40 bg-primary/5 font-serif text-2xl font-semibold text-primary transition-colors hover:border-primary cursor-pointer"
                   title="点击更换头像"
                 >
                   {authUser.avatar}
@@ -358,18 +688,18 @@ export default function UserPage() {
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                         <Crown className="w-3 h-3" /> 开发者
                       </span>
-                    ) : authUser.role === 'premium' ? (
+                    ) : !IS_OPEN_MODE && authUser.role === 'premium' ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-primary/10 text-primary border border-primary/20">
                         <Zap className="w-3 h-3" /> 充电用户
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground border border-border">
-                        普通用户
+                        {IS_OPEN_MODE ? '成员' : '普通用户'}
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {accessibleCount}/{totalModules} 模块可用 · 注册于 {new Date(authUser.created_at).toLocaleDateString('zh-CN')}
+                    {accessibleCount}/{totalModules} 模块可用 · 注册于 {new Date(authUser.created_at).toLocaleDateString('zh-CN')}{(IS_OPEN_MODE || authUser.role === 'premium') && aiCredits !== null ? ` · AI 余额 ${aiCredits} 次` : ''}
                   </p>
                 </div>
                 <button
@@ -381,12 +711,12 @@ export default function UserPage() {
                 </button>
               </div>
 
-              {/* Invite code section for normal users */}
-              {!isPremium && (
+              {/* 续码兑换区：open 模式所有登录用户可见（AI 付费点唯一）；legacy 仅未持使用权者可见 */}
+              {(IS_OPEN_MODE || !isPremium) && (
                 <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex items-center gap-2 mb-2">
                     <Ticket className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">邀请码充电</span>
+                    <span className="text-sm font-medium text-foreground">{IS_OPEN_MODE ? 'AI 额度' : '邀请码充电'}</span>
                     {aiCredits !== null && (
                       <span className="ml-auto font-mono text-[11px] tabular-nums text-muted-foreground">
                         AI 余额 <span className="text-primary font-semibold">{aiCredits}</span> 次
@@ -394,14 +724,14 @@ export default function UserPage() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mb-3">
-                    输入授权码升级为充电用户并到账 AI 额度；AI 分析按次扣减，自带 Key 不扣
+                    {IS_OPEN_MODE ? '输入续码补充 AI 次数。使用自己的 Key 不扣次数。' : '输入授权码升级为充电用户并到账 AI 额度；AI 分析按次扣减，自带 Key 不扣'}
                   </p>
                   <div className="flex gap-2">
                     <input
                       value={inviteCode}
                       onChange={(e) => { setInviteCode(e.target.value); setInviteStatus('idle'); }}
                       onKeyDown={(e) => e.key === 'Enter' && handleRedeemCode()}
-                      placeholder="输入邀请码"
+                      placeholder={IS_OPEN_MODE ? '输入续码' : '输入邀请码'}
                       className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                     />
                     <button
@@ -410,7 +740,7 @@ export default function UserPage() {
                       className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all btn-press disabled:opacity-50"
                     >
                       {inviteStatus === 'loading' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                      充电
+                      {IS_OPEN_MODE ? '兑换' : '充电'}
                     </button>
                   </div>
                   {inviteStatus === 'success' && (
@@ -433,7 +763,9 @@ export default function UserPage() {
               </div>
               <div className="flex-1">
                 <h2 className="text-base font-semibold text-foreground">访客用户</h2>
-                <p className="text-xs text-muted-foreground">注册后可保存偏好和升级权限</p>
+                <p className="text-xs text-muted-foreground">
+                  {IS_OPEN_MODE ? '注册后，偏好和标记会同步到云端。' : '注册后可保存偏好和升级权限'}
+                </p>
               </div>
               <button
                 onClick={() => { setShowLoginDialog(true); setLoginMode(REGISTRATION_OPEN ? 'register' : 'login'); setLoginError(''); }}
@@ -452,13 +784,10 @@ export default function UserPage() {
                 {AVATAR_OPTIONS.map(a => (
                   <button
                     key={a}
-                    onClick={() => {
-                      // Update avatar locally for now
-                      setShowAvatarPicker(false);
-                    }}
+                    onClick={() => handleSelectAvatar(a)}
                     className={cn(
-                      'h-10 w-10 rounded-lg flex items-center justify-center text-xl transition-all',
-                      authUser.avatar === a ? 'bg-primary/10 ring-2 ring-primary/30' : 'bg-muted/40 hover:bg-muted'
+                      'h-10 w-10 rounded-[2px] border flex items-center justify-center font-serif text-xl transition-colors',
+                      authUser.avatar === a ? 'border-primary bg-primary/10 text-primary' : 'border-border text-foreground/80 hover:border-primary/50'
                     )}
                   >
                     {a}
@@ -467,12 +796,74 @@ export default function UserPage() {
               </div>
             </div>
           )}
+
+          {/* 联系方式（收集未验证；修改需当前密码确认） */}
+          {authUser && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] text-muted-foreground">
+                  邮箱：{authUser.email || '未填写'}<span className="mx-1.5">·</span>手机：{authUser.phone || '未填写'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowContactEdit(!showContactEdit);
+                    setContactMsg(null);
+                    setContactPwd('');
+                    setContactEmail(typeof authUser.email === 'string' ? authUser.email : '');
+                    setContactPhone(typeof authUser.phone === 'string' ? authUser.phone : '');
+                  }}
+                  className="text-xs text-primary hover:underline shrink-0"
+                >
+                  {showContactEdit ? '收起' : '修改'}
+                </button>
+              </div>
+              {showContactEdit && (
+                <div className="mt-3 space-y-2.5">
+                  <input
+                    type="email"
+                    inputMode="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="新邮箱（不变请留空原值即不会改动）"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value.replace(/[^\d\s-]/g, ''))}
+                    placeholder="新手机号（不变请留原值）"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  <input
+                    type="password"
+                    value={contactPwd}
+                    onChange={(e) => setContactPwd(e.target.value)}
+                    placeholder="当前密码（确认身份）"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  {contactMsg && (
+                    <p role="alert" className={cn('text-xs', contactMsg.ok ? 'text-emerald-600' : 'text-destructive')}>{contactMsg.text}</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleUpdateContact}
+                    disabled={contactPending}
+                    className="w-full rounded-md border border-primary/40 py-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-60"
+                  >
+                    {contactPending ? '提交中…' : '确认修改'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ===== Login Dialog ===== */}
         {showLoginDialog && (
           <>
-            <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowLoginDialog(false)} aria-hidden="true" />
+            <div className="fixed inset-0 z-40 bg-black/65 md:bg-black/55 animate-fade-in" onClick={() => setShowLoginDialog(false)} aria-hidden="true" />
             <div
               role="dialog"
               aria-modal="true"
@@ -483,7 +874,7 @@ export default function UserPage() {
                 <div className="px-6 py-5 border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between">
                     <h3 id="login-dialog-title" className="text-base font-serif font-semibold text-foreground">
-                      {loginMode === 'register' ? '创建账号' : '欢迎回来'}
+                      {loginMode === 'register' ? '创建账号' : loginMode === 'email' ? '验证码登录' : loginMode === 'forgot' ? '重置密码' : '欢迎回来'}
                     </h3>
                     <button
                       onClick={() => setShowLoginDialog(false)}
@@ -494,61 +885,268 @@ export default function UserPage() {
                     </button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {loginMode === 'register' ? '注册后偏好和数据将保存在本地' : '登录以恢复你的数据'}
+                    {loginMode === 'register' ? '需要昵称、8 位以上密码，以及邮箱或手机号（至少一项，用于找回）。注册送 50 次 AI 分析，偏好和标记同步到云端。'
+                      : loginMode === 'email' ? '输入邮箱获取验证码，无需密码'
+                      : loginMode === 'forgot' ? '用注册时填写的邮箱或手机号验证身份'
+                      : '登录后记住你的年龄与标记，换设备也在。'}
                   </p>
                 </div>
                 <div className="px-6 py-5 space-y-4">
-                  <div>
-                    <label htmlFor="login-nickname" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">昵称</label>
-                    <input
-                      id="login-nickname"
-                      type="text"
-                      value={loginNickname}
-                      onChange={(e) => setLoginNickname(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && (loginMode === 'register' ? handleRegister() : handleLogin())}
-                      placeholder="输入你的昵称"
-                      maxLength={20}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
-                      autoFocus
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="login-password" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">密码</label>
-                    <input
-                      id="login-password"
-                      type="password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && (loginMode === 'register' ? handleRegister() : handleLogin())}
-                      placeholder={loginMode === 'register' ? '至少4位密码' : '输入密码'}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
-                    />
-                  </div>
+                  {(loginMode === 'login' || loginMode === 'register') && (
+                    <>
+                      <div>
+                        <label htmlFor="login-nickname" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">{loginMode === 'login' ? '昵称或邮箱' : '昵称'}</label>
+                        <input
+                          id="login-nickname"
+                          type="text"
+                          value={loginNickname}
+                          onChange={(e) => setLoginNickname(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && (loginMode === 'register' ? handleRegister() : handleLogin())}
+                          placeholder={loginMode === 'login' ? '昵称或注册邮箱均可' : '输入你的昵称'}
+                          maxLength={50}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="login-password" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">密码</label>
+                        <input
+                          id="login-password"
+                          type="password"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && (loginMode === 'register' ? handleRegister() : handleLogin())}
+                          placeholder={loginMode === 'register' ? '至少8位密码' : '输入密码'}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                        />
+                      </div>
+                      {loginMode === 'register' && (
+                        <>
+                          <div>
+                            <label htmlFor="reg-email" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">邮箱（与手机至少填一项）</label>
+                            <input
+                              id="reg-email"
+                              type="email"
+                              inputMode="email"
+                              autoComplete="email"
+                              value={regEmail}
+                              onChange={(e) => setRegEmail(e.target.value)}
+                              placeholder="you@example.com"
+                              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="reg-phone" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">手机号</label>
+                            <input
+                              id="reg-phone"
+                              type="tel"
+                              inputMode="tel"
+                              autoComplete="tel"
+                              value={regPhone}
+                              onChange={(e) => setRegPhone(e.target.value.replace(/[^\d\s-]/g, ''))}
+                              placeholder="用于日后找回密码"
+                              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                            />
+                          </div>
+                          <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileReset} />
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {loginMode === 'email' && (
+                    <>
+                      <div>
+                        <label htmlFor="login-email" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">邮箱</label>
+                        <input
+                          id="login-email"
+                          type="email"
+                          inputMode="email"
+                          autoComplete="email"
+                          value={emailAddr}
+                          onChange={(e) => setEmailAddr(e.target.value)}
+                          placeholder="you@example.com"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          autoFocus
+                        />
+                      </div>
+
+                      <div className="flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
+                        {(['login', 'register'] as const).map(k => (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={() => { setEmailPurpose(k); setLoginError(''); }}
+                            className={cn(
+                              'flex-1 rounded-md py-1.5 text-xs transition-colors',
+                              emailPurpose === k ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            )}
+                          >
+                            {k === 'login' ? '已有账号，验证码登录' : '新用户，验证码注册'}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div>
+                        <label htmlFor="login-code" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">验证码</label>
+                        <div className="flex gap-2">
+                          <input
+                            id="login-code"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            maxLength={6}
+                            value={emailCode}
+                            onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, ''))}
+                            onKeyDown={(e) => e.key === 'Enter' && handleEmailSubmit()}
+                            placeholder="6 位数字"
+                            className="flex-1 rounded-md border border-input bg-background px-3 py-2.5 text-sm font-mono tracking-[0.3em] text-foreground placeholder:tracking-normal placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSendCode(emailPurpose)}
+                            disabled={codeSending || countdown > 0 || !emailAddr.trim()}
+                            className="shrink-0 rounded-md border border-primary/40 px-3 text-xs font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {codeSending ? '发送中…' : countdown > 0 ? `${countdown}s 后重发` : '获取验证码'}
+                          </button>
+                        </div>
+                        {debugCode && (
+                          <p className="mt-1.5 text-[11px] text-amber-600">本地调试验证码：{debugCode}</p>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {loginMode === 'forgot' && forgotStep === 'match' && (
+                    <>
+                      <div>
+                        <label htmlFor="forgot-nickname" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">昵称</label>
+                        <input
+                          id="forgot-nickname"
+                          type="text"
+                          value={forgotNickname}
+                          onChange={(e) => setForgotNickname(e.target.value)}
+                          placeholder="你的账号昵称"
+                          maxLength={50}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="forgot-contact" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">注册时填写的邮箱或手机号</label>
+                        <input
+                          id="forgot-contact"
+                          type="text"
+                          value={forgotContact}
+                          onChange={(e) => setForgotContact(e.target.value)}
+                          placeholder="与注册信息一致即可"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                        />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        校验通过后，验证码将发送至注册邮箱；仅绑定手机号的账号请联系管理员重置。
+                      </p>
+                    </>
+                  )}
+
+                  {loginMode === 'forgot' && forgotStep === 'reset' && (
+                    <>
+                      <p className="text-xs text-muted-foreground">
+                        验证码已发送至 <span className="font-medium text-foreground">{forgotMasked}</span>
+                        {countdown > 0 ? `（${countdown}s 后可重发）` : ''}
+                      </p>
+                      <div>
+                        <label htmlFor="forgot-code" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">邮箱验证码</label>
+                        <input
+                          id="forgot-code"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          maxLength={6}
+                          value={emailCode}
+                          onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, ''))}
+                          placeholder="6 位数字"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm font-mono tracking-[0.3em] text-foreground placeholder:tracking-normal placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          autoFocus
+                        />
+                        {debugCode && (
+                          <p className="mt-1.5 text-[11px] text-amber-600">本地调试验证码：{debugCode}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label htmlFor="new-password" className="text-[11px] font-medium text-muted-foreground mb-1.5 block">新密码</label>
+                        <input
+                          id="new-password"
+                          type="password"
+                          autoComplete="new-password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleForgotReset()}
+                          placeholder="至少 8 位"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setForgotStep('match'); setEmailCode(''); setNewPassword(''); setDebugCode(''); setLoginError(''); }}
+                        className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                      >
+                        ← 信息填错了？返回上一步重新发送
+                      </button>
+                    </>
+                  )}
 
                   {loginError && (
                     <p role="alert" className="text-xs text-destructive">{loginError}</p>
                   )}
 
                   <button
-                    onClick={loginMode === 'register' ? handleRegister : handleLogin}
+                    onClick={
+                      loginMode === 'register' ? handleRegister
+                      : loginMode === 'email' ? handleEmailSubmit
+                      : loginMode === 'forgot' ? (forgotStep === 'match' ? handleForgotMatch : handleForgotReset)
+                      : handleLogin
+                    }
                     disabled={loginPending}
                     aria-busy={loginPending}
                     className="w-full rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all btn-press disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {loginPending && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
-                    {loginPending ? '处理中…' : loginMode === 'register' ? '注册' : '登录'}
+                    {loginPending ? '处理中…'
+                      : loginMode === 'register' ? '注册'
+                      : loginMode === 'email' ? (emailPurpose === 'register' ? '注册并登录' : '登录')
+                      : loginMode === 'forgot' ? (forgotStep === 'match' ? '下一步：发送验证码' : '重置密码')
+                      : '登录'}
                   </button>
 
-                  {(loginMode === 'login' || REGISTRATION_OPEN) && (
-                    <div className="text-center">
-                      <button
-                        onClick={() => { setLoginMode(loginMode === 'register' ? 'login' : 'register'); setLoginError(''); }}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        {loginMode === 'register' ? '已有账号？去登录' : '没有账号？去注册'}
+                  <div className="text-center space-y-1.5">
+                    {(loginMode === 'login' || loginMode === 'register') && (
+                      <>
+                        <div className="flex items-center justify-center gap-3">
+                          {loginMode === 'login' && (
+                            <button type="button" onClick={() => handleSwitchMode('forgot')} className="text-xs text-muted-foreground hover:text-foreground hover:underline">
+                              忘记密码？
+                            </button>
+                          )}
+                          {(loginMode === 'login' || REGISTRATION_OPEN) && (
+                            <button
+                              type="button"
+                              onClick={() => { setLoginMode(loginMode === 'register' ? 'login' : 'register'); setLoginError(''); }}
+                              className="text-xs text-primary hover:underline"
+                            >
+                              {loginMode === 'register' ? '已有账号？去登录' : '没有账号？去注册'}
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                    {(loginMode === 'email' || loginMode === 'forgot') && (
+                      <button type="button" onClick={() => handleSwitchMode('login')} className="text-xs text-muted-foreground hover:text-foreground hover:underline">
+                        ← 返回密码登录
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -618,7 +1216,7 @@ export default function UserPage() {
               );
             })}
           </div>
-          {authUser && !isPremium && (
+          {authUser && !IS_OPEN_MODE && !isPremium && (
             <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-2 text-xs text-muted-foreground">
               <Lock className="h-3 w-3" />
               <span>锁定的模块需充电解锁 · 当前可用 {accessibleCount}/{totalModules}</span>
@@ -722,7 +1320,7 @@ export default function UserPage() {
             </div>
             {showAgeInput ? (
               <div className="flex items-center gap-2">
-                <input type="number" min={0} max={120} value={defaultAge ?? ''} onChange={(e) => updateDefaultAge(Math.max(0, Math.min(120, parseInt(e.target.value) || 0)))} className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-ring" autoFocus />
+                <input type="number" min={0} max={AGE_MAX} value={defaultAge ?? ''} onChange={(e) => updateDefaultAge(Math.max(0, Math.min(AGE_MAX, parseInt(e.target.value) || 0)))} className="w-16 rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground text-center focus:outline-none focus:ring-1 focus:ring-ring" autoFocus />
                 <span className="text-[11px] text-muted-foreground">岁</span>
                 <button onClick={() => setShowAgeInput(false)} className="text-[11px] text-primary hover:underline">确定</button>
               </div>
@@ -831,7 +1429,6 @@ export default function UserPage() {
                   <div key={w.id}>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm">{w.icon}</span>
                         <span className="text-xs font-medium text-foreground">{w.label}</span>
                       </div>
                       <span className="text-xs font-mono tabular-nums text-primary">{w.value}</span>
@@ -858,7 +1455,7 @@ export default function UserPage() {
             <h3 className="text-sm font-semibold text-foreground">关于</h3>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            人生重构计划是一个基于数据与概率的人生规划工具。我们不提供标准答案——
+            人生沙盘是一个基于数据与概率的人生规划工具。我们不提供标准答案——
             每个人的人生都是独特的。我们只提供一个框架，帮助你更清晰地看到牌面、
             计算概率、识别窗口。
           </p>
@@ -866,7 +1463,35 @@ export default function UserPage() {
             <span className="text-[11px] text-muted-foreground/70 font-serif italic">不是算命，是算概率</span>
           </div>
         </div>
+
+        <ResetExperienceCard />
       </div>
+    </div>
+  );
+}
+
+/** 开发者专用：清空本地存储回到访客视角（不动云端数据） */
+function ResetExperienceCard() {
+  const { user } = useAuth();
+  if (!user || user.role !== 'developer') return null;
+  return (
+    <div className="rounded-lg border border-dashed border-border bg-card/40 p-4 sm:p-5">
+      <h3 className="text-sm font-semibold text-foreground">开发者 · 重置体验</h3>
+      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+        清空本浏览器的本地数据（登录态、介绍文档标记、浏览记录、本地 AI Key），
+        回到访客视角从头体验。云端数据不受影响。
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          if (!window.confirm('清空本地数据并回到访客状态？本地的 AI Key 也会被清掉，需要的话先记下来。')) return;
+          try { localStorage.clear(); sessionStorage.clear(); } catch { /* ignore */ }
+          window.location.href = '/';
+        }}
+        className="mt-3 rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+      >
+        重置本地数据
+      </button>
     </div>
   );
 }

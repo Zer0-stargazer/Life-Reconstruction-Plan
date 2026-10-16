@@ -4,6 +4,8 @@ import { useEffect, useRef } from 'react';
 import { MODULE_IDENTITIES, chapterOf } from '@/lib/module-identity';
 import { chapterMeta } from '@/lib/chapter-meta';
 import { cn } from '@/lib/utils';
+import { IconPlate, TickRule } from '@/components/shared/fig-kit';
+import { MODULE_COUNT } from '@/data/content-total';
 import { MOTION, gsap, prefersReducedMotion, registerGsap } from '@/lib/motion';
 
 /**
@@ -52,14 +54,24 @@ export function ModulePageHead({
     registerGsap();
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: MOTION.ease } });
-      tl.from('[data-head="chapter"]', { opacity: 0, y: 12, duration: MOTION.base })
-        .from('[data-head="title"]', { opacity: 0, y: 18, duration: MOTION.slow }, 0.08)
+      /* 章节翻页：大编号由上往下揭开（clip-path，600ms）。揭完立刻清掉 clip-path，
+         否则 inset(0) 会永久裁掉 leading-[0.8] 下溢出盒子的字形。 */
+      tl.fromTo(
+        '[data-head="numeral"]',
+        { clipPath: 'inset(0 0 100% 0)' },
+        { clipPath: 'inset(0 0 0% 0)', duration: 0.6, ease: MOTION.easeExpo, clearProps: 'clipPath' },
+        0
+      )
+        .from('[data-head="chapter-meta"]', { opacity: 0, y: 8, duration: MOTION.fast }, 0.25)
+        .from('[data-head="title"]', { opacity: 0, y: 14, duration: MOTION.base }, 0.12)
         .from('[data-head="question"]', { opacity: 0, y: 10, duration: MOTION.base }, 0.2)
+        /* 收束线：TickRule 自左向右画出（scaleX 0→1，700ms，延迟 150ms） */
         .from(
           '[data-head="rule"]',
-          { scaleX: 0, transformOrigin: 'left center', duration: MOTION.slow, ease: MOTION.easeExpo },
-          0.25
-        );
+          { scaleX: 0, transformOrigin: 'left center', duration: 0.7, ease: MOTION.easeExpo },
+          0.15
+        )
+        .from('[data-head="count"]', { opacity: 0, duration: MOTION.fast }, 0.6);
       const asideEl = rootRef.current?.querySelector('[data-head="aside"]');
       if (asideEl) tl.from(asideEl, { opacity: 0, y: 10, duration: MOTION.base }, 0.3);
     }, rootRef);
@@ -70,6 +82,9 @@ export function ModulePageHead({
   if (!m) return null;
   const chapter = chapterOf(href);
   const meta = chapter ? chapterMeta(chapter.num) : null;
+  // 「N 条」：数值型指标加千分位；无限/非数字（名字的 ∞）原样显示
+  const metricNum = Number(m.metric);
+  const countText = `${Number.isFinite(metricNum) ? metricNum.toLocaleString('en-US') : m.metric} ${m.unit}`;
 
   return (
     <div ref={rootRef} className={cn('border-b border-border bg-card', className)}>
@@ -77,11 +92,14 @@ export function ModulePageHead({
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="min-w-0 flex-1">
             {chapter && (
-              <div data-head="chapter" className="flex items-end gap-5">
-                <span className="font-serif text-7xl leading-[0.8] tabular-nums text-primary sm:text-8xl">
+              <div className="flex items-end gap-5">
+                <span
+                  data-head="numeral"
+                  className="inline-block font-serif text-7xl leading-[0.8] tabular-nums text-primary sm:text-8xl"
+                >
                   {chapter.num}
                 </span>
-                <div className="pb-0.5">
+                <div data-head="chapter-meta" className="pb-0.5">
                   <div className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
                     {meta?.en}
                   </div>
@@ -89,15 +107,17 @@ export function ModulePageHead({
                 </div>
               </div>
             )}
-            <h1
-              data-head="title"
-              className={cn(
-                'font-serif text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl',
-                chapter && 'mt-8'
-              )}
-            >
-              {title}
-            </h1>
+            <div className={cn('flex items-center gap-4', chapter && 'mt-8')}>
+              <IconPlate>
+                <m.icon className="relative h-7 w-7 text-foreground/85" />
+              </IconPlate>
+              <h1
+                data-head="title"
+                className="min-w-0 font-serif text-3xl font-bold leading-tight tracking-[-0.01em] text-foreground sm:text-4xl"
+              >
+                {title}
+              </h1>
+            </div>
             <p data-head="question" className="mt-3 text-sm font-medium text-muted-foreground">
               {m.question}
             </p>
@@ -111,15 +131,16 @@ export function ModulePageHead({
           )}
         </div>
 
-        {/* 细线 + 朱砂印点 + 编号：章节开篇的收束线 */}
-        <div className="relative mt-10 flex items-center">
-          <span data-head="rule" className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" aria-hidden />
+        {/* 收束线：TickRule 刻度线，右端「01 / 08 · N 条」 */}
+        <div className="mt-10 flex items-center gap-4">
+          <div data-head="rule" className="min-w-0 flex-1">
+            <TickRule />
+          </div>
           <span
-            aria-hidden
-            className="relative h-2.5 w-2.5 shrink-0 rounded-[1px] bg-primary"
-          />
-          <span className="relative ml-auto bg-card pl-4 font-serif text-[11px] tabular-nums tracking-[0.2em] text-muted-foreground">
-            {m.tag} / 08
+            data-head="count"
+            className="shrink-0 font-mono text-[11px] tabular-nums tracking-[0.15em] text-muted-foreground"
+          >
+            {m.tag} / {String(MODULE_COUNT).padStart(2, '0')} · {countText}
           </span>
         </div>
 

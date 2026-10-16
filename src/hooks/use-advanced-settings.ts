@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { readDefaultAge, writeDefaultAge } from '@/lib/default-age';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
 
-export interface LifeStage { id: string; label: string; range: [number, number]; }
-export interface WeightItem { id: string; label: string; value: number; icon: string; }
+import { sanitizeLifeStages, sanitizeWeights, type LifeStage, type WeightItem } from './settings-shape';
+
+export type { LifeStage, WeightItem };
 
 const DEFAULT_STAGES: LifeStage[] = [
   { id: 'childhood', label: '童年', range: [0, 12] },
@@ -43,8 +44,8 @@ export function useAdvancedSettings() {
 
   useEffect(() => {
     setDefaultAge(readDefaultAge());
-    setStages(loadJSON(STORAGE_KEYS.lifeStages, DEFAULT_STAGES));
-    setWeights(loadJSON(STORAGE_KEYS.preferenceWeights, DEFAULT_WEIGHTS));
+    setStages(sanitizeLifeStages(loadJSON<unknown>(STORAGE_KEYS.lifeStages, DEFAULT_STAGES), DEFAULT_STAGES));
+    setWeights(sanitizeWeights(loadJSON<unknown>(STORAGE_KEYS.preferenceWeights, DEFAULT_WEIGHTS), DEFAULT_WEIGHTS));
     setLoaded(true);
   }, []);
 

@@ -9,14 +9,14 @@ export default function Loading() {
 
       {/* HUD 行骨架 */}
       <div className="mb-8 flex items-center gap-3">
-        <div className="h-2.5 w-16 animate-pulse rounded-sm bg-muted" />
+        <div className="h-2.5 w-16 skeleton rounded-sm bg-muted" />
         <span className="h-px flex-1 bg-border" />
-        <div className="h-2.5 w-24 animate-pulse rounded-sm bg-muted" />
+        <div className="h-2.5 w-24 skeleton rounded-sm bg-muted" />
       </div>
 
       {/* 标题骨架 */}
-      <div className="h-8 w-2/3 animate-pulse rounded-md bg-muted" />
-      <div className="mt-3 h-4 w-1/2 animate-pulse rounded-md bg-muted" />
+      <div className="h-8 w-2/3 skeleton rounded-md bg-muted" />
+      <div className="mt-3 h-4 w-1/2 skeleton rounded-md bg-muted" />
 
       {/* 面板骨架 */}
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -27,12 +27,12 @@ export default function Loading() {
             style={{ opacity: 1 - i * 0.08 }}
           >
             <div className="mb-3 flex items-center justify-between">
-              <div className="h-2.5 w-12 animate-pulse rounded-sm bg-muted" />
-              <div className="h-2.5 w-8 animate-pulse rounded-sm bg-muted" />
+              <div className="h-2.5 w-12 skeleton rounded-sm bg-muted" />
+              <div className="h-2.5 w-8 skeleton rounded-sm bg-muted" />
             </div>
-            <div className="h-5 w-3/4 animate-pulse rounded-md bg-muted" />
-            <div className="mt-3 h-3 w-full animate-pulse rounded-md bg-muted" />
-            <div className="mt-2 h-3 w-5/6 animate-pulse rounded-md bg-muted" />
+            <div className="h-5 w-3/4 skeleton rounded-md bg-muted" />
+            <div className="mt-3 h-3 w-full skeleton rounded-md bg-muted" />
+            <div className="mt-2 h-3 w-5/6 skeleton rounded-md bg-muted" />
           </div>
         ))}
       </div>

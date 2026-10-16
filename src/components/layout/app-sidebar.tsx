@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { STORAGE_KEYS } from '@/lib/storage-keys';
 import {
   type LucideIcon,
   Home,
@@ -13,6 +14,7 @@ import {
   Shield,
   LogOut,
   User,
+  Heart,
   Sun,
   Moon,
   ChevronRight,
@@ -20,7 +22,8 @@ import {
 import { useAuth, type UserRole } from '@/contexts/auth-context';
 import { useTheme } from 'next-themes';
 import { RoleBadge } from '@/components/auth/module-gate';
-import { CHAPTERS } from '@/lib/module-identity';
+import { CHAPTERS, MODULE_IDENTITIES } from '@/lib/module-identity';
+import { USER_STATE_DIRTY_EVENT } from '@/lib/user-state-sync';
 import { chapterMeta } from '@/lib/chapter-meta';
 import { SealMark } from '@/components/shared/seal-mark';
 import {
@@ -38,6 +41,7 @@ import {
 
 const homeItem = { href: '/', label: '首页', icon: Home };
 const userItem = { href: '/user', label: '我的', icon: User };
+const aboutItem = { href: '/about', label: '支持作者', icon: Heart };
 
 type NavIcon = LucideIcon | ModuleIconComponent;
 
@@ -55,11 +59,48 @@ const chapterItems: Record<string, { href: string; label: string; icon: NavIcon 
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, isDeveloper, canAccessModule, updateUserRole } = useAuth();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [exitError, setExitError] = useState('');
   useEffect(() => { setMounted(true); }, []);
+
+  // 探索进度：只读 visited-modules（写入方是根布局的 ModuleVisitTracker）。
+  // 跟随 storage（跨标签）、user-state:dirty（本页写入 / 云同步回写）与路由变化刷新。
+  const [visited, setVisited] = useState<string[]>([]);
+  useEffect(() => {
+    const read = () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.visitedModules);
+        const parsed: unknown = raw ? JSON.parse(raw) : [];
+        setVisited(Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : []);
+      } catch {
+        setVisited([]);
+      }
+    };
+    read();
+    window.addEventListener('storage', read);
+    window.addEventListener(USER_STATE_DIRTY_EVENT, read);
+    return () => {
+      window.removeEventListener('storage', read);
+      window.removeEventListener(USER_STATE_DIRTY_EVENT, read);
+    };
+  }, [pathname]);
+  const readCount = MODULE_IDENTITIES.filter((m) => visited.includes(m.href)).length;
+
+  // 隐藏后台入口（彩蛋式暗门）：3 秒内连点侧栏题记 5 次进入 /admin。
+  // 正常用户不可能触达；知道的人也可以直接输入 /admin 网址进入（页内还有密码门）。
+  const secretClicksRef = useRef<number[]>([]);
+  const handleSecretTap = () => {
+    const now = Date.now();
+    secretClicksRef.current = [...secretClicksRef.current.filter(t => now - t < 3000), now];
+    if (secretClicksRef.current.length >= 5) {
+      secretClicksRef.current = [];
+      router.push('/admin');
+    }
+  };
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -80,17 +121,28 @@ export function AppSidebar() {
 
   const handleExitDeveloper = async () => {
     if (!user || user.role !== 'developer') return;
+    setExitError('');
+    let devToken = '';
+    try { devToken = localStorage.getItem(STORAGE_KEYS.devToken) || ''; } catch { /* ignore */ }
+    if (!devToken) {
+      setExitError('开发者凭证已失效，请先进入开发者后台重新验证');
+      return;
+    }
     try {
       const res = await fetch('/api/admin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-dev-token': devToken },
         body: JSON.stringify({ action: 'exit_developer', userId: user.id }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (data.success && data.newRole) {
         updateUserRole(data.newRole as UserRole);
+      } else {
+        setExitError(data.error || '退出开发者模式失败，请重试');
       }
-    } catch { /* ignore */ }
+    } catch {
+      setExitError('网络错误，退出开发者模式失败');
+    }
   };
 
   const renderItem = (item: { href: string; label: string; icon: NavIcon }) => {
@@ -134,7 +186,7 @@ export function AppSidebar() {
           <SealMark className="h-9 w-9 rounded-[2px] text-[15px]" />
           <div className="min-w-0 flex-1">
             <div className="font-serif text-[15px] font-semibold leading-tight tracking-tight text-foreground">
-              人生重构计划
+              人生沙盘
             </div>
           </div>
           {mounted && (
@@ -176,32 +228,54 @@ export function AppSidebar() {
           );
         })}
 
-        <div className="mt-6 space-y-0.5">{renderItem(userItem)}</div>
+        <div className="mt-6 space-y-0.5">
+          {renderItem(userItem)}
+          {renderItem(aboutItem)}
+        </div>
       </nav>
+
+      {/* 探索进度：已浏览 N / 8 章 + 8 格细刻度（已访问为朱砂实格）；仅登录时显示。
+          文案说明「打开过」而非「读完/解锁」——只是访问记录，不代表内容都已读完。 */}
+      {user && (
+        <div className="px-5 pb-3 pt-2" aria-label={`浏览进度：已打开 ${readCount} / ${MODULE_IDENTITIES.length} 个板块`}>
+          <div className="flex items-baseline justify-between">
+            <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">已打开</span>
+            <span className="font-mono text-[11px] tabular-nums tracking-[0.1em] text-muted-foreground">
+              {readCount} / {MODULE_IDENTITIES.length} 个板块
+            </span>
+          </div>
+          <div className="mt-2 flex gap-[3px]" aria-hidden>
+            {MODULE_IDENTITIES.map((m) => (
+              <span
+                key={m.href}
+                className={cn('h-1.5 flex-1', visited.includes(m.href) ? 'bg-primary' : 'bg-border')}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Divider */}
       <div className="px-5">
         <div className="h-px bg-border" />
       </div>
 
-      {/* Developer link - always visible for convenience */}
-      <div className="px-3 pb-1 pt-2">
-        <Link
-          href="/admin"
-          className={cn(
-            'flex items-center gap-3 py-2 pl-4 pr-3 text-sm transition-colors duration-500',
-            pathname === '/admin'
-              ? 'font-medium text-amber-600 dark:text-amber-400'
-              : isDeveloper
-                ? 'text-amber-600/80 hover:text-amber-600 dark:text-amber-400/80 dark:hover:text-amber-400'
-                : 'text-muted-foreground/75 hover:text-muted-foreground'
-          )}
-        >
-          <Shield className="h-4 w-4 shrink-0" strokeWidth={1.25} />
-          <span className="truncate">{isDeveloper ? '开发者后台' : '管理入口'}</span>
-        </Link>
-        {/* Exit developer mode button */}
-        {isDeveloper && (
+      {/* Developer link —— 仅开发者可见；普通用户通过暗门（连点题记 5 次）或直接输入 /admin 进入 */}
+      {isDeveloper && (
+        <div className="px-3 pb-1 pt-2">
+          <Link
+            href="/admin"
+            className={cn(
+              'flex items-center gap-3 py-2 pl-4 pr-3 text-sm transition-colors duration-500',
+              pathname === '/admin'
+                ? 'font-medium text-amber-600 dark:text-amber-400'
+                : 'text-amber-600/80 hover:text-amber-600 dark:text-amber-400/80 dark:hover:text-amber-400'
+            )}
+          >
+            <Shield className="h-4 w-4 shrink-0" strokeWidth={1.25} />
+            <span className="truncate">开发者后台</span>
+          </Link>
+          {/* Exit developer mode button */}
           <button
             onClick={handleExitDeveloper}
             className="flex w-full items-center gap-3 py-2 pl-4 pr-3 text-sm text-muted-foreground transition-colors duration-500 hover:text-foreground"
@@ -209,16 +283,23 @@ export function AppSidebar() {
             <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.25} />
             <span className="truncate">退出开发者模式</span>
           </button>
-        )}
-      </div>
+          {exitError && (
+            <p role="alert" className="pl-4 pr-3 pb-1 text-[12px] leading-snug text-destructive">{exitError}</p>
+          )}
+        </div>
+      )}
 
       {/* Footer：角色 + 一句题记 */}
       <div className="px-5 pb-5 pt-2">
         <div className="mb-3">
           <RoleBadge />
         </div>
-        <p className="font-serif text-[12px] italic leading-relaxed text-muted-foreground">
-          &ldquo;人生没有标准答案，<br />但有更好的决策框架&rdquo;
+        {/* 题记：同时是后台暗门（3 秒内连点 5 次 → /admin），对外无任何可见提示 */}
+        <p
+          className="font-serif text-[12px] italic leading-relaxed text-muted-foreground select-none cursor-default"
+          onClick={handleSecretTap}
+        >
+          「人生没有标准答案，<br />但有更好的决策框架」
         </p>
         <div className="mt-3 flex gap-3 text-[11px] text-muted-foreground/70">
           <Link href="/terms" className="hover:text-foreground">用户协议</Link>
@@ -231,7 +312,7 @@ export function AppSidebar() {
   return (
     <>
       {/* Mobile header bar */}
-      <div className="fixed left-0 right-0 top-0 z-50 flex h-12 items-center border-b border-border bg-sidebar/95 px-4 backdrop-blur-sm md:hidden">
+      <div className="fixed left-0 right-0 top-0 z-50 flex h-12 items-center border-b border-border bg-sidebar px-4 md:hidden">
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? '关闭导航菜单' : '打开导航菜单'}
@@ -243,14 +324,14 @@ export function AppSidebar() {
         </button>
         <div className="ml-3 flex items-center gap-2.5">
           <SealMark className="h-6 w-6 rounded-[2px] text-xs" />
-          <span className="font-serif text-sm font-semibold text-foreground">人生重构计划</span>
+          <span className="font-serif text-sm font-semibold text-foreground">人生沙盘</span>
         </div>
       </div>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="animate-fade-in fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm md:hidden"
+          className="animate-fade-in fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}

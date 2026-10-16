@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { STORAGE_KEYS } from '@/lib/storage-keys';
+import { notifyStateDirty } from '@/lib/user-state-sync';
 
 const TRACKABLE_PATHS = [
   '/name',
@@ -31,6 +32,7 @@ export function useModuleVisit() {
       if (!visited.includes(pathname)) {
         visited.push(pathname);
         localStorage.setItem(STORAGE_KEYS.visitedModules, JSON.stringify(visited));
+        notifyStateDirty(); // P1 修复：写入后广播，否则登录用户的访问记录不进云同步
       }
     } catch {
       // ignore storage errors

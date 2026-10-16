@@ -3,17 +3,15 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useEscapeKey } from '@/hooks/use-escape-key';
+import { useScrollLock } from '@/hooks/use-scroll-lock';
 import { X, Send, Sparkles } from 'lucide-react';
 import { getActiveAiConfig } from '@/lib/active-ai-client';
-import { getAuthHeader } from '@/lib/client-auth';
-import { consumeAiSseStream } from '@/lib/sse-client';
 import { AiMarkdown } from '@/components/shared/ai-markdown';
-import { AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock } from '@/components/ai/ai-panel-actions';
+import { AiCursor, AiPromptChips, AiCopyButton, AiStopButton, AiLoadingBubble, AiThinkingBlock, AiErrorNotice, AiStoppedNote } from '@/components/ai/ai-panel-actions';
+import { useAiChat, toApiHistory, type AiChatMessage } from '@/components/ai/use-ai-chat';
 
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+/** 按「模块::对象」缓存已完成的会话：关闭再打开同一对象直接显示，不重复请求（不重复扣次） */
+const sessionCache = new Map<string, AiChatMessage[]>();
 
 interface AIAnalysisPanelProps {
   open: boolean;
@@ -32,32 +30,47 @@ export function AIAnalysisPanel({
   itemTitle,
   itemDescription,
 }: AIAnalysisPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const {
+    messages, setMessages,
+    content: streamingContent,
+    thinking: thinkingContent,
+    thinkingBeat,
+    streaming: isStreaming,
+    error: aiError,
+    abortRef, run, retry, reset,
+  } = useAiChat();
   const [input, setInput] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingContent, setStreamingContent] = useState('');
-  const [thinkingContent, setThinkingContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
   const initialAnalysisSent = useRef(false);
+  const messagesRef = useRef<AiChatMessage[]>([]);
+  useEffect(() => { messagesRef.current = messages; });
 
   // 键盘用户按 Esc 也能关掉面板（原来只有点背景/点 × 才行）
   useEscapeKey(onClose, open);
+  useScrollLock(open);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
 
-  // Reset on item change
+  // 切换分析对象时重置；若该对象有缓存会话（关闭再打开）则直接恢复、不自动重发请求。
+  // cleanup 在对象切换/卸载时把当前会话存回缓存。
   useEffect(() => {
-    setMessages([]);
-    setStreamingContent('');
-    setThinkingContent('');
-    setIsStreaming(false);
-    initialAnalysisSent.current = false;
-  }, [itemTitle, module]);
+    const cacheKey = `${module}::${itemTitle}`;
+    reset();
+    const cached = sessionCache.get(cacheKey);
+    if (cached && cached.length > 0) {
+      setMessages(cached);
+      initialAnalysisSent.current = true;
+    } else {
+      initialAnalysisSent.current = false;
+    }
+    return () => {
+      if (messagesRef.current.length > 0) sessionCache.set(cacheKey, messagesRef.current);
+    };
+  }, [itemTitle, module, reset, setMessages]);
 
   // Trigger initial analysis when panel opens
   useEffect(() => {
@@ -72,62 +85,24 @@ export function AIAnalysisPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const startAnalysis = useCallback(async (question?: string) => {
-    setIsStreaming(true);
-    setStreamingContent('');
-    setThinkingContent('');
-    abortRef.current = new AbortController();
-
+  const startAnalysis = useCallback(async (question?: string, fresh = false) => {
     const itemContext = `【${itemTitle}】\n${itemDescription}`;
-    const historyForApi = messages.map(m => ({ role: m.role, content: m.content }));
+    const historyForApi = fresh ? [] : toApiHistory(messages);
+    await run({
+      module,
+      item: itemContext,
+      question,
+      history: historyForApi,
+      ai: getActiveAiConfig(),
+    });
+  }, [module, itemTitle, itemDescription, messages, run]);
 
-    try {
-      const response = await fetch('/api/ai/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-        body: JSON.stringify({
-          module,
-          item: itemContext,
-          question,
-          history: historyForApi,
-          ai: getActiveAiConfig(),
-        }),
-        signal: abortRef.current.signal,
-      });
-
-      if (!response.ok) {
-        let detail = `请求失败: ${response.status}`;
-        try {
-          const j = await response.json();
-          if (j?.error) detail = j.error;
-        } catch { /* keep default */ }
-        throw new Error(detail);
-      }
-
-      await consumeAiSseStream(response, {
-        onReasoning: (accumulated) => setThinkingContent(accumulated),
-        onContent: (accumulated) => setStreamingContent(accumulated),
-        onError: (message) => {
-          setMessages(prev => [...prev, { role: 'assistant', content: `分析失败：${message}` }]);
-        },
-        onDone: (fullText) => {
-          if (fullText) {
-            setMessages(prev => [...prev, { role: 'assistant', content: fullText }]);
-          }
-        },
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        // User cancelled
-      } else {
-        const errorMsg = error instanceof Error ? error.message : '分析失败，请重试';
-        setMessages(prev => [...prev, { role: 'assistant', content: `分析出错：${errorMsg}` }]);
-      }
-    } finally {
-      setStreamingContent('');
-      setIsStreaming(false);
-    }
-  }, [module, itemTitle, itemDescription, messages]);
+  /** 「重新分析」：清空当前会话并重新请求（会再次消耗次数） */
+  const handleReanalyze = () => {
+    if (isStreaming) return;
+    reset();
+    void startAnalysis(undefined, true);
+  };
 
   const handleSend = () => {
     const trimmed = input.trim();
@@ -138,12 +113,21 @@ export function AIAnalysisPanel({
     startAnalysis(trimmed);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handlePreset = (q: string) => {
+    if (isStreaming) return;
+    setMessages(prev => [...prev, { role: 'user', content: q }]);
+    startAnalysis(q);
+  };
+
+  const handleKeyDown =(e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
+
+  // 卸载兜底：父级条件渲染卸载面板时中止残留流式请求（与页面级 AI 面板一致）
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const handleClose = () => {
     if (abortRef.current) {
@@ -158,7 +142,7 @@ export function AIAnalysisPanel({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 z-40 bg-black/65 md:bg-black/55 animate-fade-in"
         onClick={handleClose}
       />
 
@@ -202,7 +186,7 @@ export function AIAnalysisPanel({
         </p>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div data-lenis-prevent className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {/* Initial context card */}
           <div className="rounded-lg border border-border bg-muted/30 p-3">
             <p className="text-xs text-muted-foreground leading-relaxed">{itemDescription}</p>
@@ -220,7 +204,10 @@ export function AIAnalysisPanel({
                 )}
               >
                 {msg.role === 'assistant' ? (
-                  <AiMarkdown content={msg.content} />
+                  <>
+                    <AiMarkdown content={msg.content} />
+                    {msg.stopped && <AiStoppedNote />}
+                  </>
                 ) : (
                   <div className="whitespace-pre-wrap">{msg.content}</div>
                 )}
@@ -234,7 +221,7 @@ export function AIAnalysisPanel({
               <div className="max-w-[90%] rounded-lg px-4 py-3 text-sm leading-relaxed bg-card border border-border text-foreground">
                 <div className="flex items-end gap-1">
                   <AiMarkdown content={streamingContent} />
-                  <span className="inline-block w-1.5 h-4 bg-primary/60 animate-blink -mb-0.5" />
+                  <AiCursor />
                 </div>
               </div>
             </div>
@@ -245,7 +232,26 @@ export function AIAnalysisPanel({
           )}
 
           {/* Loading indicator */}
-          {isStreaming && !streamingContent && <AiLoadingBubble />}
+          {isStreaming && !streamingContent && <AiLoadingBubble thinking={thinkingBeat && !thinkingContent} />}
+
+          {!isStreaming && aiError && <AiErrorNotice error={aiError} onRetry={retry} />}
+
+          {!isStreaming && !aiError && messages.length > 0 && (
+            <div className="flex justify-end">
+              <button
+                onClick={handleReanalyze}
+                className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+              >
+                重新分析
+              </button>
+            </div>
+          )}
+
+          <AiPromptChips
+            module={module}
+            visible={!isStreaming && !aiError && !messages.some(m => m.role === 'user')}
+            onPick={handlePreset}
+          />
 
           <div ref={messagesEndRef} />
         </div>
@@ -262,7 +268,7 @@ export function AIAnalysisPanel({
               onKeyDown={handleKeyDown}
               placeholder={isStreaming ? '等待回复中...' : '追问或提问...'}
               disabled={isStreaming}
-              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:border-ring disabled:opacity-50"
             />
             {isStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}
             <button

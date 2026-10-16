@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = { title: '用户协议 · 人生重构计划' };
+export const metadata: Metadata = { title: '用户协议 · 人生沙盘' };
 
 export default function TermsPage() {
   return (
@@ -12,11 +12,11 @@ export default function TermsPage() {
       <div className="mt-10 space-y-8 font-serif text-sm leading-[1.9] text-muted-foreground">
         <section>
           <h2 className="mb-2 text-base font-semibold text-foreground">一、服务性质</h2>
-          <p>人生重构计划是一款基于公开数据与概率框架的决策辅助工具，提供时间窗口、职业、规律与模拟等内容。本服务不构成人生、职业、财务、法律或医疗建议，所有结论仅供参考，决策责任由用户自行承担。</p>
+          <p>人生沙盘是一款基于公开数据与概率框架的决策辅助工具，提供时间窗口、职业、规律与模拟等内容。本服务不构成人生、职业、财务、法律或医疗建议，所有结论仅供参考，决策责任由用户自行承担。</p>
         </section>
         <section>
           <h2 className="mb-2 text-base font-semibold text-foreground">二、账号</h2>
-          <p>用户可注册昵称与密码账号。您应妥善保管账号信息，不得将账号转让或出借给他人。注册功能可能因运营需要暂停开放，已有账号不受影响。</p>
+          <p>用户可注册昵称与密码账号。你应妥善保管账号信息，不得将账号转让或出借给他人。注册功能可能因运营需要暂停开放，已有账号不受影响。</p>
         </section>
         <section>
           <h2 className="mb-2 text-base font-semibold text-foreground">三、AI 生成内容</h2>
@@ -24,7 +24,7 @@ export default function TermsPage() {
         </section>
         <section>
           <h2 className="mb-2 text-base font-semibold text-foreground">四、用户行为</h2>
-          <p>您不得利用本服务从事违法活动，不得干扰服务正常运行、尝试获取未授权的数据或对服务进行攻击。</p>
+          <p>你不得利用本服务从事违法活动，不得干扰服务正常运行、尝试获取未授权的数据或对服务进行攻击。</p>
         </section>
         <section>
           <h2 className="mb-2 text-base font-semibold text-foreground">五、责任限制</h2>

@@ -6,8 +6,8 @@ import type { MetadataRoute } from 'next';
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: '人生重构计划 · LIFE RECONSTRUCTION PLAN',
-    short_name: '人生重构',
+    name: '人生沙盘 · LIFE SANDBOX',
+    short_name: '人生沙盘',
     description:
       '八个模块拆解人生：名字、职业、规律、窗口、努力、运气、命运、健康。不是算命，是算概率。',
     start_url: '/',
