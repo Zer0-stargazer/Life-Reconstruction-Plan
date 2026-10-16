@@ -119,3 +119,5 @@ scripts/_*.mjs
 _tmp_*/
 
 .claude/settings.local.json
+.vinext/
+.cloudflare/

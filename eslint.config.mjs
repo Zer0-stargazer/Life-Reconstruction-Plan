@@ -23,15 +23,24 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     '.next/**',
+    '.next*/**', // .next.old / .next.prev / .next.bak-* 等构建残留
     'out/**',
     'build/**',
     'next-env.d.ts',
     // Build artifacts:
     'server.js',
     'dist/**',
+    '.cloudflare/**', // Cloudflare / vinext 构建产物（.gitignore 已忽略）
+    '.vinext/**', // vinext 构建产物（.gitignore 已忽略）
+    '.rsbuild/**', // 与 .gitignore 对齐
+    'coverage/**', // 测试覆盖率报告（.gitignore 已忽略）
+    '_tmp_*/**', // pnpm 安装期临时目录（.gitignore 已忽略）
+    '.temp/**', // 与 .gitignore 对齐（.gitignore 已忽略）
     // Script files (CommonJS):
     'scripts/**/*.js',
     'scripts/**/*.ts',
+    // 临时脚本目录（已 gitignore）：一次性数据批处理脚本，不参与质量门禁
+    '.tmp/**',
   ]),
 ]);
 
