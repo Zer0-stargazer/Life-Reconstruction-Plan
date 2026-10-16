@@ -6,6 +6,30 @@
 
 ---
 
+## 上线必做（2026-10-15 审查）
+
+- [x] 执行 batch13 迁移 —— ✅ 已完成
+- [ ] **轮换曾泄露的 AI Key**（含 AI_API_KEY / AI_FALLBACK_KEY；旧 Key 在服务商侧作废）
+- [ ] **生产变量清单**（Cloudflare Workers → Settings → Variables / `wrangler secret`）：
+  - [ ] `SESSION_SECRET` ≥32 位：`node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`
+        （缺失/过短时生产环境登录、验证码一律 500，不会回退默认值）
+  - [ ] `DEV_PASSWORD` ≥24 位随机串（<16 位生产环境直接拒绝后台口令登录）
+  - [ ] `TURNSTILE_SECRET_KEY` + `NEXT_PUBLIC_TURNSTILE_SITE_KEY`（两个必须一起配；NEXT_PUBLIC_ 需构建时存在）
+  - [ ] AI 主源 `AI_API_URL / AI_API_KEY / AI_MODEL` + 备用源 `AI_FALLBACK_URL / AI_FALLBACK_KEY / AI_FALLBACK_MODEL`
+  - [ ] `NEXT_PUBLIC_DONATE_URL` / `NEXT_PUBLIC_CONTACT` / `NEXT_PUBLIC_REPO_URL` / `NEXT_PUBLIC_SITE_URL`
+  - [ ] 邮件：`MAIL_PROVIDER=resend` + `RESEND_API_KEY` + `MAIL_FROM`（生产环境 console 模式视为未配置，注册/找回发不出码）
+- [ ] **Cloudflare Access 保护 `/admin` 与 `/api/admin`**（可选但推荐：在口令之外再加一层身份门）
+- [ ] **确认 Worker 只能经 Cloudflare 访问**：限流依赖 `cf-connecting-ip`，若源站可被绕过直连，
+      攻击者可伪造该头绕过全部限流（workers.dev / 自定义域都走 CF 边缘则天然满足）
+- [ ] **接 Cron 定时调用** `purge_old_rate_limits` 与 `purge_old_ai_content`（Supabase pg_cron 或 Cloudflare Cron Trigger），
+      否则 rate_limits 表无限增长、AI 对话正文超期不清除
+- [ ] **Supabase RLS 核对**，SQL Editor 执行并确认业务表 `rowsecurity = true`：
+      `select tablename, rowsecurity from pg_tables where schemaname='public';`
+- [x] 安全响应头（CSP / HSTS / X-Frame-Options 等）已在 `next.config.ts` 配置，Node 与 vinext 两种运行方式均生效；
+      改 CSP 后注意 Turnstile 域名白名单
+
+---
+
 ## 一、上线硬门槛（不做就不是正式产品）
 
 ### 1. 生产环境从零到一 ⬜
@@ -15,13 +39,20 @@
 - [x] **验证建表齐全** —— ✅ 2026-10-12：Dashboard → SQL Editor 跑 `scripts/check-supabase.sql`，
       **16 项全 ✅**（10 项表/列 + 4 个 RPC + 2 个开关种子）。库是空库
       （app_users 0 / invite_codes 0），没有存量数据要迁移，直接可用
+- [x] **迁移到最新批次**：batch6（账号）✅ / batch7（审核）✅ / batch8（云同步）✅ /
+      batch9（授权码 kind 列）✅（2026-10-13 执行，E2E 12/12）；
+      **batch10（user_state RLS，`2026-10-14-batch10-security.sql`）⬜ 待执行** ——
+      未执行期间 user_state 无行级隔离（服务端接口有会话校验兜底，但不等于 RLS）；
+      **batch12（反馈表，`2026-10-14-batch12-feedback.sql`）⬜ 待执行** ——
+      未执行期间站内反馈表单提交会失败（其余功能不受影响）
 - [x] **闭环实测** ✅ 2026-10-12：`pnpm check:flow` **9/9 通过**（注册 → 开发者口令校验 →
       建码带 5 次额度 → 第二账号注册 → 兑换前 0 → 兑换 → 兑换后 5 → 重复兑换被拒 →
       码用尽后被拒）。脚本只打 `localhost:5000`；会留 3 个 `e2e_*` 测试账号和 1 个
       `E2E-*` 码，脚本末尾打印清理 SQL
-  - ⚠️ 注意：本机到 `*.supabase.co` 被出网放行拦着（见 DEVLOG 2026-10-11），如果
-    dev 起来后注册/登录报 500 或 `fetch failed`，先别查代码——大概率是同一网络问题，
-    在代理软件里给 `supabase.co` 加规则（或开全局/TUN 模式）再试
+  - ✅ 2026-10-13 更新：当前网络可**直连** `*.supabase.co`，旧网络限制已不存在；
+    若仍遇 `fetch failed` 先查本机代理/网络。另注意：限流依赖 Supabase RPC，数据库不可达时
+    生产环境 fail-closed 返回「请 30 秒后再试」（开发环境放行并警告）——
+    看到 30 秒限流提示先想网络，别只想触发频率（见 DEVLOG 2026-10-15）
 - 说明：未配置时登录/兑换/后台/内置 AI 均不可用（BYOK 不受影响）
 - [x] **生产构建验证** ✅ 2026-10-12
   - [x] 停 dev server → `pnpm build` → `pnpm start` 全路由走查：**24 个页面全部产出，
@@ -31,7 +62,7 @@
   - 坑记录：`rm -rf .next.old` 撞沙箱批量删除阈值（1,713 文件），**先 `mv .next .next.old`
     再 build**，旧目录留着不管（已 gitignore）
 - [ ] **部署**（1 天）
-  - [ ] 选定部署方式（见下方「部署位置的三层约束」再定，别只看"免不免备案"）
+  - [x] 选定部署方式：**Cloudflare（vinext 路线）**——用户侧待办：`wrangler login` → `pnpm deploy:vinext`
   - [ ] 域名 + HTTPS
   - [ ] 生产环境变量重配一遍；**`SESSION_SECRET` 必须设为强随机值**（`openssl rand -hex 32`；开发环境回退用 DEV_PASSWORD，生产禁止）
   - [ ] 生产环境验证：全路由 + 注册/兑换/AI 全流程
@@ -60,7 +91,7 @@ Next 16 minor，用 Node 运行时 + `nodejs_compat`）；浏览器不直连 Sup
 
 - [x] AI 分析 50 秒总超时 + 断线中止上游（8cff398，2026-10-09）
 - [ ] **更换或增备稳定供应商**（0.5-1 天）
-  - [ ] 实测记录在案：api.apikey.fan 502 率约 50%，忽略 `thinking:disabled`，单次 13s 起步——面向真实用户等于"一半概率坏"
+  - [ ] 实测记录在案：<AI 中转站> 502 率约 50%，忽略 `thinking:disabled`，单次 13s 起步——面向真实用户等于"一半概率坏"
   - [ ] 方案 A：换稳定供应商，改 `.env.local` 三行即可（代码已兼容）
   - [x] 方案 B：代码加**多源容错**——内置 AI 主源"未产出内容即失败"自动切备用源（2026-10-10，`lib/ai-stream.ts` `streamChatWithFallback` + `lib/ai-providers.ts` `resolveFallbackSource`）；**还需在 `.env.local`/生产填 `AI_FALLBACK_URL/KEY/MODEL` 才真正生效**（三件套齐全才启用）
   - [ ] 想体验好：换一个非推理快模型（思维链占总时长 60% 的根因）

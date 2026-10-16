@@ -13,29 +13,43 @@
 > - 2026-09-29 全项目体检发现「#3 自定义 AI Key 已修」的结论**不成立**
 >   （存在 `ai-active-source` / `api-active-source` 键名分叉），已于 `8945efe` 修复。
 >   详见 `docs/history/HEALTH-REPORT.md` P1#1。
+> - ⚠️ **2026-10-13 再变**：Supabase 三件套**已配齐**（2026-10-11，见 LAUNCH-CHECKLIST；
+>   本文 P0#1 里「仍缺 Supabase」的描述已过期）；权限模型升级为 **v3 三层版**
+>   （登录门 5 板块 + 使用权/AI额度/套餐三类授权码 + AI 使用权门，见 DEVLOG 2026-10-13）；
+>   batch9 迁移（invite_codes.kind）**✅ 已执行生效**（2026-10-13，E2E 12/12）。
+> - ⚠️ **2026-10-14 再变（商业模型转向）**：**开源免费 + 登录即全功能**（BUSINESS_MODE=open 默认生效）——
+>   登录门扩至全部 10 板块（2026-10-15 patch10，含 `/journey`）；`isPremium`=登录即 true；角色仅剩 normal/developer；
+>   AI 是唯一付费点（注册送 50 次 / ai 码充值 / BYOK 免费）；legacy 买断制保留可回退。
+>   本文涉及 premium 授权语义的段落均为 legacy 模式语义。
+> - ⚠️ **2026-10-14 安全批次**：batch10 修复 P0×2（找回密码接管→两步验证码流程、验证码不回传生产）
+>   + P1×5（getClientIp 固定 / 登录锁定 / token_version 踢会话 / AI Key 移出云同步 / RLS 迁移）
+>   + P2×4，详见 DEVLOG 2026-10-14。**batch10-security.sql（user_state RLS）与
+>   batch12-feedback.sql（反馈表）⬜ 待用户 Dashboard 执行**。
+> - ⚠️ **2026-10-15**：注册限流改为「格式校验先行」——无效格式请求不再消耗限流额度（patch18）；
+>   数据库不可达时生产环境 fail-closed 返回「30 秒」，与正常限流窗口（5 分钟）是两回事。
 >
 > 当前仍未解决的条目，见文末「修与不修的建议优先级」。
 
 ## P0 · 阻塞运行（2026-09-25 已处理 / 需用户配合）
 
 ### #1 缺 `.env` / `.env.local` 🟡 部分解决（2026-09-28 更新）
-已提供并验证 **AI 三件套**（api.apikey.fan 中转站 / 智谱 GLM-5.3-flash）：
-`AI_API_URL` `AI_API_KEY` `AI_MODEL=glm-5.3-flash`，`DEV_PASSWORD` 与 `SESSION_SECRET` 也已配本地值。
+已提供并验证 **AI 三件套**（<AI 中转站> / <上游厂商> <内置模型>）：
+`AI_API_URL` `AI_API_KEY` `AI_MODEL=<内置模型>`，`DEV_PASSWORD` 与 `SESSION_SECRET` 也已配本地值。
 → **AI 分析链路已端到端跑通**（详见下方"AI 实测记录"）。
 
 **仍缺 Supabase 三件套**：`SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`。
 缺它们时：注册登录、邀请码兑换、admin 后台仍然 500；静态页面与 AI 分析（走 env Key）不受影响。
 
 #### AI 实测记录（2026-09-28）
-- 中转站 `https://api.apikey.fan/v1` 可用，模型列表：glm-5.3-flash / glm-5.3-flashx / glm-5.3 / glm-5.2 / glm-5.1
-- 该 Key 标注"智谱"，但**属于中转站而非官方**，在 `/user` 页手填并选"智谱"会失败
-  （项目内置 glm 的 baseUrl 是官方 `open.bigmodel.cn`，实测报"令牌已过期或验证不正确"）
+- 中转站 `https://<AI 中转站>/v1` 可用，模型列表：<内置模型> / <内置模型> / <内置模型> / <内置模型> / <内置模型>
+- 该 Key 标注"<上游厂商>"，但**属于中转站而非官方**，在 `/user` 页手填并选"<上游厂商>"会失败
+  （项目内置 <上游厂商> 的 baseUrl 是官方 `<上游官方地址>`，实测报"令牌已过期或验证不正确"）
   → **已解决（2026-09-28）**：新增自定义 AI 接入源，地址/协议/Key/模型都由用户填，
     实测同一 Key 通过自定义端点：测连通 3.4 秒 ✅、analyze 出 1703 字 ✅。详见 API.md。
 - **后续清理（2026-09-28）**：既然自定义源能覆盖同样场景，已把写死的 8 家厂商预设整体删除——
   官方地址 + 中转站 Key 对不上，硬编码的模型 id 也已过期，留着只会误导。
   现在 AI 来源只有两种：内置 AI（服务端 env）与自定义源（用户填地址）。
-- GLM-5 是推理模型：SSE 的 delta 里先出 `reasoning_content` 再出 `content`；
+- <内置模型> 是推理模型：SSE 的 delta 里先出 `reasoning_content` 再出 `content`；
   本项目只取 `delta.content`，思维链不会外泄到界面，但会拖慢首字
 - **性能**：同一请求 开启 thinking 112 秒 / 关闭 6 秒 → 已在 `ai-stream.ts` 默认关闭，
   可用 `AI_THINKING=1` 打开

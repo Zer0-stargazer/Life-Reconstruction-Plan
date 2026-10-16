@@ -1,21 +1,29 @@
 # 当前路线图
 
-> 更新时间：2026-10-10
+> 更新时间：2026-10-15
 > 这份文档只记录「现在该做什么」；历史过程看 [`DEVLOG.md`](DEVLOG.md)。
 
 ## 当前状态
 
-- 项目已可运行：`pnpm validate`（含 vitest）通过；全路由回归与生产构建仍待在主人环境复跑（见 LAUNCH-CHECKLIST）。
-- **商业化模型已上线**：访客预览 + 授权码解锁 + AI 额度计次（见下方"正式商业化模型"）。
-- 首页轨道中心为雷达式生命核心；/career 有搜索 + 职业级专属资源（**888/888 全覆盖**）+ 修正口径的快看组。
-- AI 链路：思维链实时显示、SSE 统一解析、6 面板居中模态 + 停止/复制/计时。
+- 项目可运行：tsc / eslint / build 全绿，全页面 200 冒烟通过；数据 2,019 条。
+- **商业模式已转向开源免费**（2026-10-14，见下方）：登录即看全部，AI 是唯一付费点。
+- **新用户旅程完成**（2026-10-15）：翻页式介绍文档、登录门全板块、序页年龄轴拖动、访客下滑引导、年份与窗口数据清洗、注册防卡。
+- 安全批次 batch10（找回密码两步验证码、登录锁定、token_version 踢会话等 P0×2+P1×5）与优化批次 batch11（AI 流 abort/退款、云同步正确性、死代码 ~930 行）已落地。
 
-## 正式商业化模型（2026-10-03 起）
+## 当前商业模式（open · 2026-10-14 起）
 
-- **权限**：访客/普通用户 = 预览态（全模块列表可逛，详情弹层、AI 分析、报告生成锁定）；持码（premium）= 全解锁；developer = 全解锁 + 后台。
-- **AI 额度**：授权码自带次数（/admin 建码时填，默认 200），兑换到账，内置 AI 每次分析扣 1，乐观锁防透支，流水在 `ai_credit_logs`；**用户自带 Key（BYOK）永久免费不扣额度**；developer 不限次。
-- **发码**：/admin 单个/批量建码 → 用户加好友或邮件找开发者领码 → 解锁弹窗或 /user 页兑换。
-- 未做（明确推迟）：在线支付、按 token 计费、免费模型兜底。
+- **看**：登录用户看全部 9 个板块；访客保留首页 + /about + 登录后翻页式介绍。
+- **AI**：唯一付费点——注册送 50 次；用完用 ai 类授权码充值（5 元 / 50 次）；**BYOK 自带 Key 永久免费不扣额度**；developer 不限次。乐观锁防透支，流水在 `ai_credit_logs`。
+- **开关**：`lib/business-mode.ts` BUSINESS_MODE=`open`（默认）/ `legacy`（回退 2026-10-13 的 v3 买断制：登录门 + access/ai/bundle 三类授权码 + AI 使用权门，设计见 DESIGN 文档）。
+- **角色**：仅 normal（登录用户）/ developer（管理员）；premium 仅作历史数据兼容。
+- **赞赏与联系**：/about 作者页（`NEXT_PUBLIC_DONATE_URL` / `NEXT_PUBLIC_CONTACT` 可配）；反馈走站内表单（feedback 表）。
+
+## 下一步（部署与收尾）
+
+1. 用户执行 batch10-security.sql + batch12-feedback.sql（Supabase Dashboard）。
+2. `wrangler login` → `pnpm deploy:vinext` 上线 Cloudflare。
+3. 填 `NEXT_PUBLIC_DONATE_URL` / `NEXT_PUBLIC_CONTACT` / `NEXT_PUBLIC_REPO_URL` 后重新构建。
+4. 反馈系统上线后观察首批用户反馈，决定第一批迭代内容。
 
 ## 下一批 UI 工作
 

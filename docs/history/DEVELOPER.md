@@ -1,4 +1,4 @@
-# 人生重构计划 - 开发者文档
+# 人生沙盘 - 开发者文档
 
 > ⚠ **2026-09-25 校注（2026-10-01 更新）**：本文写于扣子云端环境（2026-07），以下条目已过时，
 > 以 [ARCHITECTURE.md](ARCHITECTURE.md) / [API.md](API.md) / [KNOWN-ISSUES.md](KNOWN-ISSUES.md) 为准：

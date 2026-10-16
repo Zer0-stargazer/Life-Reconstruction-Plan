@@ -129,7 +129,7 @@ id 579–1539（778 条）description 为 `"{name}，{category}领域的专业�
 | 级别 | 问题 |
 |---|---|
 | 🟠 P1 | **`/api/ai/analyze` 与 `/api/ai/test-key` 是开放代理**：接受用户任意 `baseUrl` 并由服务端代为 POST（仅校验 `http(s)://`），构成 SSRF 探测面 + 带宽/成本白嫖，且无 IP 限流。公网部署前必须加限流或鉴权 |
-| 🟡 P2 | `.env.local:5` 有真实 AI Key 明文（`sk-dd9fc3...`）。已确认**未入 git**（`.gitignore` 覆盖，历史中也搜不到），但已在本机/审计场景暴露，建议轮换 |
+| 🟡 P2 | `.env.local:5` 有真实 AI Key 明文（`<已移除>`）。已确认**未入 git**（`.gitignore` 覆盖，历史中也搜不到），但已在本机/审计场景暴露，建议轮换 |
 | 🟡 P2 | 错误信息回显：`auth/route.ts:127`、`invite/route.ts:166` 把内部错误 message 原样返回前端 |
 | 🟡 P2 | `supabase-client.ts` 用 service_role key，但文件**没有 `import 'server-only'` 守卫**；一旦被客户端组件误引，key 有打进浏览器 bundle 的风险。`session.ts`、`ai-stream.ts` 同理 |
 | 🟡 P2 | `next.config.ts:9` `images.remotePatterns` 用 `hostname: "*"`（当前是死配置，全站没用 `next/image`）；一旦启用即等于开放图片代理 |

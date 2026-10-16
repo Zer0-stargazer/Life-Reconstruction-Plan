@@ -1,7 +1,8 @@
 # 架构 ARCHITECTURE.md
 
-> 描述 **2026-10-03** 时点的真实代码状态（已逐一核对源码，非设计稿）。
-> 最近一次实质变更：2026-10-02/03「商业化落地」——访客预览模型、AI 额度制、SSE 共享解析、思维链透传。
+> 描述 **2026-10-15** 时点的真实代码状态（已逐一核对源码，非设计稿）。
+> 最近一次实质变更：2026-10-14「商业模式转向开源免费」（BUSINESS_MODE=open，登录即全功能，AI 唯一付费点）+ 2026-10-15「登录门扩至全部 10 板块 + 新用户旅程（翻页介绍/序页拖动）+ 注册限流格式校验先行 + 上线前收尾（回归修复/安全头/字体自托管/106 测试）」。2026-10-15 收尾详见 [`SESSION-2026-10-15-收尾交接.md`](SESSION-2026-10-15-收尾交接.md)。
+> （更早：2026-10-13 权限模型 v3 与云同步 17 键；2026-10-02/03 商业化落地——访客预览模型、AI 额度制、SSE 共享解析、思维链透传。2026-10-14 batch10 安全加固：两步验证码找回、登录锁定、token_version 踢会话。）
 
 ## 总体形态
 
@@ -77,27 +78,35 @@ src/components/shared/ai-markdown.tsx ← AI 输出的 Markdown 轻量渲染器
 > 注意：**包 `Reveal` 会改变谁是 grid item**。卡片原本直接是 grid item 时等高拉伸，
 > 外面套一层 div 后内层不再拉伸。要么给卡片加 `h-full`，要么把 `Reveal` 包在整个 grid 外面。
 
-## 权限链路（2026-10-03 起为正式模型）
+## 权限链路（2026-10-13 起为 v3 三层模型）
 
 ```
-访客（未登录）/ 普通用户
-   └─ 预览态：全部模块的列表与摘要可逛（canPreviewModule 恒 true）
-      锁定点 = useLockedAction().guard(action) 拦截三类动作：
+访客（未登录）
+   ├─ 登录门：/me /windows /career /laws /luck（LOGIN_REQUIRED_MODULES）
+   │    └─ canViewModule=false → ModuleGate 整页渲染 LoginGate（登录引导，不泄露内容）
+   ├─ 预览板块：/destiny /health /simulation /name
+   │    └─ canViewModule=true → 正常渲染 + PreviewBanner 引导条
+   └─ 两类身份的锁定点 = useLockedAction().guard(action) 拦截三类动作：
         ① 条目详情弹层（career/windows 卡片、laws/luck 详情）
         ② AI 分析 / 对话按钮
         ③ simulation 问卷出分与推演、destiny 报告生成
       guard 未通过 → unlockStore.show() 唤起全局 UnlockDialog（挂 root layout）：
         访客 → 引导去 /user 登录/注册；已登录 → 就地输授权码兑换
-   └─ ModuleGate 不再整页 403：正常渲染内容，未持码时挂 PreviewBanner 引导条
+
+普通用户（登录 · open 模式下即全功能）
+   └─ canViewModule 恒 true（全部 10 板块可看，2026-10-15 起登录门覆盖全部板块）
+   └─ canAccessModule=isPremium：open 模式下 isPremium=登录即 true（legacy 模式才要求 premium 角色）
 
 注册/登录 (POST /api/auth)
    └─► app_users.role ∈ {normal, premium, developer}
    └─► 前端存 localStorage("auth-user")（仅展示）+ localStorage("auth-token")（权限依据）
 
-兑换授权码（POST /api/invite，需会话）
-   └─ role=premium + ai_credits 到账（码自带次数）→ 全站即时解锁
+兑换授权码（POST /api/invite，需会话，2026-10-13 起按 kind 分发）
+   ├─ kind=access 使用权码 → role=premium（不加额度）——仅 legacy 模式有授权意义
+   ├─ kind=ai     纯额度码 → 只加 ai_credits（角色不变）——**open 模式下的充值码**
+   └─ kind=bundle 套餐码   → role=premium + ai_credits 到账 → 全站即时解锁（仅 legacy）
 
-premium（全模块 + AI 额度计次）
+登录用户（open 模式：AI 前提 = 有额度或自带 Key；legacy 模式 = premium 语义）
    └─ /admin 输入 DEV_PASSWORD → POST /api/admin {action:"verify"}
         └─ role=developer，token=sha256("lrs-dev-session:"+DEV_PASSWORD+":"+UTC日期)
            按日轮换（接受今天+昨天两桶，等效 24-48h），存 localStorage("dev-token")
@@ -121,9 +130,10 @@ premium（全模块 + AI 额度计次）
 用户对象本身仍存 localStorage，但**只用于界面展示**——权限判定的唯一权威是服务端令牌。
 前端各 AI 面板统一用 `lib/client-auth.ts` 的 `getAuthHeader()` 带上令牌。
 
-> **2026-10-03 起正式权限模型生效**（测试期全开放已收回）：`canAccessModule()` 按角色判定，
-> 预览态由 `canPreviewModule()` + `useLockedAction()` 承载。决策记录见
-> `docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md`。
+> **2026-10-14 起商业模式为开源免费（open）**：`lib/business-mode.ts` 是唯一真源——
+> `isPremium()` 在 open 模式下等于「已登录」；legacy 模式回退按角色判定（v3 买断制语义）。
+> analyze 门控：open 模式下删 normal 角色 403，改为「额度>0 扣平台额度 / 额度 0 + 有自带 Key 走用户 Key / 都没有 → 引导」。
+> 决策记录见 `docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md` 与 DEVLOG 2026-10-14。
 
 ## AI 链路（2026-10-03 时点）
 

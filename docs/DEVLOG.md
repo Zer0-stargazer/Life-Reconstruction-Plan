@@ -35,7 +35,7 @@
 **主题**：让 AI 真正可用，把假数据清干净。
 
 - **自定义 AI 接入源**：任意 baseUrl + 协议（openai/claude/gemini/minimax）+ Key + 模型，
-  增删改查/启停/测试/导入导出；实测中转站 + GLM-5.3-flash 端到端出 1,703 字。
+  增删改查/启停/测试/导入导出；实测中转站 + <内置模型> 端到端出 1,703 字。
 - **careers 移除 778 条机器生成的模板条目**（1539 → 757），确立"资源必须可追溯"纪律。
 - 推理模型默认关闭思维链（实测 112s → 6s）；删除 8 家写死厂商预设、45 个未引用组件、33 个死依赖。
 - 视觉重做启动（一~三）：首页仪表盘化、/me 时间轴仪表盘化。
@@ -114,7 +114,7 @@
 - `24e4165` 4 个 AI 面板从右侧抽屉改**居中模态**（用户要求）。
 - `63db277` 加载气泡显示**已等待秒数**。
 - `5300325` 运气「影响指数/可控度」白话解释（用户反馈看不懂）。
-- `3794798` **AI 思考过程透明化**：实测 api.apikey.fan 忽略 `thinking:disabled`
+- `3794798` **AI 思考过程透明化**：实测 <AI 中转站> 忽略 `thinking:disabled`
   （思维链占时长约 60%，首正文要等 280+ 帧），`reasoning_content` 全链路透传，
   6 面板 `AiThinkingBlock` 实时显示、正文开始后折叠。
 
@@ -235,7 +235,7 @@
 
 ## 2026-10-10（续·四）｜ 上线硬门槛之三：AI 双源容错
 
-**主题**：内置 AI 供应商 `api.apikey.fan` 实测 502 率约 50%，面向真实用户等于"一半概率坏"。加备用源自动切换，从代码层兜住。
+**主题**：内置 AI 供应商 `<AI 中转站>` 实测 502 率约 50%，面向真实用户等于"一半概率坏"。加备用源自动切换，从代码层兜住。
 
 - **备用源配置**（`lib/ai-providers.ts`）：新增 `resolveFallbackSource()`，读 env `AI_FALLBACK_URL / KEY / MODEL`；**三件套齐全才生效**，否则返回 `null`（不改变现有行为）。地址复用 `isSafeBaseUrl` 做 SSRF 校验，返回与自定义源同构的 `openai` kind，直接复用 `streamChatAuto` 的 openai 分支——不新增协议分支。
 - **容错生成器**（`lib/ai-stream.ts`）：新增 `streamChatWithFallback(messages, primary, fallback, options)`。语义：**只有主源"在产出任何内容之前"就失败**（HTTP 错误 / 连接失败 / 空响应）才切备用源。一旦主源已吐出正文或思维链，就不再切换（否则两段不同来源正文会被拼接；此时透传错误）。主源抛异常（超时 abort / 客户端断开 / 网络错误）原样上抛，交给 analyze 路由既有错误路径（超时文案、退还额度）——天然不触发切换，不重复计费。`fallback` 为 `null` 时行为与 `streamChatAuto` 完全一致。
@@ -460,3 +460,394 @@ dev server 的服务端 fetch（Next.js/undici 默认不走 `https_proxy` 环境
 - admin 统一会话、限流持久化、AI 多协议实测；测试仅覆盖职业资源（auth/AI 流程待补）。
 - AI 备用源 env 值尚未配置（需第二个 Key）；配置后需真机走查容错路径。
 - 生产构建 `pnpm build` 自第 8 模块落地后未复跑；真机移动端走查未做。
+
+---
+
+## 附录 C · 职业资源专属化（分批进行中）
+
+**已完成批次 1/13 · 传媒 45 个职业（2026-10-12）**
+
+| 指标 | 批前 | 批后 |
+| --- | --- | --- |
+| 传媒类份数 | 73（人均 1.62） | **225（人均 5.00，45/45 达标）** |
+| 全局总份数 | 1,675 | 1,827 |
+| 全局人均 | 1.89 | 2.06 |
+| 全局未配齐（<5 份） | 882 | 837 |
+| 过度共用链接 | 61 条 | 59 条 |
+| 涉及共用资源占比 | 25.3% | 22.6% |
+
+**做法（后续批次沿用，避免退化）**
+
+1. 书籍当主干：每职业 2–4 本**真实存在、职业专属**的中文教材/行业手册（如纪录片导演讲
+   《纪录片也要讲故事》《纪录片导论》《拍摄纪录片》，剧本杀作者讲《剧本杀创作十讲》
+   《剧本推理游戏创作指南》），`why` 写清"为什么这份职业该读它"。
+2. 链接只放**打开就能学的具体页面**：官方培训教材、在线免费手册、行业数据库后台。
+   禁用平台首页与搜索页（`check:resources` 会拦）。
+3. 监管机构的官网（广电总局 / 网信办 / 新闻出版署）**每条最多 3 个职业共用** ——
+   它们确实是合规类职业的第一手来源，但不能当成万能答案。
+4. 改完必跑：`pnpm check:resources`（份数 + 共用）+ `tsc --noEmit` + `eslint`。
+5. **键只留一处**：`mediaResources` 比 `supplement-*` 先展开、会被覆盖，
+   所以本轮把 `supplement-02/03/05/06/11` 里的 19 个传媒键删掉了，
+   原地留注释说明迁移去向。后续批次同理 —— 不改 supplement 等于白干。
+
+**踩坑记录**
+
+- 本机 HTTP 代理（Clash）**能通百度/知乎/网易，但所有 `.gov.cn` 与部分商业站返回 000**，
+  所以链接可达性不能只靠本机 curl：这批 15 条"疑似失效"经逐一复核**全部是误报**
+  （nppa / cac / cnnic / 36氪 / 少数派 / 新榜 / 豆果 / 灯塔 均正常）。
+  → 判链接死活用**平台侧抓取**复核，别信本机代理的结论。
+- `check:resources` 的"共用链接"是**跨类别**统计的。本轮剩 3 条超额链接
+  （`pytorch.org/tutorials` 12 个、`docs.blender.org` 5 个、`cac.gov.cn` 7 个）
+  传媒各自只占 1–2 个，根因在 AI / 3D / 合规类别，留待对应批次解决。
+
+**剩余类别（12 个，837 个职业）**：科技 184、金融 103、医疗 83、设计 76、
+工程制造 66、教育 60、服务 51、商业销售 50、管理 50、能源 42、法律 39、科研 39。
+
+---
+
+## 职业资源专属化收官（2026-10-12 深夜）：888/888 四类达标 ✅
+
+第 13 批「科研」39 键 + 第 14 批「法律 5 键 / Android 1 键」全部完成，**14 个批次全部收官**。
+
+| 指标 | 收官值 |
+|---|---|
+| 四类达标（V+D+C+2B） | **888 / 888（100%）** |
+| 资源总份数 | 4,696（人均 5.29） |
+| check:resources | ✅ 基础校验 + 份数 + 通用化全部达标 |
+| 超限链接 | 42 条（历史遗留，本两批零新增） |
+
+**做法**：B站 `search/type?search_type=video` 旧接口批量搜索（search/all/v2 响应不稳定）→ view API 批量验证 BV（本两批 53/53 全真）→ MOOC 经 WebSearch 拿 icourse163/smartedu 真链 → 注入脚本（dry-run 零缺项才 apply）→ 全套验收（tsc / gap-cat / global-audit / check:resources / eslint / vitest）。
+
+**新踩坑**（详见工作区记忆）：① B站 search/all/v2 有时只剩广告块无 video，换 search/type 旧接口稳定；② 本机与平台侧都抓不到 reddit，老牌学术 sub 靠知名度+WebSearch 抽验；③ gap-cat 的 V 只认 `videos` 字段，B站视频条目写进 `docs` 会被判缺 V；④ tech.ts 里的键不在注入脚本 FILES 清单会报「未找到键块」，补前先 grep 定位真身。
+
+**遗留**：42 条超限链接（pbc.gov.cn×33、csrc/nfra×14、edx 系列等）待后续顺手清，不影响达标。
+
+---
+
+## 2026-10-12 · 超限链接清零 + 视觉打磨/logo 定稿
+
+**超限清零**：42 条超限链接 → 两步法（`dedup-urls.ts` 每条 URL 保留 3 职业批量删 173 份 → `inject-refill.ts` 回补 102 键 V=18/D=88，含 40 门真实 MOOC）→ **超限 0 条、未配齐 0**，分布 5份×716 / 6份×150 / 7份×22，总 4,634 份人均 5.22。资源专属化全项目完结。
+
+**视觉打磨**：
+- **新 logo 定稿**：`public/icon.svg` 重画——圆角纸底 + 墨色来路 + 朱红窗口方块与跃升曲线 + 终点圆点，语义「人生轨迹进入窗口分叉：淡墨原路继续，朱红轨迹跃升」，与全站纸 #faf6ee / 墨 #1f1915 / 朱红 #b2392b 三色统一，内嵌 prefers-color-scheme 暗色自适应；完整版 `assets/logo-final.svg`（HUD 四角括号 + 刻度注记环）。
+- **图标资产全链路重生成**（可复跑脚本）：`scripts/gen-icons.mjs`（sharp + png-to-ico）产出 favicon.ico / icon-192/512 / maskable-512 / apple-icon / f16/32/48；`scripts/gen-og.mjs` 产出 1200×630 og.png。全部目检通过。
+- **弹层滚动锁**：新增 `src/hooks/use-scroll-lock.ts`（计数器式加锁 + 滚动条宽度补偿，多实例安全），接入 8 处 AI 面板/详情弹层/登录框。
+- 验收：`pnpm build` 24 路由全部生成 ✓、tsc ✓、eslint 0 errors ✓。
+
+---
+
+## 2026-10-13 · 内容审核闭环 E2E 16/16 + 邮箱验证码链路 E2E 25/25 全绿
+
+**前置**：batch6（账号 15 列 + verification_codes）/ batch7（审核正文列 + user_notifications + moderation_rules）迁移已由用户在 Supabase SQL Editor 执行生效。
+
+**内容审核闭环（16/16）**：`.tmp/e2e-moderation.mjs` 端到端验证——迁移预检 → 管理员加测试词 → 注册 → 落库 → 阶梯处置 → 用户端 mustAck → ack → 后台列表/详情/审计 → 清理。`/privacy` 新增「AI 内容安全审核」条款。
+
+**邮箱验证码链路（25/25）**：
+- **API**：`/api/auth` 新增四 action——`send_email_code`（register/login/reset/bind 四用途；200 模糊话术防 reset 枚举；console 模式回传 debugCode）、`login_email`（注册自动生成唯一昵称「行者+6位」撞名重试 3 次，纯邮箱号塞随机不可用密码哈希）、`reset_password_email`（≥4 位 + token_version+1 + 清锁定）、`bind_email`（登录态 + 占用检查）
+- **UI**：`/user` 登录弹层四模式（login/register/email/forgot），邮箱 + 登录|注册子切换 + 6 位验证码 + 60s 倒计时 + debugCode 调试展示
+- **修了一个真 bug**：入口「昵称+密码」必填校验对所有 action 生效，四个邮箱 action 全被挡死 → `EMAIL_ACTIONS` 白名单跳过。教训：路由入口全局校验，加新 action 必回头检查
+- **E2E 覆盖**：发码/冷却 429/错码剩余次数/注册自动昵称/同码重放 401/已注册 409/用途混用 401/登录/重置密码→新密码登录/bind 401·409·成功/清理
+- 验收：`pnpm validate` 全绿（tsc + eslint + vitest 13/13）
+
+**邮箱验证码机制**（`lib/verification.ts`）：HMAC-SHA256 存哈希（盐=SESSION_SECRET）、6 位/5 分钟/错 5 次作废/成功即 consumed、三重限流（同目标 60s 冷却【key 不含 purpose，换用途也要等】、同目标 5 次/小时、同 IP 30 次/天）。
+
+**待办**：真实发信配 `MAIL_PROVIDER=resend` + `RESEND_API_KEY` + `MAIL_FROM`（当前 console 模式）；绑定邮箱的资料区入口 UI、头像上传、手机号绑定 UI 属阶段 3；token_version 已写但会话校验未接入版本号（踢下线暂不生效）
+
+---
+
+## 2026-10-13 · 产品更名「人生重构计划」→「人生沙盘」
+
+**更名范围（全量替换）**：
+- **代码/元数据**：`layout.tsx`（title/template/siteName/og/alt/描述话术「重构你的未来」→「沙盘推演你的未来」）、`manifest.ts`（name/short_name，英文名 **LIFE RECONSTRUCTION PLAN → LIFE SANDBOX**）、`app-sidebar.tsx` 顶栏两处、`mailer.ts` SITE_NAME（验证码邮件名）、`/privacy` `/terms` 标题与正文、`/user` 页尾、AI SYSTEM_PROMPT（analyze 路由）
+- **首页 hero**：两行大标题「人生重构 / 计划」→「人生沙盘 / 推演」（保持 4+2 字视觉节奏），kicker `Life Reconstruction Plan → Life Sandbox`
+- **品牌资产**：`public/icon.svg` 与 `assets/logo-{a-fork,b-wordmark,c-badge,final}.svg` 的 title/aria-label/字标（logo-b 字标「重构」→「沙盘」）；`scripts/gen-og.mjs` 主标题+英文条 → 重新生成 `public/og.png` 与全套图标（gen-icons.mjs）
+- **文档**：README、AGENTS、docs/{00-优先阅读,HANDOVER,PROJECT-BRIEF,history/*}、`scripts/icon-src/gen-og.html`
+- **不改**：`src/data/` 里的「行业重构期」「认知重构」「技术债务重构」等内容词（与品牌无关）
+- 英文名定稿 **LIFE SANDBOX**；副标不变「不是算命，是算概率」
+
+**验收**：pnpm validate 全绿（tsc + eslint + vitest 13/13）；dev 首页 15 处「人生沙盘」渲染正常，残留 108 处「人生重构」全为 dev 内嵌本地路径（.next 调试信息，生产构建不含）。
+
+---
+
+## 2026-10-13 · 账号体系 v2 过渡方案（无验证码）：信息收集 + 信息匹配，E2E 25/25 全绿
+
+**背景**：用户暂不买域名 → 验证码链路（send_email_code/login_email/reset_password_email/bind_email 四 action + 弹层 UI）**封存不删**，等接入 Resend 后解封。过渡期用「信息收集 + 信息匹配」方案。
+
+**用户拍板**：注册邮箱/手机**至少填一项**；忘记密码**匹配一项即可**；登录**昵称/邮箱均可**。
+
+**API 改动**（`/api/auth`）：
+- `register`：可选 email/phone 字段（normalizeEmail/normalizePhone 归一化 + 格式校验 + 唯一性 409），至少一项否则 400，存库标 email_verified/phone_verified=false
+- `login`：昵称查不到且输入含 @ 时按邮箱兜底查询；返回值带 email/phone；审计日志改用 user.nickname（邮箱登录时正确）
+- 新增 `reset_password_info`：昵称+contact（邮箱或手机任一匹配）+newPassword → 重置（token_version+1 清会话、清锁定）；「昵称不存在/联系方式不匹配/账号禁用」统一同一话术防枚举；失败也写 reset_password_failed 审计；独立限流 reset-info:ip 5 次/小时
+- 新增 `update_contact`：登录态 + currentPassword bcrypt 确认 → 改邮箱/手机（唯一性检查 + 变更后 verified 复位 false），返回最终值
+- 入口「昵称+密码」校验白名单 EMAIL_ACTIONS 更名 LOOSE_ACTIONS，纳入两个新 action
+
+**UI 改动**（`/user` + auth-context）：
+- `register` context 签名加 contact 可选参数
+- 登录框 placeholder「昵称或注册邮箱均可」（maxLength 20→50）
+- 注册表单加邮箱/手机两输入框
+- 忘记密码表单重写：昵称 + 注册时填写的邮箱或手机号 + 新密码
+- 「邮箱验证码登录」入口按钮移除（email 模式代码保留，等真发信后加回入口即可）
+- 资料卡加联系方式展示 + 修改面板（新邮箱/新手机/当前密码），成功后 applySession 刷新本地用户
+- AuthUser 类型加 email?/phone?
+
+**E2E**（`.tmp/e2e-auth-v2.mjs`，25 项全绿）：注册收集 7 项（缺联系方式/重复邮箱/格式错/重复手机）→ 登录 4 项（昵称/邮箱/错密码/返回联系方式）→ 信息重置 7 项（不匹配/防枚举/密码过短/邮箱匹配/手机匹配/新密码登录）→ 改联系方式 5 项（未登录/密码错/成功/新邮箱登录/verified 复位）→ 清理。**坑：脚本单 IP 会烧满 auth:IP 与 reset-info 桶，段间需清 rate_limits**。
+
+**安全说明**（过渡方案固有弱点，已知情接受）：信息匹配弱于验证码（知悉昵称+任一联系方式者可重置）；缓解 = 5 次/小时限流 + 防枚举话术 + 全量审计日志 + 锁定机制沿用。
+
+---
+
+## 2026-10-13 · 站长永久开发者 + 角色语义重构
+
+**变更**：用户 Zer0（id 19）= 站长本人 → 数据库 role 直接置 developer（永久），登录后进 /admin 免开发者密码。
+
+**角色语义重构**（`/api/admin`）：
+- `verify` 新增捷径：登录态会话查库确认 role=developer → 直接签发 dev token（免密码、不消耗防爆破限流、写 become_developer 审计）。角色以数据库为准，不信任本地缓存
+- **密码路径不再写库**：通过密码进入者只在客户端会话内授予开发者视图（updateUserRole），数据库角色保持原值——保证「知道密码」不等于「永久开发者」，每次进后台都要密码
+- `exit_developer` 不再降级数据库角色（原逻辑会把永久开发者降回 normal）——只写审计退出日志；客户端 updateUserRole(newRole) 用的就是数据库当前角色
+
+**UI**（`/admin`）：挂载时已登录且无 dev token → 自动调 verify 换 token（普通用户走到密码分支 401 无副作用），成功且服务端返回 developer 则 updateUserRole 同步本地角色（侧栏徽章立即正确，旧缓存会话也无需重登）
+
+**验证**：脚本伪造 Zer0 会话调 verify → 200 + dev token + role=developer；对照组（非开发者会话）→ 401 密码错误。ts-check + eslint 全绿。
+
+**同步机制答疑（用户问）**：dev 服务器只在站长本机 localhost:5000 运行，改动仅本地热更新；未来部署后线上跑的是部署时刻的代码快照，本地改动不自动同步，需显式重新部署才影响线上用户。
+
+---
+
+## 2026-10-13 · 用户数据云同步（batch8）：localStorage → user_state 表
+
+**背景**：用户模块内数据（确定的名字、窗口三态标记、人生阶段、六维权重、访问记录、AI 源）此前全存 localStorage，换设备即丢——回答用户"数据是否跟账号走"时确认为最大架构缺口，用户拍板开工。
+
+**同步键白名单**（`lib/user-state-sync.ts` SYNC_KEYS，服务端 route 各有一份）：default-age / life-stages / preference-weights / visited-modules / window-marks.v1 / ai-sources / api-active-source。**有意排除**：auth-token/auth-user/dev-token（会话凭证）、free-preview（访客防滥用计数）。
+
+**组成**：
+- 迁移 `supabase/migrations/2026-10-13-batch8-user-state.sql`：user_state(user_id, key, value jsonb, updated_at) unique(user_id,key)
+- API `src/app/api/user/state/route.ts`：GET 拉全部；POST 批量上报（白名单+单值 64KB 上限+≤40 键），**last-write-wins**（只覆盖 updatedAt 更新的）；表缺失降级 unavailable 不弹错；限流 30/min/user
+- 客户端 `lib/user-state-sync.ts`（键管理/脏检测/meta）+ `hooks/use-user-state-sync.ts`（拉取合并+防抖 3s 推送+30s 对账+beforeunload 尽力推）+ `components/layout/user-state-sync-bridge.tsx`（挂 root layout，AuthProvider 内第一个）
+- 写入点挂钩：`use-persisted-state` 与 `use-window-marks` 写 localStorage 后 `notifyStateDirty()`
+
+**合并策略**（登录拉取）：本地为空（新设备）或本地===上次推送值（没动过）→ 云端赢；本地动过（访客期改过）→ 本地赢随后推送覆盖云端。meta 基准 = `user-state-sync.v1`（key→上次推送原始值）。云端改写了本地 → 刷新一次页面（sessionStorage 按 userId 守卫防循环）。
+
+**E2E**（`.tmp/e2e-user-state.mjs`）：**15/15 全绿**（batch8 迁移已由用户执行生效）——空 GET / 推送 2 键 / 回读 / 旧时间戳拒覆盖（严格更新才覆盖，等价 last-write-wins）/ 新时间戳覆盖 / 白名单外键丢弃 / 超大值丢弃 / 未登录 401×2 / 清理。
+
+---
+
+## 2026-10-13 · 后台入口隐藏 + 自定义 AI 接口实测通过（11/11）
+
+**1. 后台入口隐藏（用户要求"别人看不出有个口"）**：
+- 侧栏「管理入口」链接改为**仅开发者角色可见**（普通用户完全看不到）
+- 暗门：侧栏底部题记「人生没有标准答案…」**3 秒内连点 5 次** → 进入 /admin；知道网址的也可直接输入 /admin（页内仍有密码门/永久开发者自动进入）
+- 实现：app-sidebar.tsx 暗门计数器（secretClicksRef）+ isDeveloper 条件渲染
+
+**2. 自定义 AI 接口全链路实测（mock OpenAI 兼容服务器，11/11 全绿）**：
+- 方法：本地起 mock 服务器（9515 端口，SSE 响应+命中取证日志），用 test-key 与 analyze 两条路径真实调用
+- **全部通过**：连接测试成功/失败路径、鉴权头/模型名/路径拼接正确透传（{baseUrl}/chat/completions、Bearer）、analyze SSE 流内容确实来自自定义源、危险地址 400
+- **顺带修了一个真实产品缺口**：isSafeBaseUrl 在**开发环境放行回环地址**（localhost/127.0.0.1/::1）——产品定位支持「自建网关/本地模型」（Ollama 等），此前开发联调本地模型会被 SSRF 防护误拦；**生产环境保持拦截不变**
+- 坑位记录：① dev 服务器 fetch 走 Clash 代理（NODE_USE_ENV_PROXY=1），联调本地服务需加 NO_PROXY=localhost,127.0.0.1（已并入标准启动 env）；② analyze 对未知 protocol 是**静默回退 openai**（test-key 才显式 400），客户端只发白名单协议所以无风险；③ hosts 文件修改被 WorkBuddy node shim/沙箱双层拦截（EPERM），PS 写入也静默失败——别再走 hosts 路线
+- E2E 脚本：`.tmp/e2e-custom-ai.mjs` + `.tmp/mock-ai-server.mjs`（可复跑）
+
+**dev 服务器标准启动 env 更新**：HTTPS_PROXY=http://127.0.0.1:9090 NO_PROXY=localhost,127.0.0.1 NODE_USE_ENV_PROXY=1 pnpm dev
+
+## 2026-10-13 · 跨模块联动三批全部落地（P0~P3）
+
+用户拍板「三批全做」，一批一验证，全部通过（pnpm validate 全绿 + 五页 200 冒烟）。
+
+### 第一批（P0+P1）：云同步补缺口 + 窗口标记→命运
+- **云同步白名单 7→14 键**（客户端 `lib/user-state-sync.ts` + 服务端 `api/user/state/route.ts` 两处同步）：新增 destiny.input.v1 / destiny.report.v1 / health.answers.v1 / sim.dimensions.v2 / sim.answers.v2 / name.style.v1 / name.surname.v1
+- 命运报告新增**「你的行动面」**段：读取 window-marks.v1 三态计数 + 正在做的窗口名（lifeWindows id→title 映射），空标记给引导文案；卡片绿点样式、右上注「来自 04 窗口的标记」
+- AI systemContext 注入行动面，行动方案维度改为「结合行动面给 3 个月计划」
+- **报告持久化 destiny.report.v1**（原 useState 刷新即丢）→ usePersistedState；刷新后恢复直接展开（mount effect 读键 setShowReport(true)，不影响生成动画）
+
+### 第二批（P2）：聚合总线 + 健康/模拟器→命运 + /me 快照
+- 新建 `lib/user-profile.ts`（纯读取聚合：windowAction / health / sim / destinyReport / careerMarks 摘要，SSR 安全）+ `hooks/use-user-profile.ts`（响应式：useWindowMarks + storage + user-state:dirty 事件）
+- 健康问卷→命运报告：generateReport 第三参 health——弹性段加健康线（复用 scoreDomains/overallScore/weakestDomains），综合 <58 且答完时下一步加健康杠杆建议
+- 模拟器六维→命运 AI 上下文（【模拟器六维自评】各维 value/weight）；健康摘要同步注入（【健康自评】）
+- /me 新增**「其他模块的快照」**区（聚焦区之后）：健康卡（综合分+tier 色+最弱子域 chips）+ 命运卡（阶段/下一窗口/已结合标记数），未填时给引导文案
+
+### 第三批（P3）：职业三态 + 收藏 + AI 完整画像
+- 新建 `hooks/use-module-marks.ts`：window-marks 模式的泛型化通用 store（每 storageKey 独立 cache/listeners，storage 事件按 key 分发，写入 notifyStateDirty 接云同步）；window-marks 保持独立实现不动
+- **职业三态标记 career-marks.v1**（想做/在做/做过）：CareerMarkBar 在职业卡片底部行与详情面板头部，顶部读数行加「已标记 N · 全部清除」
+- 新建 `components/shared/fav-star.tsx`（收藏星标，值统一 'fav'）：规律卡（intensity 点旁）、运气卡（Eye 旁）接入，storageKey 分别为 laws-favorites.v1 / luck-favorites.v1
+- 云同步白名单再 +3 键（career-marks.v1 / laws-favorites.v1 / luck-favorites.v1，共 17 键，客户端+服务端两处）
+- 命运 AI 上下文注入【职业标记】（想做的职业名，id→name 经 careers 映射）
+
+### 坑位
+- `LawItem.id` 是 **string**、`LuckNode.id` 是 number——FavStar 的 id prop 要写 `number | string`
+- tsconfig 对 LawItem 传 number 会直接报错，别想当然全是数字 id
+
+## 2026-10-13 · 权限模型 v3：登录门 + 双类授权码 + AI 使用权门（batch9）
+
+用户拍板商业模型升级：「使用权」与「AI 额度」拆开售卖；访客连部分板块都不能看。
+代码 + 文档 + E2E 全部完成，**待用户执行 batch9 迁移**（见文末）。
+
+### 一、三层权限模型（取代 v2 两级模型）
+
+| 能力 | 访客 | 普通用户 | 充电用户(premium) | 开发者 |
+|---|---|---|---|---|
+| 看 4 个预览板块（destiny/health/simulation/name） | ✅ 预览 | ✅ | ✅ | ✅ |
+| 看 5 个登录门板块（me/windows/career/laws/luck） | ❌ 登录引导整页 | ✅ | ✅ | ✅ |
+| 详情弹窗 / AI 入口 / 报告生成（使用权） | ❌ | ❌ | ✅ | ✅ |
+| 云同步 / 账号数据 | — | ✅ | ✅ | ✅ |
+| 消耗 AI 额度（使用权 + 额度双前提） | ❌ | ❌ | ✅ | ✅（不限） |
+| 后台 /admin | ❌ | ❌ | ❌ | ✅ |
+
+- `auth-context.tsx`：新增 `LOGIN_REQUIRED_MODULES`（5 个板块）+ `canViewModule()`（能否看，登录=全可看）；`canAccessModule()` 保持=使用权（premium/developer）。**「能否看」与「能否用」正式分成两层**
+- `module-gate.tsx`：新增 `LoginGate` 整页组件（不渲染任何内容，只给「为什么/怎么办」+ 登录按钮）；ModuleGate 先查 canViewModule 再走预览逻辑
+- 设计稿 `docs/DESIGN-VISITOR-PREVIEW-AND-CREDITS.md` 同步升级为 v3 版
+
+### 二、授权码拆两类（invite_codes.kind）
+
+- 迁移 `supabase/migrations/2026-10-13-batch9-code-kind.sql`：`kind varchar(16) DEFAULT 'bundle'` + CHECK(access/ai/bundle) —— **待用户执行**
+- **access** = 使用权码：升级 premium，不加额度（带额度直接 400 拒发）
+- **ai** = AI 额度码：只加额度，**角色不变**（普通用户额度到账但暂不能用 AI）；额度必须 ≥1
+- **bundle** = 套餐（默认，兼容全部历史码）：升级 + 加额度，新用户推荐
+- `/api/invite` 按 kind 分发；返回新增 `kind/grantedAccess/grantedCredits`，/user 兑换成功提示按类型说人话（「使用权已解锁全部功能，AI 额度 +200」）
+- `/api/admin` create_invite/batch_invite 加 `kind` 参数 + 类型约束；**kind 列缺失时自动降级**（去掉 kind 重插、按 bundle 语义）——迁移前后台发码不会挂
+- 后台 /admin 发码表单（单个+批量）加类型下拉：套餐/使用权/纯 AI 额度；选使用权时隐藏额度输入
+
+### 三、AI 使用权门（/api/ai/analyze）
+
+- 内置 AI 路径新增：role=normal → 403「需要先解锁使用权，在「我的」页兑换使用权码或套餐码」（在扣额度之前拦）
+- BYOK（用户自带 Key）保持免登录免费，不动——这是产品承诺
+- 语义：**用 AI = 使用权（入口）+ 额度（燃料）**；只买额度码的普通用户额度到账，再兑使用权即可用
+
+### 四、E2E 与验证
+
+- `.tmp/e2e-code-kind.mjs`：迁移感知（自动探测 kind 列）——未迁移断言降级行为、已迁移断言精确语义
+- 结果：**12/12 全绿**（迁移前降级模式）；`pnpm validate` 全绿；10 页面 200 冒烟
+- 途中修的脚本 bug：码定义用大写、创建用小写导致「邀请码无效」（Postgres 大小写敏感）；rate_limits 表主键列是 `key` 不是 `id`
+
+### 五、其他同日变更
+
+- **/me 年龄滑块红点错位修复**：根因是 globals.css 全局 `input[type="range"]::-webkit-slider-thumb`（18px 红点，特异性 0,1,1）压过 `.age-timeline-slider` 的隐身规则（0,1,0），原生红点 thumb 与竖条指示器叠成两个元素；四条规则改双类 `.age-timeline-slider.age-timeline-slider`（0,2,0）解决。**教训：全局裸元素+attribute 选择器（0,1,1）单 class 覆盖不掉**
+- **Turbopack dev watcher 失灵**：改 CSS 后编译产物不更新，Edit/touch 都无效，必须重启 dev server——改 CSS 后 curl 编译产物验证内容是唯一可靠手段
+- **管理密码更换**（值存 `.env.local`，不入库）；Zer0 免密捷径不受影响
+- **项目文件夹整理**：删除 3 个陈旧构建备份（.next.old/.next.bak-1/.next.prev，**释放约 463M**）；`.tmp` 从 120 个文件瘦身到 17 个（保留全套 E2E + 工具 + run-batch9.sql，一次性检索/注入/校验脚本全清）；根目录散落日志（.dev-*.log/dev-server.log/tsconfig.tsbuildinfo）清理
+
+### 待用户执行
+
+1. Supabase Dashboard → SQL Editor 执行 `supabase/migrations/2026-10-13-batch9-code-kind.sql`（或 .tmp/run-batch9.sql）
+2. 执行后重跑 `.tmp/e2e-code-kind.mjs` 应切换为精确语义模式全绿
+
+---
+
+## 2026-10-13 补遗 · batch9 生效 + 云同步 500 修复（接手日收尾，此前漏记）
+
+- **batch9 迁移已由用户在 Supabase Dashboard 执行生效**：`invite_codes.kind` 列确认存在，`pnpm check:db` 全绿；`.tmp/e2e-code-kind.mjs` 从「迁移前降级模式」切换为精确语义，**12/12 全绿**（access=纯使用权不加额度、ai=纯额度不改角色、bundle=套餐）。另：旧文档记载的「本机网络无法直连 supabase」在当前网络环境不存在，可直连。
+- **云同步 500 bug（用户浏览器实测踩到）**：链路是 localStorage 某键存成字符串 `"null"` → 客户端 `JSON.parse` 得 `null` → 服务端原样 upsert → `user_state.value` 是 jsonb NOT NULL，违约 → **单键 null 拖垮整批**（其后所有 `POST /api/user/state` 全 500）。修复两处：服务端 `api/user/state/route.ts` 校验循环跳过 null/undefined；客户端 `use-user-state-sync.ts` doPush 单键解析容错 + 坏键 markPushed 防重推。验证 `.tmp/verify-state-null.mjs` 6/6（null 不入库 / 真值入库 / 混合批不拖垮 / GET 一致）。
+
+---
+
+## 2026-10-14 · batch10 安全修复（P0×2 + P1×5 + P2×4）
+
+安全审查报告 `.tmp/audit-security.md`（正面结论：XSS 零、无 SQL 注入、admin 鉴权完整）。以下全部修复，tsc + eslint + 冒烟全过：
+
+- **P0-1 找回密码可接管任意账号**：原「信息匹配即重置」方案下，知悉昵称 + 任一联系方式者可直接改密。改为两步流程：匹配校验 → 服务端直接向**注册邮箱**发验证码（明文邮箱不出服务端）→ 输码 + 新密码走 `reset_password_email`（该 action 新增 nickname 定位）；仅手机号账号返回 contact_admin。前端 `/user` 忘记密码改两步表单（match→reset，含掩码展示 forgotMasked）。
+- **P0-2 验证码明文回传**：debugCode 改为仅 `NODE_ENV!=='production'` 或显式 `ALLOW_DEBUG_CODE=1` 时返回。
+- **P1-2 XFF 伪造绕过限流**：`getClientIp` 固定返回 `'local'`（本地部署防刷优先：X-Forwarded-For / X-Real-IP 等代理头可被任意伪造，一旦用于限流 key 全部限流形同虚设）。
+- **P1-3 登录无锁定**：接线 `locked_until` / `login_failed_count`，连续失败 ≥10 次锁 30 分钟（423），成功登录清零。
+- **P1-4 改密不踢旧会话**：`token_version` 全链路接线——SessionPayload 加 `ver`；新增 `sessionFromRequestVerified()`（查库比对 token_version + is_active，异常 fail-open）；10 个调用点全换；4 处 `signSession` 带 ver。旧令牌 ver 缺省 0，兼容存量登录。
+- **P1-6 AI Key 明文云同步**：SYNC_KEYS（客户端 `lib/user-state-sync.ts` + 服务端 route 两处）移除 `ai-sources` / `api-active-source`——API Key 属敏感凭据，不该上云。
+- **P1-1 user_state 无 RLS**：迁移 `supabase/migrations/2026-10-14-batch10-security.sql` **⬜ 待用户 Dashboard 执行**。
+- **P2**：密码最短 4→8 位（3 处 + 文案）；`SALT_ROUNDS` 12 + 存量透明重哈希；state 值 byteLength 上限校验；analyze 错误透传改通用文案（不泄内部信息）。
+- **未动（需产品决策）**：P1-5 前端 bundle 权限门禁（当晚商业模式转向开源后自然消解）；手机号找回需接 SMS（暂不做）。
+
+---
+
+## 2026-10-14 · batch11 优化落地 + 死代码清理
+
+实施「逻辑 29 条 + 整洁度 25 条」审查报告，P0 全部 + 高价值 P1：
+
+- **AI 流生命周期**：destiny / health / simulation / windows 4 页 + `ai-analysis-panel` 补 unmount abort（离开页面不再白烧 AI 调用）；windows「AI 分析此窗口」、destiny「生成命运报告」补重复点击 guard（原可绕过免费次数限制）；name 打字机效果 interval 卸载清理。
+- **云同步正确性**：10 个云同步键补登记 `storage-keys.ts`，SYNC_KEYS 改引常量（键名不再裸写字符串）；POST 判序改用**服务端时钟**（容忍 5min 未来漂移），响应回传 accepted/rejected，客户端 rejected 也 markPushed + warn（防无限重推）；beforeunload fetch 加 keepalive；登出调 `clearSyncMeta` 防换号串数据；漏广播补齐（`writeDefaultAge` / `use-module-visit` / user 页 persist 补 `notifyStateDirty()`）。
+- **AI 额度**：analyze 断开且零内容时**退款**（不白扣次数）；ai-stream 首 fetch try/catch；SSE 静默断流加 onError 提示。
+- **其他**：`usePersistedState` 加 validate 参数（sim.dimensions / preference-weights 脏数据防御）；危险操作补 confirm（me clearAll / health handleReset / user resetAdvanced）；auth 路由新增 `update_avatar` action（LOOSE_ACTIONS + 会话校验），user 页头像选择接线；premium 用户界面显示 AI 余额；test-key 用 CUSTOM_PROTOCOLS；career riskScore 提模块级（渲染函数不再每行重算）。
+- **死代码清理**：删 `ui/sidebar` + sheet + skeleton + separator + input 组件链（~930 行零引用，备份 `.tmp/dead-code-backup-20261014/`）+ ai-stream `invokeChat`；`chapter-meta.ts` 是审查误报（首页 / app-sidebar / module-page-head 活跃引用）**未删**。
+- **未做（留待后续）**：AI 面板 hook 合并、admin/user 大文件拆分。
+- **教训**：edit_file 同文件多 edit 并行会互相覆盖（报成功但内容被吞）——必须串行，改完做内容级扫描验证。
+
+---
+
+## 2026-10-14 晚 · 商业模型转向：开源免费 + 登录即全功能
+
+用户拍板（**覆盖当日早间的买断制方案**，早间方案留档于决策记忆）：项目作为第一个开源项目发布，内容全部免费；登录即看全部；**AI 是唯一付费点**——注册送 50 次、用完充值（5 元 / 50 次 AI 码）、或自带 Key（BYOK 免登录免费不变）；赞赏 / 联系走 /about 页。全部落地并验证全绿（tsc / eslint / build / 11 页冒烟）：
+
+- **BUSINESS_MODE 开关**（`lib/business-mode.ts`，商业模式唯一真源）：`open`（默认生效）/ `legacy`（旧买断制保留可回退，`NEXT_PUBLIC_BUSINESS_MODE` 切换）。
+- **权限语义收敛**：`isPremium` = 登录即 true（一行改，全站 guard 自动生效）；analyze 路由删 normal 角色 403，判定改为「额度>0 扣平台额度 / 额度 0 + 有自带 Key 走用户 Key / 都没有 → 引导」；角色仅剩 normal（登录用户）/ developer（管理员），premium 保留兼容历史数据。
+- **授权码语义**：open 模式下 access / bundle 语义废弃，只保留 ai 码用于充值（legacy 模式回退原三义）。
+- **/about 重写**：作者页 + 赞赏入口（afdian.com/a/thezer0，`NEXT_PUBLIC_DONATE_URL` 可配）+ 开发初心 + 联系方式（`NEXT_PUBLIC_CONTACT`）。
+- **反馈系统**：feedback 表（`supabase/migrations/2026-10-14-batch12-feedback.sql`，schema.sql 已同步）+ `/api/feedback` + 站内表单。
+- **README 开源版 + MIT LICENSE**。
+- **待用户**：执行 batch10 + batch12 SQL；`wrangler login` 后 `pnpm deploy:vinext`；提供收款链接 / 联系邮箱 / 仓库地址填 env（`NEXT_PUBLIC_DONATE_URL` / `NEXT_PUBLIC_CONTACT` / `NEXT_PUBLIC_REPO_URL`）后重新构建。
+
+---
+
+## 2026-10-15 · 新用户旅程八条需求（patch9~15）
+
+用户以新用户视角提 8 条需求，全部落地。验收：tsc 0 错、eslint 0 错、build 过、`check:data` 2019 条全过、5100 冒烟全 200：
+
+1. **序页年龄轴可拖动**（patch9，`me/page.tsx` AgeOnboarding）：横轴 SVG pointer capture 拖动选年龄（ageFromClientX 线性映射 0-100），圆点随输入框联动、拖动时放大 + 气泡数值跟随。
+2. **登录门扩至全部板块**（patch10，`auth-context` + `module-gate`）：`LOGIN_REQUIRED_MODULES` 从 5 条扩到 9 条（时间轴/窗口/职业/规律/努力/运气/命运/模拟/健康全板块），访客只保留首页与 /about；LoginGate 文案改白话（「登录后才能看」+ 板块全列举）。
+3. **首页下滑登录浮条**（新建 `visitor-login-nudge.tsx`）：访客下滑超 18% 屏高弹出底部引导条，sessionStorage（visitor-nudge-dismissed.v1）记忆关闭状态，滑出动画离开。
+4. **登录后翻页式介绍文档**（新建 `onboarding-tour.tsx`，5 页）：欢迎 → 八模块导览 → AI 50 次体验额度 → 拖圆点引导 → 免费说明 + 请咖啡 CTA；登录用户首次自动弹出（onboarding-tour.v1 标记），页面 fade-in 240ms 淡入、页码 + 点条指示、可跳过（patch12 登记 storage 键并挂 root layout）。
+5. **窗口数据 18 条替换**（patch13/14，`windows.ts`）：鸡汤条（微笑告别 / 归零 / 最后的宁静等）替换为务实晚年议题（独居适应期 / 防诈骗意识升级 / 用药大扫除 / 防跌倒改造 / 丧偶后的重建等）；重复议题替换为缺失议题（向上管理 / 投资风险再校准 / 智能手机通关等）。**patch13 曾错换 id 350**（「职场价值观形成」被误改），patch14 从 `git show HEAD:` 原文恢复 350，并把打鼾自查条目落到正确的 id 355。
+6. **数据年份同步 2026-10**（patch11）：laws-macro 6 处、laws-wealth / laws-swan / laws-habit、windows 若干处带年份的「当下」表述改写为无年份表述（如「2023年中国应届硕士平均起薪比本科仅高800元」→「应届硕士的平均起薪比本科只高几百块，读研成本却超过30万」）；**真历史事件保留年份**（双减 / P2P / 硅谷银行 / CRISPR 获批等不动）。
+7. **about 文案修正**（patch15）：删重复句；AI 成本段改「登录送 50 次体验 + 兑换续码 + 自带 Key 分文不取」口径。
+8. **动效**：翻页介绍淡入、浮条滑出（复用既有 fade-in / transform 体系）。
+
+新增 storage 键：`visitor-nudge-dismissed.v1`、`onboarding-tour.v1`（均登记 storage-keys.ts）。
+环境注意：预览启动用 `$env:PORT='5100'; pnpm start`（`pnpm start -- -p 5100` 不转发端口参数）。
+
+---
+
+## 2026-10-15 · 体验走查三修（patch16~18）
+
+- **站内重置体验**（patch16，`/user` 页 ResetExperienceCard）：browser_use 自动化清存储两次失败后改为产品化——developer 角色可见「重置本地数据」卡片，confirm 后清 localStorage + sessionStorage 回访客视角（云端数据不受影响；本机 AI Key 会一并清掉，文案已提醒）。
+- **「序章被跳过 + 年龄残留」修复**（patch17，`me/page.tsx` + `default-age.ts`）：根因是 default-age 在云同步键白名单里，清本地后登录旧账号会从云端回填旧年龄。时间轴页新增**「重新选年龄」入口**：`clearDefaultAge()`（清本地键 + 云同步删除一起做，防止下次登录又被拉回）→ `setAge(null)` 回序章。
+- **注册限流卡住修复**（patch18，`api/auth/route.ts` + `user/page.tsx`）：问题——限流卡在所有校验之前（每 IP 5 分钟 10 次、登录注册共桶），无效格式（邮箱填 12345678）也每次扣额度，几次即锁整个窗口；前端无格式校验放行无效输入。修四处：① 前端 handleRegister 加邮箱（`\S+@\S+\.\S+`）/ 手机（7-15 位数字）格式校验，无效直接本地报错；② 服务端把注册联系方式的存在性 + 格式校验挪到限流**之前**（纯本地校验不查库不扣额度，只有真实尝试才进桶）；③ 429 文案超过 60 秒显示「约 X 分钟」而非「300 秒」；④ 弹窗副标题「注册后偏好和数据将保存在本地」（过时）改「注册即送 50 次 AI 体验额度，偏好和数据云端同步」。验收 tsc / eslint / build / 冒烟全过。
+- **环境坑记录**：后台 server 每 ~20 分钟被环境回收（exit 4294967295），收到终态通知需重启；一次「请 30 秒后再试」实为 Supabase fetch failed 时生产 fail-closed 兜底（retryAfter=30），与正常限流窗口（300 秒）是两回事——网络波动期输入格式正确也会遇到，等十几秒重试即可；Google Fonts 拉取偶发失败导致 build 中断，重试即过。
+
+> **订正（2026-10-15 核对源码）**：上一节 4 说的翻页式介绍**现为 3 页**（「一条轴，看完这一生」/「一条时间轴，八个模块」/「从你的年龄开始」），非 5 页；2 说的 `LOGIN_REQUIRED_MODULES` **现为 10 条**（多一个 `/journey`）。真源分别是 `components/onboarding/onboarding-tour.tsx` 的 `PAGES` 与 `contexts/auth-context.tsx`。
+
+---
+
+## 2026-10-15 · 上线前收尾：回归修复 + 安全加固 + 全量验证
+
+**主题**：临上线做"最后一轮最强模型打磨"，反而引入回归；随后逐项修回，并补齐安全层与工程化，最终全绿。
+
+**为什么会有这一节**：打磨批次为了"统一视觉"，把 9 个模块里**承载语义的颜色**当成装饰色一起拍平，还改坏了首屏数字渲染与弹窗遮罩。教训已写进 `AGENTS.md` 的「语义色红线」。
+
+### 1. 回归修复（用户实测反馈）
+
+- **`/me` 首屏「00 岁 · 000 扇门」**（`components/shared/odometer.tsx`）：原「机械计数器」用逐位 `translateY` + `overflow:hidden`，嵌在真实页面（中文衬线字体 + 入场动画祖先）里滚轮定位失准，整排数字僵在 0。**回退为普通文本渲染**，保留组件名与 props 以免改动各处调用点。
+- **弹窗玻璃遮罩看不清**（11 处文件）：`bg-black/50 md:bg-black/35 md:backdrop-blur-sm` → `bg-black/65 md:bg-black/55`，并去掉面板遮罩上的 backdrop-blur。涉及 destiny / health / laws / luck / simulation / user / windows 的 content、`ai-analysis-panel`、`unlock-dialog`、`onboarding-tour`、`life-card`。
+- **语义配色还原**（9 个模块）：`ink-accent` 等单调色替换掉了红/绿/琥珀/橙的语义分级，laws 从 38 种语义色塌陷到 10 种。**逐条对照 `_backup/2026-10-15_before-batch1` 原始值还原**，覆盖 career / windows / me / health / name / laws / luck / simulation / destiny。期间我凭"语义应该是什么色"猜的一版是错的（laws 强度条、simulation 的 S/A/B/C/D、luck 难度色都与原值不符），白改一轮后改回对照法则。
+- **侧边栏进度文案误导**（`layout/app-sidebar.tsx`）：那只是**访问记录**，不是"读完/解锁"，「已读 N / 8 章」→「已打开 N / 8 个板块」。
+
+### 2. 安全加固（新增）
+
+- `lib/security-headers.ts` + `worker/index.ts`：CSP + `X-Frame-Options: DENY`。
+- `components/auth/route-gate.tsx`：未登录访问模块页不泄露任何内容。
+- Turnstile 人机校验（`lib/turnstile.ts` + `components/auth/turnstile-widget.tsx`）。
+- AI 输入输出护栏（`lib/ai-safety.ts`）、AI 错误文案收敛（`lib/ai-error-copy.ts`）。
+- `api/auth/route.ts`：登录/注册限流改为**格式校验先行**（无效输入不消耗额度），本地开发（无 `cf-connecting-ip`）放宽到 200 次，生产仍 10 次/5 分钟。
+
+### 3. 工程化
+
+- 10 个模块页拆为 `page.tsx`（动态壳）+ `content.tsx`（体积与首屏）。
+- 字体自托管：303 个 woff2（`public/fonts/noto-serif-sc/`，17.25 MB），**build 不再依赖 fonts.googleapis.com**。
+- vitest 补齐到 **13 文件 / 106 测试**（sse-client / session / default-age / moderation / rate-limit / settings-shape / content-total / career-* 等）。
+- 新增 `docs/DESIGN-SPEC.md`（视觉规范）、`assets/og.svg`（1200×630 分享图源）。
+
+### 4. 最终验证（全绿）
+
+`pnpm build` exit 0（21 路由）｜ `npx vitest run` 106/106 ｜ `tsc` 通过 ｜ 语义色残留 0 ｜ 数据 2,019 条核对无误（职业 888 无重复 / 窗口 488 / 运气 250 / 规律 8 维度 267 / 健康 126）。
+
+### 5. 未完成 / 待人工确认
+
+- **代码已验证但未经肉眼确认**：`/me` 首屏数字、弹窗可读性（此环境开不了浏览器）。
+- **未处理**：488 窗口 + 250 幸运节点的 npcnpc 内容归属风险；曾出现在 `docs/history/HEALTH-REPORT.md` 的真实 AI 密钥**需用户自行作废重发**；Supabase RLS 终检 SQL 用户未跑；测试账号待清（`delete from app_users where nickname in ('沙盘测试A','沙盘测试B');`）。
+- **工程红线**（已写进 `AGENTS.md`）：PowerShell 5.1 的 `Set-Content -Encoding utf8` 会写 BOM，导致 build 以 `3221225477` 崩溃。
+
+详见 [`SESSION-2026-10-15-收尾交接.md`](SESSION-2026-10-15-收尾交接.md)。
+

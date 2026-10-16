@@ -1,70 +1,106 @@
-# 设计稿：访客预览态 + AI 额度制
+# 设计稿：权限模型 + 授权码制（v3 · 2026-10-13 设计；2026-10-14 起运行开源模式）
 
-> 2026-10-02 起草，**待确认后实施**。两项共用一套权限/计费地基，一起评审。
+> ⚠️ **2026-10-14 商业模型转向：本文档的 v3 方案现为 legacy 回退方案**。
+> 实际运行的是**开源免费模式（BUSINESS_MODE=open，`lib/business-mode.ts` 唯一真源）**：
+> - **登录即看全部**：登录用户可浏览全部 9 个板块（2026-10-15 起登录门覆盖全板块，访客只留首页与 /about），
+>   `isPremium()` = 已登录；角色仅 normal / developer（premium 作历史兼容）。
+> - **AI 是唯一付费点**：注册送 50 次；用完兑 ai 类授权码充值（5 元 / 50 次）；BYOK 免登录永久免费。
+>   analyze 门控 = 额度>0 扣平台额度 / 额度 0+有自带 Key 走用户 Key / 都没有→引导。
+> - 授权码 access/bundle 语义在 open 模式下无授权意义（仅 legacy 生效）；ai 码 = 充值码。
+> - 赞赏/联系：/about 作者页（`NEXT_PUBLIC_DONATE_URL` / `NEXT_PUBLIC_CONTACT`）；反馈走站内表单（feedback 表，batch12）。
+> v1（2026-10-02 访客预览+额度制）、v2（2026-10-03 正式上线）、v3（2026-10-13 三层模型）
+> 的历史设计保留，便于理解决策脉络与 legacy 回退。
+> 代码入口：`src/contexts/auth-context.tsx`（权限判定唯一真源）、
+> `src/components/auth/module-gate.tsx`（登录门/预览横幅）、
+> `src/hooks/use-locked-action.ts`（功能锁定点）。
 
-## 一、访客预览模型（替代"整页锁死"）
+## ⓪ 当前现状：开源免费模式（2026-10-14 起，BUSINESS_MODE=open）
 
-### 现状问题
-`canAccessModule()` 测试期恒返回 true（见 ROADMAP 回滚清单）；原权限模型是"normal 只能看 3 个模块，其余整页锁死"。产品决定：**访客也应该能逛**，锁定点收窄到真正的价值动作上。
+| 身份 | 能看 | AI |
+|---|---|---|
+| **访客**（未登录） | 首页 + /about；其余板块整页 LoginGate 引导登录；登录后先看翻页式介绍文档（onboarding-tour，3 页） | BYOK 自定义源可用（免登录） |
+| **登录用户**（normal） | 全部 10 板块全部内容 | 注册送 50 次；用完 ai 码充值或自带 Key |
+| **开发者** | 全部 + 后台 + 重置体验卡 | 不限量 |
 
-### 三档身份
+## 一、三层权限模型（v3 · 2026-10-13，现为 legacy 回退方案）
+
+| 身份 | 能看 | 能用（详情/AI/报告） | AI 额度 |
+|---|---|---|---|
+| **访客**（未登录） | 4 个预览板块（/destiny /health /simulation /name）的列表与摘要 | ❌ 弹解锁引导 | — |
+| **普通用户**（登录） | 全部 8 个板块（含登录门板块） | ❌ 弹解锁引导 | 可到账但暂不可用（需使用权） |
+| **充电用户**（premium） | 全部 | ✅ | ✅ 按次消耗 |
+| **开发者** | 全部 + 后台 | ✅ | ✅ 不限量 |
+
+### 关键机制
+
+1. **登录门（v3 新增 5 板块；2026-10-15 patch10 扩至全部 10 板块）**：
+   `LOGIN_REQUIRED_MODULES = ['/me', '/windows', '/career', '/laws', '/luck', '/name', '/destiny', '/simulation', '/health', '/journey']`
+   ——访客访问时整页渲染 `LoginGate`（不泄露任何内容，只有引导文案+登录按钮）；
+   访客仅保留首页与 /about。LoginGate 文案已改白话（「登录后才能看」+ 板块全列举）。
+2. **「看」与「用」两层判定**：
+   - `canViewModule()`：能否看页面（登录用户恒 true；访客看登录门名单）
+   - `canAccessModule()`：能否用功能（premium/developer）；锁定点统一走 `useLockedAction().guard`
+3. **预览态横幅**：未持码的**访客**在预览板块看到 `PreviewBanner`（已登录不显示，走 UnlockDialog 就地兑换）。
+
+## 二、授权码制：两类码 + 套餐（v3，batch9）
+
+授权码分三种 `kind`（`invite_codes.kind`，默认 `bundle` 兼容历史码）：
+
+| kind | 售卖含义 | 兑换效果 | 约束 |
+|---|---|---|---|
+| `access` | **使用权**（使用网站的权利） | 升级 premium，不加额度 | 带额度直接 400 拒发 |
+| `ai` | **AI 授权**（额度充值） | 只加额度，角色不变 | 额度必须 ≥1 |
+| `bundle` | **套餐**（新用户必买） | 升级 premium + 加额度 | — |
+
+- 兑换接口 `/api/invite` 按 kind 分发；响应含 `kind / grantedAccess / grantedCredits`，前端按类型给到账提示
+- **AI 使用前提 = 使用权 + 额度**（v3 拍板）：只兑了 `ai` 码的普通用户额度到账但暂不能用，
+  再兑使用权码即可；`/api/ai/analyze` 对 role=normal 在扣额度前拦（403 明确文案）
+- **BYOK 永久免费**：用户自带 Key（自定义接入源）不要求登录、不扣额度（保持承诺）
+- 后台 `/admin` 发码支持三种类型；**迁移未执行时自动降级**为旧行为（按 bundle 语义），发码链路不挂
+
+## 三、AI 额度扣减机制（v1 起沿用，至今有效）
+
+- 授权码到账：`/api/invite` 事务内 `ai_credits += N`，流水表 `ai_credit_logs` 每笔留痕
+- 消耗：`/api/ai/analyze` 内部 AI 开工前经 Postgres 原子函数 `consume_ai_credit` 扣 1（防并发透支）；
+  developer 不限；BYOK 不扣
+- 额度不足：流式前返回 402 + 明确文案「AI 额度已用完，请找开发者续码；或用自带 Key（不扣额度）」
+- /user 页展示余额（`/api/ai/credits`）；/admin 用户表可调余额
+
+## 四、明确不做（起步期）
+
+- 在线支付/充值（等有真实付费用户再说；先靠后台发码）
+- 按 token 计费（按「次」计，用户心智简单；单次分析 max_tokens ≤4096）
+- 免费模型兜底（中转站不稳定 + 推理模型体验差，见 2026-10-02 实测记录）
+
+---
+
+## 附一：v2 历史设计（2026-10-03 上线，已被 v3 取代）
+
+> 两级模型：访客预览（全模块列表可逛、详情/AI/报告持码解锁）+ 单一授权码（自带 AI 次数默认 200）。
+> **v3 变更点**：① 新增登录门 5 板块（访客不是全都能逛了）；② 授权码拆 access/ai/bundle 三类；
+> ③ AI 使用从「有额度即可」收紧为「使用权 + 额度双前提」。
+
+## 附二：v1 原始设计稿（2026-10-02 起草，保留决策脉络）
+
+### 访客预览模型（替代“整页锁死”）
+
+**现状问题**：`canAccessModule()` 测试期恒返回 true；原模型是“normal 只能看 3 个模块，其余整页锁死”。
+产品决定：**访客也应该能逛**，锁定点收窄到真正的价值动作上。
+
+**三档身份**（原表）：
 
 | 身份 | 能看 | 不能 |
 |---|---|---|
-| 访客（未登录） | 全部 8 个入口的**列表与摘要**：卡片、分类、计数、快看组、筛选搜索全部可逛 | ① 每条目的**详情弹层** ② **AI 分析/对话**按钮 ③ simulation 问卷结果与 destiny 报告生成 |
-| 持码用户（兑换授权码 → premium） | 一切 | —（AI 按额度计次，见下） |
+| 访客（未登录） | 全部 8 个入口的列表与摘要 | ① 详情弹层 ② AI 分析/对话 ③ simulation 结果与 destiny 报告 |
+| 持码用户（premium） | 一切 | —（AI 按额度计次） |
 | 开发者 | 一切 + 后台 | — |
 
-设计原则一句话：**列表是"逛"的体验，决定第一印象，全放开；详情 + AI 是付费点，锁这里。**
+设计原则一句话：**列表是“逛”的体验，决定第一印象，全放开；详情 + AI 是付费点，锁这里。**
 
-### 实现路径（预计 1 个工作日）
-1. `canAccessModule()` 恢复按角色判断（按 ROADMAP 回滚清单），新增 `canPreviewModule()`（恒 true，表达"可逛"）。
-2. `ModuleGate` 加 `mode="preview"`：未解锁时不再渲染整页 403，而是**正常渲染列表 + 底部/顶部解锁引导条**（"输入授权码解锁全部内容"）。
-3. 抽 `useLockedAction()` hook：详情弹层、AI 按钮、报告生成统一走它——未解锁时弹统一的解锁引导（登录 → 兑换码），已解锁直接放行。7 个模块各接一次，改的都是触发点，不动内容本身。
-4. `/admin` 批量建码已有（batch_invite），补一个"发码指引"文案（加好友/邮件领取）。
+### AI 额度制（v1 定稿，机制如上第三节）
 
-## 二、AI 额度制（授权码 = 含 AI 次数）
-
-### 结论先行
-起步期**不做支付、不做充值**：授权码自带 AI 额度（如每个码 200 次），兑换即到账，用完找管理员续码。用户自带 Key（自定义接入源）**永久不扣额度**——BYOK 免费保留，本身就是传播点。
-
-### 表结构（Supabase，增量迁移）
-
-```sql
--- 用户表：剩余额度 + 累计已充（展示用）
-ALTER TABLE app_users ADD COLUMN IF NOT EXISTS ai_credits INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE app_users ADD COLUMN IF NOT EXISTS ai_credits_total INTEGER NOT NULL DEFAULT 0;
-
--- 额度流水：审计与对账，每一笔增减都留痕
-CREATE TABLE IF NOT EXISTS ai_credit_logs (
-  id         serial PRIMARY KEY,
-  user_id    INTEGER NOT NULL REFERENCES app_users(id),
-  delta      INTEGER NOT NULL,              -- +N 到账 / -1 消耗
-  reason     VARCHAR(100) NOT NULL,         -- redeem_code / analyze / admin_grant
-  balance    INTEGER NOT NULL,              -- 变动后余额（对账用）
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS ai_credit_logs_user_idx ON ai_credit_logs (user_id);
-
--- 邀请码表：每个码自带多少 AI 次数
-ALTER TABLE invite_codes ADD COLUMN IF NOT EXISTS ai_credits INTEGER NOT NULL DEFAULT 0;
-```
-
-### 关键机制
-- **扣减防并发透支**：与邀请码同款乐观锁——`UPDATE app_users SET ai_credits = n-1 WHERE id = ? AND ai_credits = n`，写不进去说明并发扣过了，返回 409。
-- **扣减时机**：`/api/ai/analyze` 开工前先扣（失败不退，与行业惯例一致）；同时该接口**补上会话校验**（上线前收口项顺带完成），未登录调不通。
-- **额度不足的返回**：SSE 内返回明确错误文案"AI 额度已用完，请续码"，前端透出——不是 500。
-- **/user 页**：显示"剩余 N 次"；/admin 用户表加余额列。
-- **成本模型示例**：授权码 ¥99 含 200 次 → 单次 ¥0.5；用户自购 API Key 的注册/充值门槛远高于此，这就是"码"的附加价值。
-
-### 实现路径（预计 1 个工作日）
-1. schema.sql 追加上述迁移 + docs/DATABASE.md 同步。
-2. /admin 建码表单加"AI 次数"字段（默认 200）。
-3. /api/invite 兑换事务内到账额度 + 流水。
-4. /api/ai/analyze 接会话 + 乐观锁扣减；6 个前端面板透出"额度用完"错误。
-5. /user 页余额展示。
-
-### 明确不做（起步期）
-- 在线支付/充值（等有真实付费用户再说）
-- 按 token 计费（按"次"计，用户心智简单，成本可控——单次分析 max_tokens 上限 4096）
-- 免费模型兜底（中转站不稳定 + 推理模型体验差，见 2026-10-02 实测记录）
+关键决策记录：
+- 起步期不做支付/充值：授权码自带 AI 额度（如每码 200 次），兑换即到账，用完找管理员续码
+- 用户自带 Key（自定义接入源）永久不扣额度——BYOK 免费保留，本身就是传播点
+- 扣减防并发透支用乐观锁/原子函数；扣减时机=analyze 开工前
+- 成本模型示例：授权码 ¥99 含 200 次 → 单次 ¥0.5；用户自购 API Key 的注册/充值门槛远高于此，这就是“码”的附加价值

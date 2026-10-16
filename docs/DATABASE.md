@@ -17,7 +17,7 @@
 | nickname | varchar(50) UNIQUE NOT NULL | 登录名 |
 | password_hash | varchar(128) NOT NULL | bcrypt cost=10 |
 | avatar | varchar(20) | 默认 🧑‍💻（注册接口写 👤） |
-| role | varchar(20) NOT NULL | normal / premium / developer |
+| role | varchar(20) NOT NULL | normal / premium / developer（**2026-10-14 起 open 模式：登录即全功能**，premium 仅历史兼容；business-mode.ts 判定） |
 | invite_code_used | varchar(50) | 升级所用授权码；退出开发者模式时据此决定降回 premium 还是 normal |
 | is_active | boolean | false = 禁止登录 |
 | **ai_credits** | integer NOT NULL DEFAULT 0 | **AI 剩余额度（2026-10-03 额度制）**：内置 AI 每次分析乐观锁扣 1；BYOK 自定义源不扣 |
@@ -36,7 +36,8 @@
 | label | varchar(100) | 后台备注 |
 | max_uses | integer | NULL = 不限次 |
 | used_count | integer | 兑换时乐观锁占位 +1（`.eq("used_count", 读到的值)` 防并发超发） |
-| **ai_credits** | integer NOT NULL DEFAULT 0 | **兑换此码到账的 AI 次数（2026-10-03）**；/admin 建码时填，默认 200 |
+| **ai_credits** | integer NOT NULL DEFAULT 0 | **兑换此码到账的 AI 次数（2026-10-03）**；/admin 建码时填，默认 200（`access` 类码强制 0） |
+| **kind** | varchar(16) NOT NULL DEFAULT 'bundle' | **码类型（2026-10-13 batch9）**：`access`=使用权（升级 premium 不加额度）/ `ai`=纯 AI 额度（只加额度不升级）/ `bundle`=套餐（两者都含，默认）。CHECK 约束三选一。⚠️ **迁移未执行时服务端自动降级为 bundle 语义** |
 | is_active | boolean | |
 | created_by | varchar(50) | 固定写 'developer' |
 | expires_at | timestamptz | NULL = 永久 |
@@ -111,3 +112,26 @@ AI 额度流水：每一笔增减都留痕，供审计与对账。
 - **dev_sessions**：开发者会话令牌库，仅存 sha256 哈希，12 小时过期。
 
 > 未执行前：后台调用量看板、开关与开发者会话会报错。
+
+## 批次 6 ~ 9 迁移（2026-10-12 ~ 10-13）
+
+按顺序执行（均幂等、可重复跑；`supabase/migrations/` 下按文件名日期排序即执行顺序）：
+
+| 文件 | 内容 | 状态 |
+|---|---|---|
+| `2026-10-12-batch6-account.sql` | 账号 v2：app_users 加 email/phone/verified/资料字段/session_version/deleted_at；新建 `verification_codes`（验证码只存哈希）；唯一索引（大小写归一化邮箱、防注销重注刷额度） | ✅ 已执行 |
+| `2026-10-13-batch7-moderation.sql` | AI 内容审核：`ai_content_logs`（正文+元数据）、`moderation_rules`（词表后台自维护）、`app_settings` 加 `ai_content_logging_enabled`/`auto_moderation_enabled`、`purge_old_ai_content()`（30 天清理正文） | ✅ 已执行 |
+| `2026-10-13-batch8-user-state.sql` | 云同步：`user_state`（user_id+key 唯一，value jsonb，updated_at）——登录用户 localStorage 白名单键跟账号走 | ✅ 已执行 |
+| `2026-10-13-batch9-code-kind.sql` | 授权码拆类：`invite_codes.kind`（access/ai/bundle，CHECK 约束） | ✅ 已执行（2026-10-13） |
+| `2026-10-14-batch10-security.sql` | 安全加固：**user_state 行级 RLS**（用户只能读写自己的键） | ⚠️ **待执行** |
+| `2026-10-14-batch12-feedback.sql` | 反馈表 `feedback`（昵称/联系方式/正文/来源页），开源版站内反馈 | ⚠️ **待执行** |
+| `2026-10-15-batch13-invite-redeem.sql` | 邀请码原子兑换：`invite_redemptions`（unique(user_id, code_id) 防重复兑换）、`redeem_invite_code(user_id, code)`（行锁 + 增量加额度 + 流水）、`purge_old_ai_content` 补 REVOKE/GRANT、`purge_old_rate_limits()`（清 24h 前限流行，可由 Cloudflare Cron/admin 调用，未接 cron） | ⚠️ **待执行**（须先于 /api/invite 新代码部署） |
+
+> batch10 未执行期间：user_state 无行级隔离（服务端接口有会话校验兜底，但不等于 RLS，尽快执行）。
+> batch12 未执行期间：站内反馈表单提交会失败，其余功能不受影响。
+> batch9 的自动降级分支保留（防御性），当前库已含 kind 列，走精确语义。
+> E2E 自检：`.tmp/e2e-code-kind.mjs`（迁移后重跑已切换为精确断言，12/12）。
+>
+> **batch10 前后端配套（代码已落，2026-10-14）**：找回密码改两步验证码（reset_password_info → 邮箱收码 →
+> reset_password_email）；登录锁定 locked_until / login_failed_count；token_version 全链路踢会话；
+> 验证码 debugCode 仅非生产返回。手机号找回待接 SMS。
