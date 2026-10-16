@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/storage/database/supabase-client";
-import { sessionFromRequest } from "@/lib/session";
+import { sessionFromRequestVerified } from "@/lib/session";
 
 /** GET /api/ai/credits - 查询当前登录用户的剩余 AI 额度（需要会话令牌） */
 export async function GET(request: NextRequest) {
-  const session = sessionFromRequest(request);
+  const session = await sessionFromRequestVerified(request);
   if (!session) {
     return NextResponse.json({ success: false, error: "登录态无效或已过期" }, { status: 401 });
   }

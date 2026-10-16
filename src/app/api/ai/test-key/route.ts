@@ -1,7 +1,7 @@
-﻿import { NextRequest, NextResponse } from "next/server";
-import { isValidCustomBaseUrl } from "@/lib/ai-providers";
+import { NextRequest, NextResponse } from "next/server";
+import { isValidCustomBaseUrl, CUSTOM_PROTOCOLS, type CustomProtocol } from "@/lib/ai-providers";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
-import { sessionFromRequest } from "@/lib/session";
+import { sessionFromRequestVerified } from "@/lib/session";
 
 /** 测试连接最多等 30s，给平台留一点余量 */
 export const maxDuration = 45;
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 需要登录：避免匿名用户把服务端当作外部请求探测工具
-    if (!sessionFromRequest(request)) {
+    if (!await sessionFromRequestVerified(request)) {
       return NextResponse.json({ success: false, error: "请先登录后再测试连接" }, { status: 401 });
     }
 
@@ -56,9 +56,10 @@ export async function POST(request: NextRequest) {
         );
       }
       const base = rawBase.replace(/\/+$/, "");
-      const proto = protocol && ["openai", "claude", "gemini", "minimax"].includes(protocol)
-        ? protocol
-        : "openai";
+      const proto =
+        protocol && (CUSTOM_PROTOCOLS as readonly string[]).includes(protocol)
+          ? (protocol as CustomProtocol)
+          : "openai";
       const m = (model || "").trim() || "gpt-4o-mini";
 
       const controller = new AbortController();
@@ -113,49 +114,32 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // 防探测：HTTP 状态 / 超时 / 网络失败统一一句话，不区分原因、不回显上游任何内容
+      const CONNECT_FAILED = "连接失败，请检查地址、Key 与模型名";
+      const startedAt = Date.now();
       let res: Response;
       try {
         res = await fetch(url, { method: "POST", headers, body, signal: controller.signal, redirect: "error" });
-      } catch (e) {
+      } catch {
         clearTimeout(timer);
-        if (e instanceof Error && e.name === "AbortError") {
-          return NextResponse.json({ success: false, error: "请求超时（30秒），请检查地址或 Key" });
-        }
-        return NextResponse.json({ success: false, error: "网络请求失败，请检查接口地址是否可访问" });
+        return NextResponse.json({ success: false, error: CONNECT_FAILED });
       }
       clearTimeout(timer);
 
-      // 不回显上游响应原文，只给状态码
       if (!res.ok) {
-        return NextResponse.json({
-          success: false,
-          error: `连接失败（HTTP ${res.status}），请检查 Key、模型名与接口地址`,
-        });
+        // 丢弃响应体，释放连接
+        await res.body?.cancel().catch(() => {});
+        return NextResponse.json({ success: false, error: CONNECT_FAILED });
       }
+      await res.body?.cancel().catch(() => {});
 
-      let data: Record<string, unknown> = {};
-      try { data = await res.json(); } catch { /* 非 JSON 响应 */ }
-
-      // OpenAI 兼容：正文可能在 content（常规模型）或 reasoning_content（推理模型）里
-      const openaiSnippet = (() => {
-        const msg = (data.choices as Array<{ message?: { content?: string; reasoning_content?: string } }>)?.[0]?.message;
-        return (msg?.content || msg?.reasoning_content || "").slice(0, 60);
-      })();
-
-      const snippet =
-        proto === "claude"
-          ? ((data.content as Array<{ text?: string }>)?.[0]?.text?.slice(0, 60) ?? "")
-          : proto === "gemini"
-            ? ((data.candidates as Array<{ content?: { parts?: Array<{ text?: string }> } }>)?.[0]?.content?.parts?.[0]?.text?.slice(0, 60) ?? "")
-            : openaiSnippet;
-
+      // 成功只回「连接成功」与耗时，不回显模型名与输出片段
       return NextResponse.json({
         success: true,
-        message: `连接成功 · ${m}`,
-        responseSnippet: snippet,
+        message: "连接成功",
+        elapsedMs: Date.now() - startedAt,
       });
     }
-
     return NextResponse.json(
       { success: false, error: "仅支持测试自定义接入源" },
       { status: 400 }

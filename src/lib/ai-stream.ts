@@ -5,6 +5,7 @@ import "server-only";
  */
 
 import type { AiSourceConfig, ResolvedAiSource } from "./ai-providers";
+import { AI_ERROR_MESSAGES, sanitizeUpstreamError, type AiErrorCode } from "./ai-safety";
 
 /**
  * 内置 AI 的配置全部来自服务端 env（见 .env.example）。
@@ -15,20 +16,38 @@ const ENV_BASE_URL = process.env.AI_API_URL || "";
 const ENV_API_KEY = process.env.AI_API_KEY || "";
 const ENV_MODEL = process.env.AI_MODEL || "";
 
-/** 内置 AI 缺配置时的统一提示 */
-const ENV_MISSING_MSG =
-  "服务端未配置内置 AI：请在 .env.local 里填写 AI_API_URL / AI_API_KEY / AI_MODEL（参考 .env.example），或在「我的」页用自定义接入源";
-
-function envConfigError(baseUrl: string, apiKey: string, model: string): string | null {
-  if (!baseUrl || !apiKey || !model) return ENV_MISSING_MSG;
-  return null;
+function envConfigError(baseUrl: string, apiKey: string, model: string, builtin: boolean): StreamChunk | null {
+  if (baseUrl && apiKey && model) return null;
+  if (builtin) {
+    // 变量名等细节只进服务端日志，客户端只看到通用文案
+    console.error("内置 AI 未配置完整（AI_API_URL / AI_API_KEY / AI_MODEL 缺失）");
+    return { error: AI_ERROR_MESSAGES.NOT_CONFIGURED, code: "NOT_CONFIGURED" };
+  }
+  return { error: "自定义接入源缺少接口地址、Key 或模型名", code: "BAD_REQUEST" };
 }
 
-interface StreamChunk {
+export interface StreamChunk {
   content?: string;
   /** 推理模型的思维链增量（GLM-5 等先出 reasoning_content 再出 content） */
   reasoning?: string;
+  /** 面向客户端的错误文案：内置源为通用文案，自带 Key 源为已脱敏、限长的上游信息 */
   error?: string;
+  code?: AiErrorCode;
+}
+
+/**
+ * 构造对客户端可见的错误帧。原始细节只写服务端日志；
+ * 内置源一律通用文案，自带 Key 源展示脱敏后的 detail（去 URL、限 200 字）。
+ */
+function failure(builtin: boolean, code: AiErrorCode, detail: unknown, label = "上游 AI 错误"): StreamChunk {
+  console.error(`${label}:`, detail instanceof Error ? detail.message : detail);
+  if (builtin) return { error: AI_ERROR_MESSAGES[code], code };
+  return { error: sanitizeUpstreamError(detail), code };
+}
+
+/** 是否内置源（env 或 env 配置的备用源） */
+function isBuiltinSource(source: ResolvedAiSource): boolean {
+  return source.kind === "env" || (source.kind !== "invalid" && source.provider === "fallback");
 }
 
 /**
@@ -36,15 +55,16 @@ interface StreamChunk {
  */
 export async function* streamChat(
   messages: { role: string; content: string }[],
-  options?: { model?: string; temperature?: number; baseUrl?: string; apiKey?: string; path?: string; signal?: AbortSignal }
+  options?: { model?: string; temperature?: number; baseUrl?: string; apiKey?: string; path?: string; signal?: AbortSignal; builtin?: boolean }
 ): AsyncGenerator<StreamChunk> {
   const baseUrl = options?.baseUrl || ENV_BASE_URL;
   const apiKey = options?.apiKey || ENV_API_KEY;
   const model = options?.model || ENV_MODEL;
+  const builtin = options?.builtin ?? !options?.baseUrl;
 
-  const cfgErr = envConfigError(baseUrl, apiKey, model);
+  const cfgErr = envConfigError(baseUrl, apiKey, model, builtin);
   if (cfgErr) {
-    yield { error: cfgErr };
+    yield cfgErr;
     return;
   }
 
@@ -53,39 +73,47 @@ export async function* streamChat(
 
   const url = `${baseUrl}${path}`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    redirect: "error",
-    signal: options?.signal,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      stream: true,
-      max_tokens: 4096,
-      // 推理型模型（如 GLM-5 系列）默认会先吐一大段思维链再给正文，
-      // 实测同一请求：开启 112 秒、关闭 6 秒。这里默认关闭，
-      // 需要深度推理时用 AI_THINKING=1 打开。不支持该字段的厂商会忽略它。
-      ...(process.env.AI_THINKING === "1"
-        ? { thinking: { type: "enabled" } }
-        : { thinking: { type: "disabled" } }),
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      redirect: "error",
+      signal: options?.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        stream: true,
+        max_tokens: 4096,
+        // 推理型模型（如 GLM-5 系列）默认会先吐一大段思维链再给正文，
+        // 实测同一请求：开启 112 秒、关闭 6 秒。这里默认关闭，
+        // 需要深度推理时用 AI_THINKING=1 打开。不支持该字段的厂商会忽略它。
+        ...(process.env.AI_THINKING === "1"
+          ? { thinking: { type: "enabled" } }
+          : { thinking: { type: "disabled" } }),
+      }),
+    });
+  } catch (err) {
+    // P1 修复：首 fetch 网络异常转成 error 帧而不是未捕获 rejection（AbortError 原样上抛给调用方）
+    if ((err as Error)?.name === "AbortError") throw err;
+    yield failure(builtin, "UPSTREAM_UNAVAILABLE", `网络异常，无法连接 AI 服务（${(err as Error)?.message ?? "unknown"}）`, "上游 AI 连接失败");
+    return;
+  }
 
   if (!response.ok) {
     const errText = await response.text().catch(() => "");
     console.error("上游 AI 返回错误:", response.status, errText.slice(0, 500));
-    yield { error: `AI 请求失败: HTTP ${response.status}` };
+    yield failure(builtin, "UPSTREAM_UNAVAILABLE", `AI 请求失败: HTTP ${response.status}`, "上游 AI HTTP 错误");
     return;
   }
 
   const reader = response.body?.getReader();
   if (!reader) {
-    yield { error: "无法读取响应流" };
+    yield failure(builtin, "UPSTREAM_UNAVAILABLE", "无法读取响应流");
     return;
   }
 
@@ -127,70 +155,6 @@ export async function* streamChat(
 }
 
 /**
- * 非流式调用（用于 API Key 测试等场景）
- */
-export async function invokeChat(
-  messages: { role: string; content: string }[],
-  options?: { model?: string; temperature?: number; baseUrl?: string; apiKey?: string; maxTokens?: number }
-): Promise<{ content?: string; error?: string }> {
-  const baseUrl = options?.baseUrl || ENV_BASE_URL;
-  const apiKey = options?.apiKey || ENV_API_KEY;
-  const model = options?.model || ENV_MODEL;
-
-  const cfgErr = envConfigError(baseUrl, apiKey, model);
-  if (cfgErr) return { error: cfgErr };
-
-  const url = `${baseUrl}/chat/completions`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      redirect: "error",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: options?.temperature ?? 0.5,
-        max_tokens: options?.maxTokens ?? 50,
-        // 与 streamChat 保持一致：推理型模型（GLM-5 等）默认关闭思维链。
-        // 实测不关时 token 全花在 reasoning_content 上，content 是空字符串，
-        // 测试连接会拿到"成功但没内容"的结果。
-        ...(process.env.AI_THINKING === "1"
-          ? { thinking: { type: "enabled" } }
-          : { thinking: { type: "disabled" } }),
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text().catch(() => "");
-      let errMsg = `AI 请求失败: HTTP ${response.status}`;
-      try {
-        const errJson = JSON.parse(errText);
-        errMsg = errJson.error?.message || errJson.message || errMsg;
-      } catch {}
-      return { error: errMsg };
-    }
-
-    const data = await response.json() as Record<string, unknown>;
-    const choices = data.choices as Array<{
-      message: { content?: string; reasoning_content?: string };
-    }> | undefined;
-    if (choices && choices.length > 0) {
-      const msg = choices[0].message;
-      // 推理型模型在思维链被打开时会把正文放进 reasoning_content，content 为空
-      const text = (msg.content || msg.reasoning_content || "").trim();
-      if (text) return { content: text };
-    }
-    return { error: "模型返回空内容" };
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : "未知错误" };
-  }
-}
-
-/**
  * 逐行读取 SSE 数据帧（data: {...}），跨 chunk 拼缓冲
  */
 async function* sseDataFrames(
@@ -227,7 +191,7 @@ export async function* streamChatClaude(
   // 不如直接报错让用户填准确的。
   const model = opts.model?.trim();
   if (!model) {
-    yield { error: "缺少模型名：请在自定义接入源里填写准确的模型 id" };
+    yield { error: "缺少模型名：请在自定义接入源里填写准确的模型 id", code: "BAD_REQUEST" };
     return;
   }
   const system = messages.filter(m => m.role === "system").map(m => m.content).join("\n\n");
@@ -257,7 +221,8 @@ export async function* streamChatClaude(
       }),
     });
   } catch (err) {
-    yield { error: `Claude 请求失败: ${err instanceof Error ? err.message : "网络错误"}` };
+    if ((err as Error)?.name === "AbortError") throw err;
+    yield failure(false, "UPSTREAM_UNAVAILABLE", `Claude 请求失败: ${err instanceof Error ? err.message : "网络错误"}`, "Claude 请求失败");
     return;
   }
 
@@ -268,7 +233,7 @@ export async function* streamChatClaude(
       const j = JSON.parse(errText);
       errMsg = j.error?.message || errMsg;
     } catch {}
-    yield { error: errMsg };
+    yield failure(false, "UPSTREAM_UNAVAILABLE", errMsg, "Claude 上游错误");
     return;
   }
 
@@ -287,7 +252,7 @@ export async function* streamChatClaude(
         } else if (json.type === "message_stop") {
           return;
         } else if (json.type === "error") {
-          yield { error: json.error?.message || "Claude 流式错误" };
+          yield failure(false, "UPSTREAM_UNAVAILABLE", json.error?.message || "Claude 流式错误", "Claude 流式错误");
           return;
         }
       } catch { /* 忽略解析错误 */ }
@@ -306,7 +271,7 @@ export async function* streamChatGemini(
 ): AsyncGenerator<StreamChunk> {
   const rawModel = opts.model?.trim();
   if (!rawModel) {
-    yield { error: "缺少模型名：请在自定义接入源里填写准确的模型 id" };
+    yield { error: "缺少模型名：请在自定义接入源里填写准确的模型 id", code: "BAD_REQUEST" };
     return;
   }
   const model = encodeURIComponent(rawModel);
@@ -341,7 +306,8 @@ export async function* streamChatGemini(
       }
     );
   } catch (err) {
-    yield { error: `Gemini 请求失败: ${err instanceof Error ? err.message : "网络错误"}` };
+    if ((err as Error)?.name === "AbortError") throw err;
+    yield failure(false, "UPSTREAM_UNAVAILABLE", `Gemini 请求失败: ${err instanceof Error ? err.message : "网络错误"}`, "Gemini 请求失败");
     return;
   }
 
@@ -352,7 +318,7 @@ export async function* streamChatGemini(
       const j = JSON.parse(errText);
       errMsg = j.error?.message || errMsg;
     } catch {}
-    yield { error: errMsg };
+    yield failure(false, "UPSTREAM_UNAVAILABLE", errMsg, "Gemini 上游错误");
     return;
   }
 
@@ -365,7 +331,7 @@ export async function* streamChatGemini(
           error?: { message?: string };
         };
         if (json.error) {
-          yield { error: json.error.message || "Gemini 流式错误" };
+          yield failure(false, "UPSTREAM_UNAVAILABLE", json.error.message || "Gemini 流式错误", "Gemini 流式错误");
           return;
         }
         const text = json.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
@@ -388,10 +354,11 @@ export async function* streamChatAuto(
 ): AsyncGenerator<StreamChunk> {
   switch (source.kind) {
     case "env":
-      yield* streamChat(messages, { model: source.model, temperature: options?.temperature, signal: options?.signal });
+      yield* streamChat(messages, { model: source.model, temperature: options?.temperature, signal: options?.signal, builtin: true });
       return;
     case "openai":
       yield* streamChat(messages, {
+        builtin: isBuiltinSource(source),
         baseUrl: source.baseUrl,
         apiKey: source.apiKey,
         model: source.model,
@@ -430,7 +397,7 @@ export async function* streamChatAuto(
       });
       return;
     case "invalid":
-      yield { error: source.reason };
+      yield { error: sanitizeUpstreamError(source.reason), code: "BAD_REQUEST" };
       return;
   }
 }
@@ -474,7 +441,11 @@ export async function* streamChatWithFallback(
   console.warn("内置 AI 主源失败，切换备用源");
   for await (const chunk of streamChatAuto(messages, fallback, options)) {
     if (chunk.error) {
-      yield { error: `${chunk.error}（备用源同样失败）` };
+      // 备用源同样失败：对客户端只给通用文案（内置源），细节已由 failure() 记入服务端日志
+      console.error("内置 AI 备用源同样失败");
+      yield chunk.code === "NOT_CONFIGURED"
+        ? chunk
+        : { error: AI_ERROR_MESSAGES.UPSTREAM_UNAVAILABLE, code: "UPSTREAM_UNAVAILABLE" };
       return;
     }
     yield chunk;

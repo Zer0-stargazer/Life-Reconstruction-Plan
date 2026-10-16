@@ -1,5 +1,5 @@
 import "server-only";
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 
 /**
  * 轻量服务端会话令牌（HMAC-SHA256 签名）。
@@ -19,6 +19,8 @@ export interface SessionPayload {
   userId: number;
   nickname: string;
   role: string;
+  /** 会话版本号：签发时等于 app_users.token_version，改密/禁用等操作会使旧会话失效 */
+  ver: number;
   /** 过期时间（Unix 秒） */
   exp: number;
 }
@@ -26,30 +28,36 @@ export interface SessionPayload {
 /** 会话有效期：7 天 */
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
-const DEV_FALLBACK_SECRET = "lrs-dev-insecure-session-secret";
-let warnedDevSecret = false;
+export const MIN_SECRET_LENGTH = 32;
+
+// 开发环境的临时密钥：进程启动后首次需要时随机生成，挂在 globalThis 上，
+// 避免 dev 下各路由模块实例各生成一份导致签发/校验不一致。重启即失效（旧登录态作废）。
+const DEV_SECRET_KEY = Symbol.for("lrs.dev-session-secret");
 
 /**
- * 会话签名密钥，只读 SESSION_SECRET。生产环境必须配置且 ≥32 字符，
- * 否则拒绝签发/校验（避免静默使用不安全默认值）。
+ * 会话签名密钥，只读 SESSION_SECRET。
+ * - 生产环境：必须配置且 ≥32 字符，否则抛错（调用方按 500 通用文案处理），绝不使用默认值
+ * - 开发环境：缺失或过短时 console.warn 并使用进程启动时随机生成的临时密钥（非硬编码常量）
+ * verification.ts 的验证码哈希盐也走这里，保证两处口径一致。
  */
-function getSecret(): string {
+export function getSessionSecret(): string {
   const configured = process.env.SESSION_SECRET?.trim();
+  if (configured && configured.length >= MIN_SECRET_LENGTH) return configured;
 
   if (process.env.NODE_ENV === "production") {
-    if (!configured || configured.length < 32) {
-      throw new Error("SESSION_SECRET 未配置或长度不足 32 字符：生产环境必须设置会话密钥");
-    }
-    return configured;
+    throw new Error(`SESSION_SECRET 未配置或长度不足 ${MIN_SECRET_LENGTH} 字符：生产环境必须设置会话密钥`);
   }
 
-  if (configured) return configured;
-  // 仅开发环境兜底，方便本地起服务
-  if (!warnedDevSecret) {
-    warnedDevSecret = true;
-    console.warn("SESSION_SECRET 未配置，开发环境使用固定的不安全密钥");
+  const g = globalThis as unknown as Record<symbol, string | undefined>;
+  let dev = g[DEV_SECRET_KEY];
+  if (!dev) {
+    dev = randomBytes(48).toString("base64url");
+    g[DEV_SECRET_KEY] = dev;
+    console.warn(
+      `SESSION_SECRET 未配置或不足 ${MIN_SECRET_LENGTH} 字符，开发环境使用本次进程随机生成的临时密钥（重启后已登录会话失效）`
+    );
   }
-  return DEV_FALLBACK_SECRET;
+  return dev;
 }
 
 function b64url(input: string | Buffer): string {
@@ -61,7 +69,7 @@ function b64url(input: string | Buffer): string {
 }
 
 function hmac(payloadB64: string): string {
-  return b64url(createHmac("sha256", getSecret()).update(payloadB64).digest());
+  return b64url(createHmac("sha256", getSessionSecret()).update(payloadB64).digest());
 }
 
 /** 签发会话令牌 */
@@ -125,7 +133,46 @@ export function readSessionToken(request: Request): string | null {
   return request.headers.get("x-session-token");
 }
 
-/** 便捷方法：校验请求里的会话，失败返回 null */
+/** 便捷方法：校验请求里的会话，失败返回 null（仅验签名，不查库） */
 export function sessionFromRequest(request: Request): SessionPayload | null {
   return verifySession(readSessionToken(request));
+}
+
+/**
+ * 增强版会话校验：签名之外再查库比对 token_version 与 is_active。
+ * 改密 / 管理员重置密码会递增 token_version，被禁用账号 is_active=false，
+ * 两者都会让旧令牌立即失效（P1-4 修复）。
+ * 校验失败返回 null，数据库异常时拒绝（fail-closed）。
+ */
+export async function sessionFromRequestVerified(
+  request: Request
+): Promise<SessionPayload | null> {
+  const payload = sessionFromRequest(request);
+  if (!payload) return null;
+
+  try {
+    const { getSupabaseClient } = await import("@/storage/database/supabase-client");
+    const { data, error } = await getSupabaseClient()
+      .from("app_users")
+      .select("token_version, is_active")
+      .eq("id", payload.userId)
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!data) return null; // 用户已不存在
+    if (data.is_active === false) return null; // 已禁用
+    // 库里 token_version 为 NULL（旧数据）视为 0；载荷缺 ver（旧令牌）也视为 0
+    const dbVer = (data.token_version as number | null) ?? 0;
+    const tokenVer = payload.ver ?? 0;
+    if (tokenVer !== dbVer) return null; // 改密后旧令牌失效
+
+    return payload;
+  } catch (err) {
+    // fail-closed：查不到库就无法确认会话没被撤销/禁用，一律按无效处理
+    console.error(
+      "会话版本校验失败（fail-closed，按无效会话处理）:",
+      err instanceof Error ? err.message : err
+    );
+    return null;
+  }
 }

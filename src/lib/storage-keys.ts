@@ -31,6 +31,53 @@ export const STORAGE_KEYS = {
   authToken: 'auth-token',
   /** 访客各模块已免费展开的详情次数（JSON：{ [moduleId]: count }，见 src/lib/free-preview.ts） */
   freePreview: 'free-preview.v1',
+  /** 首页访客登录引导条本次会话已关闭（sessionStorage，VisitorLoginNudge 用） */
+  visitorNudgeDismissed: 'visitor-nudge-dismissed.v1',
+  /** 翻页式介绍文档已读标记——旧版全浏览器共用键，仅作历史登记，不再读写（见 onboardingTourDoneFor） */
+  onboardingTourDone: 'onboarding-tour.v1',
+  /** 翻页式介绍文档已读标记前缀（按用户区分：同一浏览器的新账号也能看到介绍） */
+  onboardingSeenPrefix: 'onboarding.seen.v1:',
+  // ---- 云同步模块数据键（batch 联动，写入点见各模块；与 user-state-sync SYNC_KEYS 对齐） ----
+  /** 命运模块画像输入 */
+  destinyInput: 'destiny.input.v1',
+  /** 命运模块已生成报告 */
+  destinyReport: 'destiny.report.v1',
+  /** 健康问卷答案 */
+  healthAnswers: 'health.answers.v1',
+  /** 模拟器六维权重 */
+  simDimensions: 'sim.dimensions.v2',
+  /** 模拟器六维问答 */
+  simAnswers: 'sim.answers.v2',
+  /** 名字模块风格偏好 */
+  nameStyle: 'name.style.v1',
+  /** 名字模块性别选择 */
+  nameGender: 'name.gender.v1',
+  /** 名字模块姓氏 */
+  nameSurname: 'name.surname.v1',
+  /** 职业三态标记（想做/在做/做过） */
+  careerMarks: 'career-marks.v1',
+  /** 规律收藏 */
+  lawsFavorites: 'laws-favorites.v1',
+  /** 运气收藏 */
+  luckFavorites: 'luck-favorites.v1',
+  /** 云同步 meta：上次推送值 + 数据归属账号 __owner（user-state-sync.ts 专用，P0 防串号） */
+  userStateSyncMeta: 'user-state-sync.v1',
   /** 开发者后台会话（按 UTC 日轮换的哈希，24-48h 有效） */
   devToken: 'dev-token',
+} as const;
+
+/** 介绍文档已读标记的按用户键（`onboarding.seen.v1:<userId>`） */
+export function onboardingSeenKey(userId: number | string): string {
+  return `${STORAGE_KEYS.onboardingSeenPrefix}${userId}`;
+}
+
+/** sessionStorage：云同步拉取后已刷新页面的守卫前缀（`user-state-reloaded-<userId>`） */
+export const SESSION_KEYS = {
+  userStateReloadedPrefix: 'user-state-reloaded-',
+  /** 登录已过期提示标记（会话过期后页面会因云同步守卫刷新一次，靠它让提示横幅跨刷新保留） */
+  sessionExpired: 'session-expired.v1',
+  /** 首页开场落印（刻度轨道描出 + 方印落下）本会话已播放，只播一次 */
+  atlasIntro: 'atlas-intro.v1',
+  /** /journey 八个节点依次点亮 + 方印落下，本会话已播放，只播一次 */
+  journeyLit: 'journey-lit.v1',
 } as const;

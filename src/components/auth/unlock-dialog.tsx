@@ -11,6 +11,9 @@ import {
   useUnlockOpen,
 } from '@/hooks/use-locked-action';
 import { unlockStore } from '@/lib/unlock-store';
+import { BUSINESS_MODE } from '@/lib/business-mode';
+
+const IS_OPEN_MODE = BUSINESS_MODE === 'open';
 
 // 必须静态引用 process.env.NEXT_PUBLIC_CONTACT，Next 才会在构建时内联
 const CONTACT = (process.env.NEXT_PUBLIC_CONTACT ?? '').trim();
@@ -128,7 +131,7 @@ export function UnlockDialog() {
   return createPortal(
     <>
       <div
-        className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 z-[60] bg-black/65 md:bg-black/55 animate-fade-in"
         onClick={handleDismiss}
         aria-hidden="true"
       />
@@ -140,7 +143,7 @@ export function UnlockDialog() {
         aria-describedby={descId}
         tabIndex={-1}
         onKeyDown={handleTrapTab}
-        className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-primary/25 bg-background shadow-2xl p-6 animate-scale-in outline-none"
+        className="fixed z-[70] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-sm rounded-md border border-primary/25 bg-background shadow-2xl p-6 animate-scale-in outline-none"
       >
           <button
             type="button"
@@ -161,21 +164,30 @@ export function UnlockDialog() {
                 解锁成功
               </h2>
               <p id={descId} className="text-sm text-muted-foreground">
-                全部模块与 AI 分析已对您开放。
+                {IS_OPEN_MODE ? 'AI 次数已补充。' : '全部模块与 AI 分析已对您开放。'}
               </p>
             </>
           ) : (
             <>
               <h2 id={titleId} className="text-lg font-serif font-bold text-foreground mb-1.5">
-                解锁全部内容
+                {IS_OPEN_MODE ? '补充 AI 次数' : '解锁全部内容'}
               </h2>
-              <p id={descId} className="text-xs text-muted-foreground leading-relaxed mb-5">
-                输入授权码后解锁全部模块详情与 AI 分析；授权码向开发者索取（加好友或邮件）。
-              </p>
+              {IS_OPEN_MODE ? (
+                <p id={descId} className="text-xs text-muted-foreground leading-relaxed mb-5">
+                  AI 次数用完后，可输入续码补充，也可填入自己的 Key。
+                </p>
+              ) : (
+                <p id={descId} className="text-xs text-muted-foreground leading-relaxed mb-5">
+                  授权码分两种：<span className="text-foreground">使用权码</span>解锁全部功能（详情、AI、报告），
+                  <span className="text-foreground">AI 额度码</span>为 AI 分析充值；<span className="text-foreground">套餐码</span>两者都含（推荐）。
+                  向开发者索取：加好友或邮件。
+                </p>
+              )}
 
-              {CONTACT && !isPremium && (
+              {CONTACT && (IS_OPEN_MODE || !isPremium) && (
                 <p className="text-xs text-muted-foreground mb-5">
-                  获取授权码请联系：<span className="text-foreground select-all">{CONTACT}</span>
+                  {IS_OPEN_MODE ? '获取续码请联系：' : '获取授权码请联系：'}
+                  <span className="text-foreground select-all">{CONTACT}</span>
                 </p>
               )}
 
@@ -188,7 +200,7 @@ export function UnlockDialog() {
                   <LogIn className="w-4 h-4" />
                   先去登录 / 注册
                 </Link>
-              ) : isPremium ? (
+              ) : isPremium && !IS_OPEN_MODE ? (
                 <p className="text-sm text-muted-foreground">您已是充电用户，无需解锁。</p>
               ) : (
                 <div className="space-y-3">
@@ -198,7 +210,7 @@ export function UnlockDialog() {
                     value={code}
                     onChange={(e) => { setCode(e.target.value); setError(''); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleRedeem(); }}
-                    placeholder="输入授权码，如 LR-XXXXXX"
+                    placeholder={IS_OPEN_MODE ? '输入续码' : '输入授权码，如 LR-XXXXXX'}
                     maxLength={100}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/40"
                   />
@@ -213,7 +225,7 @@ export function UnlockDialog() {
                     disabled={!code.trim() || pending}
                     className="w-full px-5 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {pending ? '兑换中…' : '解锁'}
+                    {pending ? '兑换中…' : IS_OPEN_MODE ? '兑换' : '解锁'}
                   </button>
                 </div>
               )}
