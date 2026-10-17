@@ -94,6 +94,15 @@ cp .env.example .env.local    # 然后填入真实值
    pnpm deploy:vinext     # 部署
    ```
 
+   > 本机实测（2026-10-17）：pnpm 引擎锁定损坏 / Node 22 构建挂 PostCSS 时，
+   > 可直接 `node node_modules/@vinext/cloudflare/dist/cli.js deploy`（需系统 Node ≥ 24）。
+   > 部署报 `fetch failed` 先 `npx wrangler whoami` 刷新过期 token。
+
+   **自定义域名**（国内访问必需，`*.workers.dev` 在大陆被墙）：
+   域名 NS 托管到 Cloudflare → Worker Settings → Domains & Routes 添加（或调
+   `PUT /accounts/{id}/workers/domains` API）；**别忘了把新域名加进 Turnstile widget
+   的域名白名单**，否则登录验证码会失败。本站生产域名：`https://lifesandbox.me`。
+
    生产环境变量在 Cloudflare Dashboard → Workers → Settings → Variables 里配置，
    敏感值（`SESSION_SECRET` / `SUPABASE_SERVICE_ROLE_KEY` / `AI_API_KEY`）务必加密。
 5. **开发者账号**：注册普通账号后，在数据库手动把该用户 `role` 改为 `developer`，
@@ -189,6 +198,8 @@ docs/                         # 接手入口 / 开发日志 / 全景 / 架构 / 
 - 2026-10-03：**商业化上线**——访客预览模型 + AI 额度制（授权码自带次数）；首批职业专属资源；工程清理
 - 2026-10-13：**更名「人生沙盘 · LIFE SANDBOX」**；账号 v2 过渡登录；用户数据云同步（17 键）；**权限模型 v3**；跨模块联动三批落地
 - 2026-10-14：**开源免费模式**——`BUSINESS_MODE` 开关分离开新旧方案（登录即解锁全部内容，旧买断制保留未删可随时切回）；注册赠送 50 次 AI 额度；**「支持作者」页**（开发初心 / 赞赏 / 联系我 / 反馈表单）；**反馈系统**（feedback 表 + API + 后台可查）；安全修复 batch10/batch11 + 死代码清理；README/License 开源化；Cloudflare Workers 部署链路（vinext）打通
+- 2026-10-16：Cloudflare Workers 正式部署上线（vinext，21 路由）；安全层与商业化收口、全站体验升级、字体自托管（303 woff2）四批次入库
+- 2026-10-17：**正式域名上线 `https://lifesandbox.me`**——国内直连可访问（`*.workers.dev` 在大陆被墙）；Turnstile 白名单 / 站点地址 / 限流对照验证齐活；eu.org 备用域名申请在途
 - 数据总览：267 规律 + 488 窗口 + 250 运气 + 888 职业 + 126 健康信号 = **2,019 条**
 
 ## License

@@ -851,3 +851,99 @@ dev server 的服务端 fetch（Next.js/undici 默认不走 `https_proxy` 环境
 
 详见 [`SESSION-2026-10-15-收尾交接.md`](SESSION-2026-10-15-收尾交接.md)。
 
+## 2026-10-17 · 正式域名 lifesandbox.me 上线：国内直连访问全链路打通
+
+**主题**：解决「`*.workers.dev` 被墙、国内用户打不开」的根本问题——购入并绑定自定义域名
+`https://lifesandbox.me`，从买域名到国内直连验证通过全程约 30 分钟。同日完成 git 存档大补交
+（220 个改动拆 4 个提交）与 eu.org 备用域名申请。
+
+**为什么会有这一节**：10-16 站点已在 `rensheng-shapan.zer0create.workers.dev` 上跑通，
+但 `*.workers.dev` 在中国大陆被 DNS 污染 + SNI 阻断（解析出 198.18.x.x 保留地址），
+目标用户基本打不开。「绑自有域名」是唯一低成本解（免备案、零月费），本节记录完整路径与踩坑。
+
+### 1. 前置：git 存档大补交（10-09 以来成果入库）
+
+工作区积压 220 个未提交改动（87 新增 / 128 修改 / 5 删除，含 supabase 迁移 batch6~13、
+worker/ 部署链、安全层、页面拆分），按主题拆 4 个提交后 `batch-6-icons` 快进合并进 `main` 并推送：
+
+- `ffbafdb` feat(security,business) 安全层与商业化收口
+- `c8491d1` feat(ux) 全站体验升级（页面拆分 / onboarding / journey / 分享 / 通知 / 图标）
+- `1884fb2` build(deploy) vinext + Cloudflare Workers 部署链 + 字体自托管（326 文件）
+- `a33268b` docs 文档大同步 + MIT License
+
+教训：**上次部署的线上代码在 git 里没有任何对应记录**，服务器一丢即全没。今后每批部署前必须先提交。
+
+### 2. 免费域名三条线的尝试与结论
+
+- **DigitalPlat（us.kg/dpdns.org）**：注册流程撞上其官方源站 502 故障（Cloudflare "Host Error"，
+  直连与代理均复现，与本地无关）。等恢复期间放弃等待，其价值被下面的付费路线取代。
+  排障方法：页面内 hook `window.fetch` 抓 `/_panel_api/api/security/csrf` 返回体，
+  确认 502 来自 CF 源站故障而非风控。
+- **eu.org（保底）**：联系人 `GL1470-FREE` 注册 + 邮箱验证成功；域名申请
+  `lifesandbox.eu.org` 已提交（请求号 `20261017033633-arf-8647`），SOA/NS 实时校验一次通过
+  （因 Cloudflare zone 预先建好）。**注意：Gmail 会把 eu.org 验证邮件当垃圾拒收，必须用 163 等**。
+  审核为人工，数天~两周；下发后 CF 自动激活，可做备用域名。
+- **结论**：免费路线全部有时间成本或不可控因素，¥1 买 `.me` 首年（续费约 ¥30/年）是
+  「今天就要上线」的最优解。
+
+### 3. 域名购买与 DNS 指向（用户操作部分）
+
+- 阿里云注册 `lifesandbox.me`（¥1 首年促销）。**实名认证是硬门槛**：不过审则阿里云
+  不受理 DNS 修改。
+- DNS 修改为 Cloudflare 的 `aitana.ns.cloudflare.com` / `carl.ns.cloudflare.com`。
+  阿里云保存后**并不立即推送注册局**——页面上的「**同步**」按钮才是立即提交动作，
+  点击后约 8 分钟注册局（`a0.nic.me`）委派生效。
+- 排障命令：`Resolve-DnsName lifesandbox.me -Type NS -Server a0.nic.me -TcpOnly`
+  直接查注册局，比公共 DNS 快且无缓存干扰。
+
+### 4. Cloudflare 侧配置（可全程 API 化）
+
+1. **加 zone**：wrangler OAuth 无 `zone:create` 权限（仅 zone:read），走 Dashboard
+   「Connect a domain」→ Free 套餐 → 记下分配的两条 NS。
+2. **zone 激活**：注册局委派生效后 **CF 自动检测激活**，无需手动 Check。
+3. **绑 Custom Domain**：Dashboard 的 Next steps 卡片不可自动化点击，直接调 API 更稳：
+   `PUT /accounts/{id}/workers/domains`，body 含 `zone_id / hostname / service / environment:"production"`；
+   换绑到另一个 worker 需加 `override_existing_origin: true`，否则报 100116。
+   ⚠️ 域名实际绑到的是 **`lifesandbox`** worker（与 `cloudflare.config.ts` 的 name 一致），
+   旧的 `rensheng-shapan` worker 是 10-16 部署残留，**已弃用未删**。
+4. **Turnstile 域名白名单**（易漏！）：widget 原来只配了 workers.dev 域名，
+   不加 `lifesandbox.me` 则新域名上登录/注册验证码直接失败。API：
+   `PUT /accounts/{id}/challenges/widgets/{sitekey}`，domains 数组全量覆盖。
+
+### 5. 构建与部署的三个坑
+
+- **pnpm 12 会因 `packageManager: pnpm@9.0.0` 锁定尝试自切换**，本机 @pnpm/exe 二进制损坏
+  （`no @pnpm/exe.win32-x64 native binary`，`--config.manage-package-manager-versions=false` 也绕不开）。
+  **解法：直接用系统 Node 24 跑 `node node_modules/@vinext/cloudflare/dist/cli.js deploy`**。
+- **Node 22.22.2（托管版）跑同一构建会挂 PostCSS**：`Failed to load PostCSS config ...
+  Expected a string...but got null`（jiti 兼容性）。**必须用系统 Node 24**（`C:/Program Files\nodejs\node.exe`）。
+- **wrangler OAuth token 约 1 小时过期**，部署报 `fetch failed` 时先 `npx wrangler whoami`
+  静默刷新再重跑（部署工具复用 wrangler 的凭证文件）。
+
+### 6. 环境变量与部署产物
+
+- `.env.local` 追加 `NEXT_PUBLIC_SITE_URL=https://lifesandbox.me`（OG / 分享卡 / canonical 用，
+  `layout.tsx` metadataBase 读取）；`.env.example` 同步补注释（`11aae76`）。
+- 部署完成：Version `10161787`，workers.dev 旧地址同样指向新版本
+  （`lifesandbox.zer0create.workers.dev`，虽然同样被墙，但可用于海外测试）。
+
+### 7. 上线验证（国内直连，`curl --noproxy --resolve` 强制 IP）
+
+- 首页 `https://lifesandbox.me/`：**HTTP 200**，149 KB，title「人生沙盘」，直连 2.7s。
+- 全部 8 个模块页逐个验证：career / windows / laws / luck / health / destiny / name / simulation
+  **全部 200**；`/journey` 200。
+- 本机 DNS 缓存滞后时用 `--resolve lifesandbox.me:443:104.21.48.110` 绕过（全球 DNS 已生效）。
+- **登录限流对照实验**：用另一个 IP POST `/api/auth` 得 400「请输入昵称和密码」而非 429，
+  证明 `cf-connecting-ip` 维度的限流桶独立、无共享桶误伤；用户真实遇到的
+  「尝试过于频繁，请等待 30 秒」是连续输错密码触发的正常防爆破行为。
+
+### 8. 当前待办（承接 10-15 清单，仅列状态变化）
+
+- [x] ~~域名 + HTTPS~~ → ✅ 2026-10-17（lifesandbox.me）
+- [x] ~~生产环境变量重配~~ → ✅ 部署工具直接带 `.env.local`；`NEXT_PUBLIC_SITE_URL` 已配
+- ⬜ **batch10（user_state RLS）/ batch12（反馈表）迁移仍未执行**（此前批次一致）
+- ⬜ **曾在文档出现的真实 AI 密钥必须作废重发**（仍有效！）
+- ⬜ 旧 worker `rensheng-shapan` 可删除（当前无流量指向）
+- ⬜ eu.org 审核（数天~两周，通过后 cf 自动激活 lifesandbox.eu.org，可做备用域名/后续申请新前缀）
+
+详见 [`SESSION-2026-10-17-域名上线.md`](SESSION-2026-10-17-域名上线.md)。

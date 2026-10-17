@@ -63,9 +63,16 @@
     再 build**，旧目录留着不管（已 gitignore）
 - [ ] **部署**（1 天）
   - [x] 选定部署方式：**Cloudflare（vinext 路线）**——用户侧待办：`wrangler login` → `pnpm deploy:vinext`
-  - [ ] 域名 + HTTPS
-  - [ ] 生产环境变量重配一遍；**`SESSION_SECRET` 必须设为强随机值**（`openssl rand -hex 32`；开发环境回退用 DEV_PASSWORD，生产禁止）
-  - [ ] 生产环境验证：全路由 + 注册/兑换/AI 全流程
+  - [x] **域名 + HTTPS** —— ✅ **2026-10-17 已完成**：`https://lifesandbox.me`
+        （阿里云 ¥1 首年购入 → NS 改 `aitana`/`carl.ns.cloudflare.com` → zone 自动激活 →
+        API 绑 Custom Domain 到 worker `lifesandbox`，证书自动签发）。
+        备用：`lifesandbox.eu.org` 申请中（请求号 20261017033633-arf-8647）。
+        踩坑全集见 DEVLOG 2026-10-17 / SESSION-2026-10-17。
+  - [x] 生产环境变量重配一遍 —— ✅ 2026-10-17：部署工具直接读取 `.env.local` 全量带入；
+        **`NEXT_PUBLIC_SITE_URL=https://lifesandbox.me`** 已配置（OG/分享卡/canonical）。
+        ⚠️ 仍需人工确认：`SESSION_SECRET` 是否已是强随机值（生产禁止用 DEV_PASSWORD 回退）
+  - [x] 生产环境验证：全路由 —— ✅ 2026-10-17：首页 + 8 模块页 + /journey 国内直连全部 200；
+        注册/登录 API 可达（限流/验证码工作正常）。**AI 全流程与兑换流程仍待用户实测一轮**
 
 #### 部署位置的三层约束（2026-10-12 补，定方案前必读）
 

@@ -1,5 +1,11 @@
 # 人生沙盘 - 项目交接手册
 
+> **2026-10-17 修订**：**正式域名上线** —— `https://lifesandbox.me`（国内直连可访问，
+> `*.workers.dev` 在大陆被墙勿再对外分享）。域名绑在 worker **`lifesandbox`**（10-16 的
+> `rensheng-shapan` 已弃用未删）；部署方式更新：本机 pnpm 引擎损坏时用
+> `node node_modules/@vinext/cloudflare/dist/cli.js deploy`（需系统 Node 24）。
+> 详见 [DEVLOG 2026-10-17](DEVLOG.md) 与 [SESSION-2026-10-17-域名上线.md](SESSION-2026-10-17-域名上线.md)。
+>
 > **2026-10-15 修订**。原 2026-07 版的"踩坑记录"完整保留（仍是真金白银的经验），
 > 过时信息已就地修正并标注。已知问题全集见 [KNOWN-ISSUES.md](KNOWN-ISSUES.md)，
 > 产品侧结论见 [PRODUCT-AUDIT.md](PRODUCT-AUDIT.md)，历史工程体检见 [history/HEALTH-REPORT.md](history/HEALTH-REPORT.md)。
