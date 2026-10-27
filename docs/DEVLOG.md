@@ -947,3 +947,31 @@ worker/ 部署链、安全层、页面拆分），按主题拆 4 个提交后 `b
 - ⬜ eu.org 审核（数天~两周，通过后 cf 自动激活 lifesandbox.eu.org，可做备用域名/后续申请新前缀）
 
 详见 [`SESSION-2026-10-17-域名上线.md`](SESSION-2026-10-17-域名上线.md)。
+
+## 2026-10-17 登录修复（生产 secret 缺失）
+
+- 根因：Worker `lifesandbox` 无运行时 secret → 限流连库失败 → fail-closed 返回"请等待30秒"。
+- 修复：`node scripts/set-cf-secrets.mjs`（项目根目录执行）写入 9 个 secret。
+- 验证：探测登录不存在账号返回 401 `昵称或密码错误`；真实登录/注册待浏览器手测。
+- 手机端首轮：抽屉 `h-dvh`、输入框 `text-base md:text-sm`（详见 SESSION-2026-10-17-域名上线.md 第七节）。
+## 2026-10-26 · 站点暂停上线（维护页）+ 工作区整理
+
+**主题**：用户反馈线上仍有多个 bug，决定暂停对外服务，集中修复后再重新上线。
+同日把 10-17 会话遗留的未提交改动（手机端首轮适配 + secret 脚本订正 + Claude Code 协作配置）入库（`674616d`），106 个测试全过。
+
+### 暂停方式（温和下线，可一键恢复）
+
+- `lifesandbox` Worker 被**临时替换**为静态「系统维护中」页面（HTTP 503 + `noindex`，防止搜索引擎收录维护页）。
+  部署命令：`CLOUDFLARE_ACCOUNT_ID=<账号id> npx wrangler deploy maintenance.js --name lifesandbox --compatibility-date 2026-10-17`
+- ⚠️ wrangler 多账号环境必须带 `CLOUDFLARE_ACCOUNT_ID`，否则交互式选账号在非终端下会静默失败（exit 0 但未部署）。
+- **域名 / DNS / Turnstile / Secrets / Supabase 全部未动**，恢复只需重新部署正式版本：
+  系统 Node 24 执行 `node node_modules/@vinext/cloudflare/dist/cli.js deploy`（token 过期先 `npx wrangler whoami`）。
+- 数据库未触碰；10-17 的 secret 修复与手机端改动**仅在本地，尚未部署过正式版**。
+
+### 工作区整理
+
+- `备份/`（6 个 2026-10-15 快照 + colorfix.mjs）整体移入 `归档/备份-2026-10-15/`
+- `docs/待办-batch9迁移-外出执行.md`（已完成事项）移入 `docs/history/`
+- 仓库新增 `CLAUDE.md` / `.mcp.json` / `.claude/`（AI 协作配置，无敏感信息，`settings.local.json` 已忽略）
+
+详见 [`SESSION-2026-10-26-暂停与整理.md`](SESSION-2026-10-26-暂停与整理.md)。
