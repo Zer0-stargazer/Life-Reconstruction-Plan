@@ -212,7 +212,7 @@ export function UnlockDialog() {
                     onKeyDown={(e) => { if (e.key === 'Enter') handleRedeem(); }}
                     placeholder={IS_OPEN_MODE ? '输入续码' : '输入授权码，如 LR-XXXXXX'}
                     maxLength={100}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/40"
                   />
                   {error && (
                     <p className="flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400">

@@ -1,0 +1,11 @@
+{
+  "postEdit": {
+    "enabled": true,
+    "mode": "tsc-watch",
+    "extensions": [".ts", ".tsx", ".mts"],
+    "watchCommand": "pnpm exec tsc -p tsconfig.json --noEmit --watch --pretty false",
+    "log": ".claude/.typecheck.log",
+    "waitSeconds": 12
+  },
+  "onStop": { "notify": true }
+}

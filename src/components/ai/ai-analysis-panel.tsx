@@ -268,7 +268,7 @@ export function AIAnalysisPanel({
               onKeyDown={handleKeyDown}
               placeholder={isStreaming ? '等待回复中...' : '追问或提问...'}
               disabled={isStreaming}
-              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:border-ring disabled:opacity-50"
+              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:border-ring disabled:opacity-50"
             />
             {isStreaming && <AiStopButton onStop={() => abortRef.current?.abort()} />}
             <button

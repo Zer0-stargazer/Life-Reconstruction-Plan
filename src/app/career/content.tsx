@@ -515,7 +515,7 @@ export default function CareerPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="搜索职业、技能关键词（如：心理咨询 / Python）..."
-              className="w-full rounded-lg border border-border bg-background pl-9 pr-9 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:border-ring"
+              className="w-full rounded-lg border border-border bg-background pl-9 pr-9 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:border-ring"
             />
             {searchQuery && (
               <button

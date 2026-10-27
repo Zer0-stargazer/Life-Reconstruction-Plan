@@ -121,3 +121,13 @@ _tmp_*/
 .claude/settings.local.json
 .vinext/
 .cloudflare/
+
+# --- Claude Code 本地文件 ---
+.claude/.typecheck.log*
+.claude/.hook-state
+*.bak-*
+
+
+# Serena MCP
+.serena/
+

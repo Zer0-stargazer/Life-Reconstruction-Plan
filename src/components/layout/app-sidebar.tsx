@@ -344,7 +344,7 @@ export function AppSidebar() {
         inert={!mobileOpen}
         aria-hidden={!mobileOpen}
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-screen w-60 flex-col border-r border-border bg-sidebar transition-transform duration-500 ease-out md:hidden',
+          'fixed left-0 top-0 z-50 flex h-dvh w-60 flex-col border-r border-border bg-sidebar transition-transform duration-500 ease-out md:hidden',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >

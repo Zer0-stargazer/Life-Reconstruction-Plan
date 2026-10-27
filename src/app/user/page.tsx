@@ -732,7 +732,7 @@ export default function UserPage() {
                       onChange={(e) => { setInviteCode(e.target.value); setInviteStatus('idle'); }}
                       onKeyDown={(e) => e.key === 'Enter' && handleRedeemCode()}
                       placeholder={IS_OPEN_MODE ? '输入续码' : '输入邀请码'}
-                      className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                      className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                     />
                     <button
                       onClick={handleRedeemCode}
@@ -826,7 +826,7 @@ export default function UserPage() {
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     placeholder="新邮箱（不变请留空原值即不会改动）"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                   <input
                     type="tel"
@@ -834,14 +834,14 @@ export default function UserPage() {
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value.replace(/[^\d\s-]/g, ''))}
                     placeholder="新手机号（不变请留原值）"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                   <input
                     type="password"
                     value={contactPwd}
                     onChange={(e) => setContactPwd(e.target.value)}
                     placeholder="当前密码（确认身份）"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                   {contactMsg && (
                     <p role="alert" className={cn('text-xs', contactMsg.ok ? 'text-emerald-600' : 'text-destructive')}>{contactMsg.text}</p>
@@ -904,7 +904,7 @@ export default function UserPage() {
                           onKeyDown={(e) => e.key === 'Enter' && (loginMode === 'register' ? handleRegister() : handleLogin())}
                           placeholder={loginMode === 'login' ? '昵称或注册邮箱均可' : '输入你的昵称'}
                           maxLength={50}
-                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                           autoFocus
                         />
                       </div>
@@ -917,7 +917,7 @@ export default function UserPage() {
                           onChange={(e) => setLoginPassword(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && (loginMode === 'register' ? handleRegister() : handleLogin())}
                           placeholder={loginMode === 'register' ? '至少8位密码' : '输入密码'}
-                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                         />
                       </div>
                       {loginMode === 'register' && (
@@ -932,7 +932,7 @@ export default function UserPage() {
                               value={regEmail}
                               onChange={(e) => setRegEmail(e.target.value)}
                               placeholder="you@example.com"
-                              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                             />
                           </div>
                           <div>
@@ -945,7 +945,7 @@ export default function UserPage() {
                               value={regPhone}
                               onChange={(e) => setRegPhone(e.target.value.replace(/[^\d\s-]/g, ''))}
                               placeholder="用于日后找回密码"
-                              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                              className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                             />
                           </div>
                           <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileReset} />
@@ -966,7 +966,7 @@ export default function UserPage() {
                           value={emailAddr}
                           onChange={(e) => setEmailAddr(e.target.value)}
                           placeholder="you@example.com"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                           autoFocus
                         />
                       </div>
@@ -1029,7 +1029,7 @@ export default function UserPage() {
                           onChange={(e) => setForgotNickname(e.target.value)}
                           placeholder="你的账号昵称"
                           maxLength={50}
-                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                           autoFocus
                         />
                       </div>
@@ -1041,7 +1041,7 @@ export default function UserPage() {
                           value={forgotContact}
                           onChange={(e) => setForgotContact(e.target.value)}
                           placeholder="与注册信息一致即可"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                         />
                       </div>
                       <p className="text-[11px] text-muted-foreground">
@@ -1084,7 +1084,7 @@ export default function UserPage() {
                           onChange={(e) => setNewPassword(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleForgotReset()}
                           placeholder="至少 8 位"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-ring"
                         />
                       </div>
                       <button

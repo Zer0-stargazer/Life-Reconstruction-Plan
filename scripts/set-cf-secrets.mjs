@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * 把 .env.local 里的运行时变量推送到 Cloudflare Worker（rensheng-shapan）。
+ * 把 .env.local 里的运行时变量推送到 Cloudflare Worker（lifesandbox）。
  *
  * 只打印变量名与结果，不打印值。
- * 用法：node scripts/set-cf-secrets.mjs
+ * 用法（必须在项目根目录执行，脚本按 process.cwd() 读取 .env.local）：node scripts/set-cf-secrets.mjs
  * 需要先设置：$env:CLOUDFLARE_ACCOUNT_ID（或已用 wrangler login 且只有一个账号）
  *
  * 注意：NEXT_PUBLIC_* 是构建时内联的，不走这里；改了需要重新 pnpm deploy:vinext。
